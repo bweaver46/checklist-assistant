@@ -7,9 +7,12 @@ set; AU -> Autograph unless redundant; plain Base rows dropped).
 """
 
 from scraper.card_record import CardRecord
-from exporter.convert import convert_all, parse_set, parse_serial, build_sub_type
+from exporter.convert import (
+    convert_all, parse_set, parse_serial, build_sub_type,
+    split_trailing_slash_serial,
+)
 from exporter.merge import merge_parallels
-from exporter.cleanup import apply_cleanup
+from exporter.cleanup import apply_cleanup, normalize_insert_name
 
 
 def test_parse_set():
@@ -110,6 +113,57 @@ def test_different_card_numbers_do_not_merge():
     assert len(checklist_rows) == 2
 
 
+def test_plain_base_with_section_still_keeps_section():
+    # Without a section, a plain Base row produces no occurrence at all.
+    # With a section like "Prospects", that would silently lose the
+    # section name - so an occurrence must still be created.
+    record = CardRecord(
+        name="Mike Trout", card_number="#101", set="2026 Bowman",
+        variant="Base", variant_name="-", attributes="-",
+    )
+    row = convert_all([record], {"section": "Prospects"})[0]
+    assert row.set == "2026 Bowman"
+    assert row.card_number == "#101"
+    assert row.occurrences == [("", "Prospects", "")]
+
+
+def test_section_combines_with_autograph_without_duplication():
+    record = CardRecord(
+        name="Mike Trout", card_number="#PRV-MT", set="2026 Bowman",
+        variant="Insert", variant_name="Rookie and Veteran Autographs Purple",
+        attributes="AU, SN250",
+    )
+    context = {"section": "Prospects"}
+    row = convert_all([record], context)[0]
+    assert row.occurrences == [
+        ("Rookie and Veteran Autographs Purple", "Prospects", "250")
+    ]
+
+
+def test_trailing_slash_serial_fallback():
+    assert split_trailing_slash_serial("Gold /50") == ("Gold", "50")
+    assert split_trailing_slash_serial("Anime") == ("Anime", "")
+
+
+def test_normalize_insert_name_hyphens_and_spacing():
+    assert normalize_insert_name("Black-Wave") == "Black Wave"
+    assert normalize_insert_name("Black  Wave") == "Black Wave"
+    assert normalize_insert_name("  Black Wave  ") == "Black Wave"
+
+
+def test_standardize_names_merges_hyphen_variants_after_merge():
+    records = [
+        CardRecord(name="Mike Trout", card_number="#XYZ", set="2026 Bowman",
+                   variant="Insert", variant_name="Black-Wave", attributes="SN10"),
+        CardRecord(name="Mike Trout", card_number="#XYZ", set="2026 Bowman",
+                   variant="Insert", variant_name="Black Wave", attributes="SN10"),
+    ]
+    checklist_rows = apply_cleanup(merge_parallels(convert_all(records, {})))
+    assert len(checklist_rows) == 1
+    # After normalization both occurrences are identical and get deduped.
+    assert checklist_rows[0].occurrences == [("Black Wave", "", "10")]
+
+
 if __name__ == "__main__":
     test_parse_set()
     test_parse_serial()
@@ -120,4 +174,9 @@ if __name__ == "__main__":
     test_insert_occurrences_merge_under_same_card_number()
     test_autograph_insert_gets_blank_subtype_no_duplicate()
     test_different_card_numbers_do_not_merge()
+    test_plain_base_with_section_still_keeps_section()
+    test_section_combines_with_autograph_without_duplication()
+    test_trailing_slash_serial_fallback()
+    test_normalize_insert_name_hyphens_and_spacing()
+    test_standardize_names_merges_hyphen_variants_after_merge()
     print("All tests passed.")

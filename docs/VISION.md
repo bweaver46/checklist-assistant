@@ -161,11 +161,24 @@ Bowman / Anime insert / Rookie and Veteran Autographs Purple).
 - `type`, `sport`: not derivable from row data at all - the app now
   prompts for these once per extraction run (see `_prompt_for_context`
   in `app/main_window.py`).
-- `team`: still unresolved - not in the row data, not yet asked for.
-  Left blank.
-- A plain Base row (no attributes at all) is dropped entirely. A Base
-  row that does carry an attribute (e.g. a serial number) is kept with
-  insert left blank.
+- `team`: not present in row data, supplied via `context`. Optional -
+  blank is fine.
+- `section`: not present in row data either, supplied via `context`.
+  Handles "continuation numbering" - e.g. a Prospects subsection that
+  continues a base set's numbering (#101-200) rather than restarting at
+  #1. The `set` and `card_number` stay exactly as the website gives
+  them - never renumbered. The section name goes into `sub_type`
+  instead. Asked for once per extraction run, since each run is already
+  scoped to one search.
+- A plain Base row (no attributes at all) is dropped entirely, UNLESS a
+  Section is active, in which case it's kept with a blank insert so the
+  section name doesn't get silently lost.
+- Insert/parallel name standardization (Phase 7): hyphens are treated as
+  spaces and whitespace is collapsed, so "Black-Wave" and "Black Wave"
+  normalize to the same string and correctly dedupe/merge. NOT yet
+  implemented: dropping a redundant trailing descriptor like "Refractor"
+  ("Blue Mojo" vs "Blue Mojo Refractor") - the rule for *when* that's
+  appropriate vs not still needs to come from Brandon.
 
 Final CSV columns: type, sport, year, brand, set, card_number, player,
 team, then insert_1/sub_type_1/serial_1, insert_2/sub_type_2/serial_2,
@@ -173,9 +186,10 @@ team, then insert_1/sub_type_1/serial_1, insert_2/sub_type_2/serial_2,
 
 ## Open Questions
 
-1. Where should `team` come from?
-2. Phase 7's "continuation numbering" and "standardize names" rules
-   still aren't implemented.
+1. The "Blue Mojo" vs "Blue Mojo Refractor" rule - when is a trailing
+   descriptor word like "Refractor" redundant and droppable vs needed?
+2. Phase 7's exact set of standardization rules may grow as more naming
+   inconsistencies turn up in real data.
 3. The full pipeline has NOT yet been run end-to-end against a live page
    inside the actual desktop app - only validated via direct DOM
    inspection and unit tests against realistically-shaped fake data.
@@ -247,7 +261,7 @@ stable releases, and easy maintenance.
 
 ## Current Version
 
-**Version: 0.5.0 (Field mapping rules applied: per-occurrence insert/sub_type/serial, year/brand parsed from set, Type/Sport prompt)**
+**Version: 0.6.0 (Section/continuation-numbering support, insert name standardization)**
 
 Current capabilities:
 - Launches as a desktop application
@@ -255,15 +269,16 @@ Current capabilities:
 - Maintains a BrowserManager that owns the browser instance
 - Reads every row across every page using selectors confirmed against
   the real, logged-in BuySportsCards table (Phases 1-2)
-- Prompts for Sport and Type once per extraction run
+- Prompts for Sport, Type, Team, and Section once per extraction run
 - Converts raw rows into checklist rows with per-occurrence
   insert/sub_type/serial, parses year/brand from the set string, drops
-  plain Base rows, applies the Autograph-dedup rule, merges occurrences
-  by card identity, and exports both a raw debug CSV and a final
-  checklist CSV (Phases 3-8)
+  plain Base rows (unless a Section is active), applies the
+  Autograph-dedup rule, treats PR the same as SN, normalizes
+  insert-name punctuation, merges occurrences by card identity, and
+  exports both a raw debug CSV and a final checklist CSV (Phases 3-8)
 
 Not yet done: a real, live, end-to-end run of Extract Checklist inside
 the actual desktop app. See "Open Questions" above.
 
-Next goal (v0.6.0): run Extract Checklist for real, validate output
+Next goal (v0.7.0): run Extract Checklist for real, validate output
 against the live site, and resolve the remaining open questions.

@@ -20,13 +20,27 @@ Field mapping (per Brandon, 2026-06-28):
     - serial: the digits from Attributes' "SN<digits>" or "PR<digits>" token.
     - type, sport: NOT derivable from the row data - supplied via
       `context`, which the app now prompts for once per extraction run.
-    - team: still unresolved - not present in row data, not yet asked
-      for. Left blank for now.
+    - team: not present in row data, supplied via `context`. Optional -
+      blank is fine.
+    - section: NOT present in row data either, supplied via `context`.
+      For "continuation numbering" (e.g. a Prospects subsection that
+      continues a base set's numbering, #101-200, rather than
+      restarting at #1) - the `set` and `card_number` stay exactly as
+      the website gives them (never renumbered), and the section name
+      goes into `sub_type` instead. Since each extraction run is
+      already scoped to one search, this is asked for once per run
+      alongside Sport/Type/Team, not auto-detected from the page.
 
 A truly plain Base row (variant == "Base" and attributes == "-") is
 dropped entirely (Phase 7's "remove redundant Base"). A Base row that
 DOES carry an attribute (e.g. a serial-numbered version BSC still
 buckets under "Base") is kept, with insert left blank as instructed.
+
+Defensive fallback: if a Variant Name ever shows up as "Name /digits"
+(slash-serial jammed into the name, the way the original vision doc's
+generic example assumed) rather than as separate Variant Name +
+Attributes columns, that trailing "/digits" gets split off into serial
+too. Not needed for any real row seen so far, but cheap insurance.
 """
 
 import re
@@ -40,6 +54,7 @@ from exporter.checklist_template import ChecklistRow
 SERIAL_PATTERN = re.compile(r"(?:SN|PR)(\d+)")
 AUTOGRAPH_PATTERN = re.compile(r"\bAU\b")
 SET_YEAR_PATTERN = re.compile(r"^\s*(\d{4})\s+(.*)$")
+TRAILING_SLASH_SERIAL_PATTERN = re.compile(r"^(.*)/\s*(\d+)\s*$")
 
 
 def parse_set(set_text: str) -> tuple[str, str]:
@@ -52,22 +67,33 @@ def parse_set(set_text: str) -> tuple[str, str]:
     return "", set_text.strip()
 
 
-def build_sub_type(attributes: str, set_text: str, insert_text: str) -> str:
-    """Derive sub_type from Attributes, avoiding a redundant 'Autograph'
-    if that word already appears in the set or this occurrence's insert.
-    SN/PR never contribute to sub_type - they're serial info, handled by
+def build_sub_type(
+    attributes: str, set_text: str, insert_text: str, section: str = ""
+) -> str:
+    """Derive sub_type from the Section context value plus Attributes,
+    avoiding a redundant 'Autograph' if that word already appears in the
+    set, this occurrence's insert text, or the section name. SN/PR never
+    contribute to sub_type - they're serial info, handled by
     parse_serial instead."""
-    if not attributes or attributes == "-":
-        return ""
+    parts = []
+    section = (section or "").strip()
+    if section:
+        parts.append(section)
 
     already_says_autograph = (
         "autograph" in (set_text or "").lower()
         or "autograph" in (insert_text or "").lower()
+        or "autograph" in section.lower()
     )
-    if AUTOGRAPH_PATTERN.search(attributes) and not already_says_autograph:
-        return "Autograph"
+    if (
+        attributes
+        and attributes != "-"
+        and AUTOGRAPH_PATTERN.search(attributes)
+        and not already_says_autograph
+    ):
+        parts.append("Autograph")
 
-    return ""
+    return ", ".join(parts)
 
 
 def parse_serial(attributes: str) -> str:
@@ -77,10 +103,26 @@ def parse_serial(attributes: str) -> str:
     return match.group(1) if match else ""
 
 
-def is_plain_base(record: CardRecord) -> bool:
+def split_trailing_slash_serial(text: str) -> tuple[str, str]:
+    """'Gold /50' -> ('Gold', '50'). No trailing slash-serial -> (text, '')."""
+    if not text:
+        return text, ""
+    match = TRAILING_SLASH_SERIAL_PATTERN.match(text)
+    if match:
+        return match.group(1).strip(), match.group(2)
+    return text, ""
+
+
+def is_plain_base(record: CardRecord, section: str = "") -> bool:
+    """A row is droppable (Phase 7's 'remove redundant Base') only if
+    there's truly nothing to record: it's a Base row, it has no
+    attributes, AND no section context was given. If a section like
+    'Prospects' is active, every row in that batch needs an occurrence
+    so the section name doesn't get silently lost."""
     return (
         record.variant.strip().lower() == "base"
         and (not record.attributes or record.attributes.strip() == "-")
+        and not (section or "").strip()
     )
 
 
@@ -99,13 +141,17 @@ def convert_record(record: CardRecord, context: dict | None = None) -> Checklist
         team=context.get("team", ""),
     )
 
-    if not is_plain_base(record):
+    if not is_plain_base(record, context.get("section", "")):
         is_base = record.variant.strip().lower() == "base"
         insert_text = "" if is_base else (record.variant_name or "").strip()
         if insert_text == "-":
             insert_text = ""
-        sub_type = build_sub_type(record.attributes, record.set, insert_text)
-        serial = parse_serial(record.attributes)
+
+        insert_text, fallback_serial = split_trailing_slash_serial(insert_text)
+
+        section = context.get("section", "")
+        sub_type = build_sub_type(record.attributes, record.set, insert_text, section)
+        serial = parse_serial(record.attributes) or fallback_serial
         row.occurrences.append((insert_text, sub_type, serial))
 
     return row

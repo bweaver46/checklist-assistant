@@ -16,16 +16,17 @@ python main.py
 
 ## Status
 
-v0.5.0 — Field mapping rules applied per Brandon's direction: insert,
-sub_type, and serial are now per-occurrence (insert_1/sub_type_1/serial_1,
-insert_2/sub_type_2/serial_2, ...), year/brand parsed from the Set
-string, plain Base rows dropped, Autograph dedup rule applied, and the
-app now prompts for Sport/Type once per extraction run.
+v0.6.0 — Section context (for continuation-numbering subsections like
+"Prospects" - set/card_number never renumbered, section name goes into
+sub_type instead) and insert-name punctuation standardization
+(hyphen/space normalization) added per Brandon's direction. App now
+prompts for Sport/Type/Team/Section once per extraction run.
 
 **Not yet run end-to-end inside the actual desktop app against a live
 page** — that's the next step.
 
-See `docs/VISION.md` "Open Questions" for what's still unresolved (team
-source, naming/continuation rules).
+See `docs/VISION.md` "Open Questions" for what's still unresolved (the
+"Blue Mojo" vs "Blue Mojo Refractor" rule, and whatever else turns up
+once this runs against real data).
 
 Run tests with: `PYTHONPATH=. python3 tests/test_exporter_pipeline.py`
