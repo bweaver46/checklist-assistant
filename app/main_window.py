@@ -19,6 +19,11 @@ from PySide6.QtWidgets import (
 )
 
 from scraper.browser_manager import BrowserManager
+from exporter.raw_export import write_raw_csv
+from exporter.convert import convert_all
+from exporter.merge import merge_parallels
+from exporter.cleanup import apply_cleanup
+from exporter.final_export import write_final_csv
 
 
 class MainWindow(QMainWindow):
@@ -63,9 +68,37 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(f"Browser ready at {url}")
 
     def on_extract_checklist(self) -> None:
-        """v0.0.2 milestone: count rows currently displayed, nothing else."""
+        """Run the full extraction pipeline: read every page, export raw
+        CSV, convert to checklist format, merge parallels, clean up, and
+        export the final CSV.
+        """
         try:
-            row_count = self.browser_manager.count_rows()
-            self.statusBar().showMessage(f"Rows currently displayed: {row_count}")
+            self.statusBar().showMessage("Reading rows across all pages...")
+            records = self.browser_manager.extract_all_pages()
+
+            print(f"--- Extracted {len(records)} raw rows ---")
+            for record in records:
+                print(record.to_dict())
+
+            raw_path = "raw_export.csv"
+            write_raw_csv(records, raw_path)
+
+            # TODO: sport/year/brand/type/insert/sub_type/team aren't in
+            # the row data itself per the vision doc - supply them here
+            # once we know where they should come from (page header, URL,
+            # or a value Brandon enters before extracting).
+            context: dict = {}
+
+            checklist_rows = convert_all(records, context)
+            checklist_rows = merge_parallels(checklist_rows)
+            checklist_rows = apply_cleanup(checklist_rows)
+
+            final_path = "checklist_export.csv"
+            write_final_csv(checklist_rows, final_path)
+
+            self.statusBar().showMessage(
+                f"Done: {len(records)} rows -> {len(checklist_rows)} cards. "
+                f"Raw: {raw_path}  Final: {final_path}"
+            )
         except RuntimeError as exc:
             self.statusBar().showMessage(str(exc))

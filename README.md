@@ -16,6 +16,11 @@ python main.py
 
 ## Status
 
-v0.0.2 — Row counting. Launch Browser opens a Chromium session on
-BuySportsCards; Extract Checklist counts the rows currently displayed on the
-page.
+v0.3.0 — Full Phase 1-8 pipeline (read all pages → raw CSV → checklist
+format → merge parallels → cleanup → final CSV) is wired and unit-tested
+against fake data. **Not yet validated against the live BuySportsCards
+site** — `settings/selectors.py` and `exporter/convert.py`'s field
+mapping are placeholder guesses until confirmed against the real DOM.
+See `docs/VISION.md` "Blocked On" for the exact next step.
+
+Run tests with: `PYTHONPATH=. python3 tests/test_exporter_pipeline.py`

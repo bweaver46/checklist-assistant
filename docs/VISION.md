@@ -111,12 +111,42 @@ extraction.
 - [x] BrowserManager created
 - [x] Extract button connected
 - [x] Git repository initialized
+- [x] Row counting (Phase 1)
+- [x] Read one row / all rows on a page (Phase 1)
+- [x] Pagination: detect and click Next, read all pages (Phase 2)
+- [x] Raw CardRecord objects (Phase 3)
+- [x] Raw CSV export (Phase 4)
+- [x] Convert raw records to checklist template rows (Phase 5)
+- [x] Merge parallels into one row per card (Phase 6)
+- [x] Cleanup rules: remove redundant Base, normalize serials, dedupe (Phase 7, partial)
+- [x] Final checklist CSV export (Phase 8)
+
+## Blocked On
+
+The full pipeline above (Phases 1-8) is wired and unit-tested against
+fake data (see tests/test_exporter_pipeline.py - reproduces the Mike
+Trout merge example from this doc exactly). It has NOT been run against
+the live BuySportsCards site yet, because:
+
+1. `settings/selectors.py` (ROW_SELECTOR, FIELD_SELECTORS,
+   NEXT_BUTTON_SELECTOR) are placeholder guesses, not confirmed against
+   the real DOM.
+2. `exporter/convert.py`'s mapping from raw fields to checklist columns
+   (sport, year, brand, type, insert, sub_type, team) is a best guess -
+   those values aren't in the row data the original vision doc
+   describes, so where they actually come from needs to be confirmed
+   against a real search page.
+3. Phase 7's "continuation numbering" and "standardize names" rules
+   aren't implemented - they depend on conventions only Brandon has.
+
+Next concrete step: log into BuySportsCards, run a search, inspect the
+table HTML (or extract once with the placeholder selectors and look at
+raw_export.csv), and feed back the real selectors and a sample of real
+rows so convert.py and selectors.py can be corrected.
 
 ## Next Milestone
 
-Read the number of rows currently displayed. Nothing else.
-
-If we can count rows, then we know Checklist Assistant can "see" the page.
+Confirm real selectors and field mapping against the live site.
 
 ## Following Milestones
 
@@ -180,13 +210,20 @@ stable releases, and easy maintenance.
 
 ## Current Version
 
-**Version: 0.0.2 (Row counting)**
+**Version: 0.3.0 (Full pipeline, unverified against live site)**
 
 Current capabilities:
 - Launches as a desktop application
 - Opens a Playwright-controlled Chromium browser
 - Maintains a BrowserManager that owns the browser instance
-- Counts rows currently displayed on the active page
+- Reads every row across every page (Phases 1-2)
+- Converts raw rows into checklist template rows, merges parallels,
+  applies basic cleanup, and exports both a raw debug CSV and a final
+  checklist CSV (Phases 3-8)
 
-Next goal (v0.0.3): Read the data in the first row, then progressively
-expand to reading every row, multi-page extraction, and CSV generation.
+All of the above is unit-tested against fake data but not yet run
+against the real BuySportsCards site - see "Blocked On" above.
+
+Next goal (v0.4.0): confirm real selectors and field mapping against a
+live, logged-in BuySportsCards search, then validate the full pipeline
+end to end on a real checklist.
