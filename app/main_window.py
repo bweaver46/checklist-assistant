@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QToolBar,
     QStatusBar,
+    QInputDialog,
 )
 
 from scraper.browser_manager import BrowserManager
@@ -67,11 +68,31 @@ class MainWindow(QMainWindow):
         url = self.browser_manager.current_url()
         self.statusBar().showMessage(f"Browser ready at {url}")
 
-    def on_extract_checklist(self) -> None:
-        """Run the full extraction pipeline: read every page, export raw
-        CSV, convert to checklist format, merge parallels, clean up, and
-        export the final CSV.
+    def _prompt_for_context(self) -> dict | None:
+        """Ask for Type and Sport once per extraction run - the two
+        fields that aren't derivable from the row data at all. Returns
+        None if the user cancels either prompt.
         """
+        sport, ok = QInputDialog.getText(self, "Extract Checklist", "Sport:")
+        if not ok:
+            return None
+
+        card_type, ok = QInputDialog.getText(self, "Extract Checklist", "Type:")
+        if not ok:
+            return None
+
+        return {"sport": sport.strip(), "type": card_type.strip()}
+
+    def on_extract_checklist(self) -> None:
+        """Run the full extraction pipeline: ask for Type/Sport, read
+        every page, export raw CSV, convert to checklist format, merge
+        occurrences, clean up, and export the final CSV.
+        """
+        context = self._prompt_for_context()
+        if context is None:
+            self.statusBar().showMessage("Extraction cancelled.")
+            return
+
         try:
             self.statusBar().showMessage("Reading rows across all pages...")
             records = self.browser_manager.extract_all_pages()
@@ -82,12 +103,6 @@ class MainWindow(QMainWindow):
 
             raw_path = "raw_export.csv"
             write_raw_csv(records, raw_path)
-
-            # TODO: sport/year/brand/type/insert/sub_type/team aren't in
-            # the row data itself per the vision doc - supply them here
-            # once we know where they should come from (page header, URL,
-            # or a value Brandon enters before extracting).
-            context: dict = {}
 
             checklist_rows = convert_all(records, context)
             checklist_rows = merge_parallels(checklist_rows)

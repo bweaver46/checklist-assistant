@@ -140,22 +140,45 @@ are no longer placeholders. `tests/test_exporter_pipeline.py` uses
 fake data shaped exactly like real confirmed rows (Mike Trout / 2026
 Bowman / Anime insert / Rookie and Veteran Autographs Purple).
 
+## Field Mapping Rules (per Brandon, 2026-06-28)
+
+- `year`, `brand`: parsed out of the website's Set string (e.g. "2026
+  Bowman" -> year="2026", brand="Bowman"). `set` keeps the full original
+  string too.
+- `insert`: the website's Variant Name, blank for Base. This is
+  per-occurrence (insert_1, insert_2, ...), not a single scalar - the
+  same card_number can have several Variant Name values that all need
+  to merge into one checklist row.
+- `sub_type`: derived from Attributes, also per-occurrence.
+  - "AU" becomes "Autograph", UNLESS the word "Autograph" already
+    appears in the set or that occurrence's insert text, in which case
+    it's dropped as redundant.
+  - "PR" is passed through as-is - meaning/expansion unconfirmed, no
+    live example seen yet.
+- `serial`: the digits from Attributes' "SN<digits>" token, per-occurrence.
+- `type`, `sport`: not derivable from row data at all - the app now
+  prompts for these once per extraction run (see `_prompt_for_context`
+  in `app/main_window.py`).
+- `team`: still unresolved - not in the row data, not yet asked for.
+  Left blank.
+- A plain Base row (no attributes at all) is dropped entirely. A Base
+  row that does carry an attribute (e.g. a serial number) is kept with
+  insert left blank.
+
+Final CSV columns: type, sport, year, brand, set, card_number, player,
+team, then insert_1/sub_type_1/serial_1, insert_2/sub_type_2/serial_2,
+... expanded per row's occurrence count.
+
 ## Open Questions
 
-1. How should autographed cards (AU) appear in the final checklist?
-   Currently the parallel name gets " (AU)" appended as a placeholder
-   (see `exporter/convert.py`). If your checklist format wants a
-   separate AU column, say so.
-2. sport / year / brand / type / insert / sub_type / team aren't present
-   in the row data at all. Where should these come from - parsed from
-   the page/search context, or entered manually before extracting?
+1. What does "PR" in Attributes actually mean/expand to? Haven't seen a
+   live example yet.
+2. Where should `team` come from?
 3. Phase 7's "continuation numbering" and "standardize names" rules
-   still aren't implemented - need your specific conventions.
-4. The full pipeline has NOT yet been run end-to-end against a live
-   page inside the actual desktop app (only validated via direct DOM
-   inspection + unit tests against realistically-shaped fake data).
-   Next real test: click Extract Checklist for real and check the
-   output CSVs.
+   still aren't implemented.
+4. The full pipeline has NOT yet been run end-to-end against a live page
+   inside the actual desktop app - only validated via direct DOM
+   inspection and unit tests against realistically-shaped fake data.
 
 ## Next Milestone
 
@@ -224,7 +247,7 @@ stable releases, and easy maintenance.
 
 ## Current Version
 
-**Version: 0.4.0 (Selectors and field mapping confirmed against live site)**
+**Version: 0.5.0 (Field mapping rules applied: per-occurrence insert/sub_type/serial, year/brand parsed from set, Type/Sport prompt)**
 
 Current capabilities:
 - Launches as a desktop application
@@ -232,14 +255,15 @@ Current capabilities:
 - Maintains a BrowserManager that owns the browser instance
 - Reads every row across every page using selectors confirmed against
   the real, logged-in BuySportsCards table (Phases 1-2)
-- Converts raw rows into checklist template rows, merges parallels,
-  applies basic cleanup, and exports both a raw debug CSV and a final
-  checklist CSV - logic confirmed against realistically-shaped fake
-  data matching the real table structure (Phases 3-8)
+- Prompts for Sport and Type once per extraction run
+- Converts raw rows into checklist rows with per-occurrence
+  insert/sub_type/serial, parses year/brand from the set string, drops
+  plain Base rows, applies the Autograph-dedup rule, merges occurrences
+  by card identity, and exports both a raw debug CSV and a final
+  checklist CSV (Phases 3-8)
 
 Not yet done: a real, live, end-to-end run of Extract Checklist inside
-the actual desktop app. See "Open Questions" above for what's still
-unresolved.
+the actual desktop app. See "Open Questions" above.
 
-Next goal (v0.5.0): run Extract Checklist for real, validate output
-against the live site, and resolve the open questions above.
+Next goal (v0.6.0): run Extract Checklist for real, validate output
+against the live site, and resolve the remaining open questions.

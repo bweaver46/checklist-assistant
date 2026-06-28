@@ -1,10 +1,12 @@
 """
-The standard checklist template. One row per unique card, after parallels
-have been merged in Phase 6.
+The standard checklist template. One row per unique physical card design
+(same card_number/player/set/etc), after occurrences have been merged in
+Phase 6.
 
-`parallels` is a list of (parallel_name, serial) tuples. It starts with at
-most one entry per row coming out of Phase 5 (one row per website row,
-before merging) and grows as Phase 6 merges same-card rows together.
+`occurrences` is a list of (insert, sub_type, serial) tuples - one per
+original website row for this card. Base rows with nothing notable about
+them are dropped entirely (see exporter/convert.py); a Base row that does
+carry an attribute (e.g. a serial number) is kept with insert="".
 """
 
 from dataclasses import dataclass, field
@@ -17,23 +19,21 @@ class ChecklistRow:
     year: str = ""
     brand: str = ""
     set: str = ""
-    insert: str = ""
-    sub_type: str = ""
     card_number: str = ""
     player: str = ""
     team: str = ""
-    parallels: list = field(default_factory=list)
+    occurrences: list = field(default_factory=list)
 
     def merge_key(self) -> tuple:
-        """Two rows are the 'same card' if everything but the parallel matches."""
+        """Two rows are the 'same card' if everything but insert/sub_type/
+        serial matches. Those three are per-occurrence, not part of the
+        card's identity."""
         return (
             self.type,
             self.sport,
             self.year,
             self.brand,
             self.set,
-            self.insert,
-            self.sub_type,
             self.card_number,
             self.player,
             self.team,

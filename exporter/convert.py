@@ -3,24 +3,28 @@ Phase 5: convert raw CardRecord objects into ChecklistRow objects.
 
 Still one row per website row at this point - merging happens in Phase 6.
 
-Confirmed against the live BuySportsCards table (2026-06-28):
-    - `variant` is a category: "Base" or "Insert". Base rows get no
-      parallel at all.
-    - `variant_name` holds the actual parallel/insert name, e.g.
-      "Anime Red Refractors". "-" means not applicable.
-    - `attributes` holds serial number as "SN<digits>" and/or an
-      autograph flag "AU", comma-separated when both present, e.g.
-      "AU, SN150". "-" means no attributes.
+Field mapping (per Brandon, 2026-06-28):
+    - year, brand: parsed out of the website's "Set" string (e.g.
+      "2026 Bowman" -> year="2026", brand="Bowman"). `set` itself keeps
+      the full original string.
+    - insert: the website's Variant Name, blank for Base.
+    - sub_type: derived from Attributes.
+        - "AU" -> "Autograph", UNLESS the word "Autograph" already
+          appears in the set or this occurrence's insert text, in which
+          case it's dropped as redundant.
+        - "PR" -> passed through as-is. *** Meaning/expansion rule for
+          PR unconfirmed - haven't seen a live example yet. Tell me what
+          it should become if/when one shows up. ***
+    - serial: the digits from Attributes' "SN<digits>" token.
+    - type, sport: NOT derivable from the row data - supplied via
+      `context`, which the app now prompts for once per extraction run.
+    - team: still unresolved - not present in row data, not yet asked
+      for. Left blank for now.
 
-*** OPEN QUESTION for Brandon: how should autographed cards (AU) show up
-*** in the final checklist? Right now the parallel name gets " (AU)"
-*** appended as a placeholder. If your checklist format wants a separate
-*** AU column instead, say so and this gets a one-line fix.
-
-sport / year / brand / type / insert / sub_type / team are NOT present in
-the row data at all - they come from `context`, metadata about the
-current search that has to be supplied some other way (read from the
-page header/URL, or typed in before extracting). Still unresolved.
+A truly plain Base row (variant == "Base" and attributes == "-") is
+dropped entirely (Phase 7's "remove redundant Base"). A Base row that
+DOES carry an attribute (e.g. a serial-numbered version BSC still
+buckets under "Base") is kept, with insert left blank as instructed.
 """
 
 import re
@@ -30,41 +34,76 @@ from exporter.checklist_template import ChecklistRow
 
 SERIAL_PATTERN = re.compile(r"SN(\d+)")
 AUTOGRAPH_PATTERN = re.compile(r"\bAU\b")
+PRINT_RUN_PATTERN = re.compile(r"\bPR\b")
+SET_YEAR_PATTERN = re.compile(r"^\s*(\d{4})\s+(.*)$")
 
 
-def parse_attributes(attributes: str) -> tuple[str, bool]:
-    """'AU, SN150' -> ('150', True). 'SN10' -> ('10', False). '-' -> ('', False)."""
+def parse_set(set_text: str) -> tuple[str, str]:
+    """'2026 Bowman' -> ('2026', 'Bowman'). No leading year -> ('', set_text)."""
+    if not set_text:
+        return "", ""
+    match = SET_YEAR_PATTERN.match(set_text)
+    if match:
+        return match.group(1), match.group(2).strip()
+    return "", set_text.strip()
+
+
+def build_sub_type(attributes: str, set_text: str, insert_text: str) -> str:
+    """Derive sub_type from Attributes, avoiding a redundant 'Autograph'
+    if that word already appears in the set or this occurrence's insert."""
     if not attributes or attributes == "-":
-        return "", False
-    serial_match = SERIAL_PATTERN.search(attributes)
-    serial = serial_match.group(1) if serial_match else ""
-    is_autograph = bool(AUTOGRAPH_PATTERN.search(attributes))
-    return serial, is_autograph
+        return ""
+
+    parts = []
+    already_says_autograph = (
+        "autograph" in (set_text or "").lower()
+        or "autograph" in (insert_text or "").lower()
+    )
+    if AUTOGRAPH_PATTERN.search(attributes) and not already_says_autograph:
+        parts.append("Autograph")
+    if PRINT_RUN_PATTERN.search(attributes):
+        parts.append("PR")
+
+    return ", ".join(parts)
+
+
+def parse_serial(attributes: str) -> str:
+    if not attributes:
+        return ""
+    match = SERIAL_PATTERN.search(attributes)
+    return match.group(1) if match else ""
+
+
+def is_plain_base(record: CardRecord) -> bool:
+    return (
+        record.variant.strip().lower() == "base"
+        and (not record.attributes or record.attributes.strip() == "-")
+    )
 
 
 def convert_record(record: CardRecord, context: dict | None = None) -> ChecklistRow:
     context = context or {}
+    year, brand = parse_set(record.set)
+
     row = ChecklistRow(
         type=context.get("type", ""),
         sport=context.get("sport", ""),
-        year=context.get("year", ""),
-        brand=context.get("brand", ""),
-        set=record.set or context.get("set", ""),
-        insert=context.get("insert", ""),
-        sub_type=context.get("sub_type", ""),
+        year=year,
+        brand=brand,
+        set=record.set,
         card_number=record.card_number,
         player=record.name,
         team=context.get("team", ""),
     )
 
-    is_base = record.variant.strip().lower() == "base"
-    if not is_base:
-        parallel_name = record.variant_name.strip()
-        if parallel_name and parallel_name != "-":
-            serial, is_autograph = parse_attributes(record.attributes)
-            if is_autograph:
-                parallel_name = f"{parallel_name} (AU)"
-            row.parallels.append((parallel_name, serial))
+    if not is_plain_base(record):
+        is_base = record.variant.strip().lower() == "base"
+        insert_text = "" if is_base else (record.variant_name or "").strip()
+        if insert_text == "-":
+            insert_text = ""
+        sub_type = build_sub_type(record.attributes, record.set, insert_text)
+        serial = parse_serial(record.attributes)
+        row.occurrences.append((insert_text, sub_type, serial))
 
     return row
 

@@ -1,13 +1,8 @@
 """
-Phase 6: merge rows that represent the same card but different parallels.
+Phase 6: merge rows that represent the same physical card design but
+different print occurrences (insert/sub_type/serial combos).
 
-Mike Trout / Base
-Mike Trout / Gold /50
-Mike Trout / Red /5
-
-becomes one Mike Trout row with parallel_1=Gold/50, parallel_2=Red/5.
-
-Rows are merged if everything except the parallel list matches
+Rows are merged if everything except `occurrences` matches
 (see ChecklistRow.merge_key). Order of first appearance is preserved.
 """
 
@@ -28,14 +23,12 @@ def merge_parallels(rows: list[ChecklistRow]) -> list[ChecklistRow]:
                 year=row.year,
                 brand=row.brand,
                 set=row.set,
-                insert=row.insert,
-                sub_type=row.sub_type,
                 card_number=row.card_number,
                 player=row.player,
                 team=row.team,
-                parallels=list(row.parallels),
+                occurrences=list(row.occurrences),
             )
         else:
-            merged[key].parallels.extend(row.parallels)
+            merged[key].occurrences.extend(row.occurrences)
 
     return list(merged.values())

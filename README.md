@@ -16,14 +16,16 @@ python main.py
 
 ## Status
 
-v0.4.0 — Selectors and field mapping confirmed against the live,
-logged-in BuySportsCards table (see `docs/VISION.md`). Full Phase 1-8
-pipeline (read all pages → raw CSV → checklist format → merge parallels
-→ cleanup → final CSV) is wired and tested against fake data shaped
-exactly like the real table. **Not yet run end-to-end inside the actual
-desktop app against a live page** — that's the next step.
+v0.5.0 — Field mapping rules applied per Brandon's direction: insert,
+sub_type, and serial are now per-occurrence (insert_1/sub_type_1/serial_1,
+insert_2/sub_type_2/serial_2, ...), year/brand parsed from the Set
+string, plain Base rows dropped, Autograph dedup rule applied, and the
+app now prompts for Sport/Type once per extraction run.
 
-See `docs/VISION.md` "Open Questions" for what's still unresolved
-(autograph representation, sport/year/brand context, naming rules).
+**Not yet run end-to-end inside the actual desktop app against a live
+page** — that's the next step.
+
+See `docs/VISION.md` "Open Questions" for what's still unresolved (PR
+attribute meaning, team source, naming/continuation rules).
 
 Run tests with: `PYTHONPATH=. python3 tests/test_exporter_pipeline.py`
