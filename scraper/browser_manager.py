@@ -23,6 +23,7 @@ from playwright.sync_api import sync_playwright, Browser, Page, Playwright, Loca
 
 from scraper.card_record import CardRecord
 from settings.selectors import ROW_SELECTOR, FIELD_SELECTORS, PAGINATION_NAV_SELECTOR
+from settings.window_layout import BROWSER_WINDOW_POSITION, BROWSER_WINDOW_SIZE
 
 
 class BrowserManager:
@@ -47,9 +48,18 @@ class BrowserManager:
         if self.is_launched:
             return
 
+        x, y = BROWSER_WINDOW_POSITION
+        width, height = BROWSER_WINDOW_SIZE
+
         self._playwright = sync_playwright().start()
-        self._browser = self._playwright.chromium.launch(headless=False)
-        self._page = self._browser.new_page()
+        self._browser = self._playwright.chromium.launch(
+            headless=False,
+            args=[
+                f"--window-position={x},{y}",
+                f"--window-size={width},{height}",
+            ],
+        )
+        self._page = self._browser.new_page(viewport=None)
         self._page.goto(start_url)
 
     def current_url(self) -> str | None:

@@ -14,6 +14,16 @@ playwright install chromium
 python main.py
 ```
 
+### Easier launch (Mac)
+
+After the one-time setup above, double-click **`Launch Checklist Assistant.command`**
+in Finder to start the app without typing anything into Terminal. To put
+it somewhere convenient: right-click the file → Make Alias, then drag
+that alias to your Desktop or Dock.
+
+Window positions (where the app window and the browser window open on
+screen) are set in `settings/window_layout.py` if you want to move them.
+
 ## Status
 
 v0.7.0 — **First successful live test passed**: a real extraction

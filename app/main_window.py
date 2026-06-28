@@ -27,6 +27,7 @@ from exporter.convert import convert_all
 from exporter.merge import merge_parallels
 from exporter.cleanup import apply_cleanup
 from exporter.final_export import write_final_csv
+from settings.window_layout import MAIN_WINDOW_POSITION
 
 # BuySportsCards only sells sports cards, so Type is fixed and never
 # asked for. If Checklist Assistant grows to support a non-sports source
@@ -39,6 +40,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Checklist Assistant")
         self.resize(480, 240)
+        self.move(*MAIN_WINDOW_POSITION)
 
         self.browser_manager = BrowserManager()
 
