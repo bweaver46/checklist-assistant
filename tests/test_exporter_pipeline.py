@@ -87,8 +87,8 @@ def test_insert_occurrences_merge_under_same_card_number():
     assert row.brand == "Bowman"
     assert row.occurrences == [
         ("Anime", "", ""),
-        ("Anime Black Refractors", "", "10"),
-        ("Anime Red Refractors", "", "5"),
+        ("Anime Black", "", "10"),
+        ("Anime Red", "", "5"),
     ]
 
 
@@ -125,6 +125,32 @@ def test_plain_base_with_section_still_keeps_section():
     assert row.set == "2026 Bowman"
     assert row.card_number == "#101"
     assert row.occurrences == [("", "Prospects", "")]
+
+
+def test_normalize_insert_name_drops_trailing_refractor():
+    assert normalize_insert_name("Blue Mojo Refractor") == "Blue Mojo"
+    assert normalize_insert_name("Blue Mojo Refractors") == "Blue Mojo"
+    assert normalize_insert_name("Blue Mojo") == "Blue Mojo"
+
+
+def test_normalize_insert_name_prizm_and_refractor_plurals():
+    assert normalize_insert_name("Silver Prizms") == "Silver Prizm"
+    assert normalize_insert_name("Silver Prizm") == "Silver Prizm"
+    # Non-trailing "Refractor" (not at the end) still gets singular-normalized
+    # rather than dropped.
+    assert normalize_insert_name("Refractors Wave") == "Refractor Wave"
+
+
+def test_standardize_names_merges_refractor_variants_after_merge():
+    records = [
+        CardRecord(name="Mike Trout", card_number="#XYZ", set="2026 Panini Prizm",
+                   variant="Insert", variant_name="Blue Mojo", attributes="SN10"),
+        CardRecord(name="Mike Trout", card_number="#XYZ", set="2026 Panini Prizm",
+                   variant="Insert", variant_name="Blue Mojo Refractor", attributes="SN10"),
+    ]
+    checklist_rows = apply_cleanup(merge_parallels(convert_all(records, {})))
+    assert len(checklist_rows) == 1
+    assert checklist_rows[0].occurrences == [("Blue Mojo", "", "10")]
 
 
 def test_section_combines_with_autograph_without_duplication():
@@ -179,4 +205,7 @@ if __name__ == "__main__":
     test_trailing_slash_serial_fallback()
     test_normalize_insert_name_hyphens_and_spacing()
     test_standardize_names_merges_hyphen_variants_after_merge()
+    test_normalize_insert_name_drops_trailing_refractor()
+    test_normalize_insert_name_prizm_and_refractor_plurals()
+    test_standardize_names_merges_refractor_variants_after_merge()
     print("All tests passed.")
