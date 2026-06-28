@@ -6,6 +6,8 @@ Rows are merged if everything except `occurrences` matches
 (see ChecklistRow.merge_key). Order of first appearance is preserved.
 """
 
+from __future__ import annotations
+
 from collections import OrderedDict
 
 from exporter.checklist_template import ChecklistRow

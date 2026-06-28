@@ -6,6 +6,8 @@ compare this raw CSV against the website to find where the discrepancy
 was introduced.
 """
 
+from __future__ import annotations
+
 import csv
 
 from scraper.card_record import CardRecord

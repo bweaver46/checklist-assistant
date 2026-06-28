@@ -5,6 +5,8 @@ Keep these as-is. Do not clean or merge here, that happens later in the
 exporter pipeline.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, fields, asdict
 
 

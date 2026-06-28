@@ -43,6 +43,8 @@ Attributes columns, that trailing "/digits" gets split off into serial
 too. Not needed for any real row seen so far, but cheap insurance.
 """
 
+from __future__ import annotations
+
 import re
 
 from scraper.card_record import CardRecord

@@ -6,6 +6,8 @@ insert_2/sub_type_2/serial_2, ... expanded to however many occurrences the
 widest card in this batch actually has.
 """
 
+from __future__ import annotations
+
 import csv
 
 from exporter.checklist_template import ChecklistRow

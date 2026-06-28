@@ -23,6 +23,8 @@ automate:
       Section context field.
 """
 
+from __future__ import annotations
+
 import re
 
 from exporter.checklist_template import ChecklistRow
