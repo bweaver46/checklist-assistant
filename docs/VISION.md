@@ -153,9 +153,11 @@ Bowman / Anime insert / Rookie and Veteran Autographs Purple).
   - "AU" becomes "Autograph", UNLESS the word "Autograph" already
     appears in the set or that occurrence's insert text, in which case
     it's dropped as redundant.
-  - "PR" is passed through as-is - meaning/expansion unconfirmed, no
-    live example seen yet.
-- `serial`: the digits from Attributes' "SN<digits>" token, per-occurrence.
+  - "PR" (Print Run) is just an alternate label for the same concept as
+    SN (Serial Numbered) - not printed on the card, not a distinct
+    sub_type category. PR<digits> is treated exactly like SN<digits>:
+    the number goes into `serial`, nothing goes into `sub_type`.
+- `serial`: the digits from Attributes' "SN<digits>" or "PR<digits>" token.
 - `type`, `sport`: not derivable from row data at all - the app now
   prompts for these once per extraction run (see `_prompt_for_context`
   in `app/main_window.py`).
@@ -171,12 +173,10 @@ team, then insert_1/sub_type_1/serial_1, insert_2/sub_type_2/serial_2,
 
 ## Open Questions
 
-1. What does "PR" in Attributes actually mean/expand to? Haven't seen a
-   live example yet.
-2. Where should `team` come from?
-3. Phase 7's "continuation numbering" and "standardize names" rules
+1. Where should `team` come from?
+2. Phase 7's "continuation numbering" and "standardize names" rules
    still aren't implemented.
-4. The full pipeline has NOT yet been run end-to-end against a live page
+3. The full pipeline has NOT yet been run end-to-end against a live page
    inside the actual desktop app - only validated via direct DOM
    inspection and unit tests against realistically-shaped fake data.
 

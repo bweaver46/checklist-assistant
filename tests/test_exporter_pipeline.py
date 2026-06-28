@@ -23,6 +23,9 @@ def test_parse_serial():
     assert parse_serial("AU, SN150") == "150"
     assert parse_serial("AU") == ""
     assert parse_serial("-") == ""
+    # PR (Print Run) is the same concept as SN under a different label.
+    assert parse_serial("PR99") == "99"
+    assert parse_serial("AU, PR99") == "99"
 
 
 def test_build_sub_type_autograph():
@@ -33,6 +36,13 @@ def test_build_sub_type_autograph():
                            "Rookie and Veteran Autographs Purple") == ""
     # "Autograph" already in the set name -> dropped
     assert build_sub_type("AU", "2026 Bowman Autographs", "") == ""
+
+
+def test_print_run_never_appears_in_sub_type():
+    # PR is just a serial label, not a sub_type category - sub_type
+    # should stay blank even when PR is present.
+    assert build_sub_type("PR99", "2026 Bowman", "Some Insert") == ""
+    assert build_sub_type("AU, PR99", "2026 Bowman", "Some Insert") == "Autograph"
 
 
 def test_plain_base_row_produces_no_occurrence():
@@ -104,6 +114,7 @@ if __name__ == "__main__":
     test_parse_set()
     test_parse_serial()
     test_build_sub_type_autograph()
+    test_print_run_never_appears_in_sub_type()
     test_plain_base_row_produces_no_occurrence()
     test_base_with_attributes_is_kept_with_blank_insert()
     test_insert_occurrences_merge_under_same_card_number()

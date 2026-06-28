@@ -25,7 +25,7 @@ app now prompts for Sport/Type once per extraction run.
 **Not yet run end-to-end inside the actual desktop app against a live
 page** — that's the next step.
 
-See `docs/VISION.md` "Open Questions" for what's still unresolved (PR
-attribute meaning, team source, naming/continuation rules).
+See `docs/VISION.md` "Open Questions" for what's still unresolved (team
+source, naming/continuation rules).
 
 Run tests with: `PYTHONPATH=. python3 tests/test_exporter_pipeline.py`

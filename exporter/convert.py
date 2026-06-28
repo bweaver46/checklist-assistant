@@ -12,10 +12,12 @@ Field mapping (per Brandon, 2026-06-28):
         - "AU" -> "Autograph", UNLESS the word "Autograph" already
           appears in the set or this occurrence's insert text, in which
           case it's dropped as redundant.
-        - "PR" -> passed through as-is. *** Meaning/expansion rule for
-          PR unconfirmed - haven't seen a live example yet. Tell me what
-          it should become if/when one shows up. ***
-    - serial: the digits from Attributes' "SN<digits>" token.
+        - "PR" is just an alternate label for a serial number ("Print
+          Run") - it is NOT printed on the card itself and is NOT a
+          distinct sub_type category. PR<digits> is treated exactly
+          like SN<digits>: the number goes into `serial`, nothing goes
+          into `sub_type`.
+    - serial: the digits from Attributes' "SN<digits>" or "PR<digits>" token.
     - type, sport: NOT derivable from the row data - supplied via
       `context`, which the app now prompts for once per extraction run.
     - team: still unresolved - not present in row data, not yet asked
@@ -32,9 +34,11 @@ import re
 from scraper.card_record import CardRecord
 from exporter.checklist_template import ChecklistRow
 
-SERIAL_PATTERN = re.compile(r"SN(\d+)")
+# SN (Serial Numbered) and PR (Print Run) are the same concept under two
+# different labels - both mean "this many were made", neither is the
+# card's printed designation. Both extract into `serial` the same way.
+SERIAL_PATTERN = re.compile(r"(?:SN|PR)(\d+)")
 AUTOGRAPH_PATTERN = re.compile(r"\bAU\b")
-PRINT_RUN_PATTERN = re.compile(r"\bPR\b")
 SET_YEAR_PATTERN = re.compile(r"^\s*(\d{4})\s+(.*)$")
 
 
@@ -50,21 +54,20 @@ def parse_set(set_text: str) -> tuple[str, str]:
 
 def build_sub_type(attributes: str, set_text: str, insert_text: str) -> str:
     """Derive sub_type from Attributes, avoiding a redundant 'Autograph'
-    if that word already appears in the set or this occurrence's insert."""
+    if that word already appears in the set or this occurrence's insert.
+    SN/PR never contribute to sub_type - they're serial info, handled by
+    parse_serial instead."""
     if not attributes or attributes == "-":
         return ""
 
-    parts = []
     already_says_autograph = (
         "autograph" in (set_text or "").lower()
         or "autograph" in (insert_text or "").lower()
     )
     if AUTOGRAPH_PATTERN.search(attributes) and not already_says_autograph:
-        parts.append("Autograph")
-    if PRINT_RUN_PATTERN.search(attributes):
-        parts.append("PR")
+        return "Autograph"
 
-    return ", ".join(parts)
+    return ""
 
 
 def parse_serial(attributes: str) -> str:
