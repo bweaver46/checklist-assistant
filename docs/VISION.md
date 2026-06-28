@@ -184,6 +184,29 @@ Final CSV columns: type, sport, year, brand, set, card_number, player,
 team, then insert_1/sub_type_1/serial_1, insert_2/sub_type_2/serial_2,
 ... expanded per row's occurrence count.
 
+## Field Mapping Rules - Round 2 (per Brandon, 2026-06-29)
+
+From reviewing the actual 564-row live extraction:
+
+- `set` now holds brand only, year stripped out (e.g. "Bowman" not
+  "2026 Bowman") - year already has its own column, no need to repeat it.
+- `card_number`: "#" stripped. If the number has a trailing run of
+  digits at the end (e.g. "T91-1", "TBC15", "12P5"), everything before
+  that run is a prefix that gets prepended to insert_N - space
+  separated, hyphen preserved exactly. Purely numeric numbers (e.g.
+  "517") get no prefix. This runs AFTER insert-name normalization
+  (hyphen-stripping etc.) so the prefix's own hyphen never gets
+  accidentally stripped by that unrelated rule.
+- Primary Player (new context field, optional): if the search is
+  filtered to one player, typing their name here means any Name field
+  containing other text (multi-player inserts, acronyms) keeps just
+  that player's name as `player` and moves everything else into
+  `sub_type`. If the name isn't found in a given row's Name field,
+  nothing changes for that row - no data is ever silently dropped.
+- A plain Base row is now droppable only if there's truly nothing to
+  record at all: no attributes, no section, no card-number prefix, AND
+  no Primary-Player leftover text.
+
 ## Open Questions
 
 1. The "Blue Mojo" vs "Blue Mojo Refractor" rule - when is a trailing
@@ -279,29 +302,16 @@ stable releases, and easy maintenance.
 
 ## Current Version
 
-**Version: 0.7.0 (First successful live test - 564 rows / 68 cards, no errors)**
+**Version: 0.8.0 (Round 2 fixes from reviewing real extraction output: set without year, card-number prefix into insert, Primary Player splitting, desktop launcher, window positioning)**
 
-Current capabilities:
-- Launches as a desktop application
-- Opens a Playwright-controlled Chromium browser
-- Maintains a BrowserManager that owns the browser instance
-- Reads every row across every page using selectors confirmed against
-  the real, logged-in BuySportsCards table (Phases 1-2)
-- Prompts for Sport, Team, and Section once per extraction run (Type
-  is fixed to "Sports")
-- Converts raw rows into checklist rows with per-occurrence
-  insert/sub_type/serial, parses year/brand from the set string, drops
-  plain Base rows (unless a Section is active), applies the
-  Autograph-dedup rule, treats PR the same as SN, normalizes
-  insert-name punctuation (including dropping redundant
-  Refractor/Refractors and normalizing Prizm/Prizms), merges
-  occurrences by card identity, and exports both a raw debug CSV and a
-  final checklist CSV to clearly-reported absolute paths (Phases 3-8)
+Current capabilities: everything in v0.7.0, plus:
+- `set` column holds brand only (year stripped, already has its own column)
+- card_number prefix (e.g. "T91-", "BA-") moves to the front of insert,
+  applied after insert-name normalization so its hyphen survives
+- optional "Primary Player" prompt splits a player's name out of a
+  messy Name field, moving everything else into sub_type
+- double-clickable `.command` launcher for Finder
+- main window and browser window open at configured screen positions
 
-Confirmed working live: a real 564-row, multi-page extraction against
-Mike Trout / 2026 Bowman merged correctly to 68 cards with no errors.
-
-Next goal (v0.8.0): review the actual contents of that real CSV output
-for any remaining mapping issues, and resolve the "Refractor in card
-data" edge cases and continuation-numbering scenarios as they show up
-in real checklists.
+Next goal (v0.9.0): keep reviewing real CSV output at volume and fixing
+whatever else turns up.

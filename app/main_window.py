@@ -78,17 +78,30 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(f"Browser ready at {url}")
 
     def _prompt_for_context(self) -> dict | None:
-        """Ask for Sport, Team, and Section once per extraction run -
-        the fields that aren't derivable from the row data at all. Type
-        is fixed to "Sports" (BSC only sells sports cards) and isn't
-        asked for. Team and Section are optional; leaving them blank is
-        fine - in fact, leave Section blank unless you're specifically
-        extracting a continuation subsection (see below). Returns None
-        if the user cancels Sport (the one field that really matters).
+        """Ask for Sport, Primary Player, Team, and Section once per
+        extraction run - the fields that aren't derivable from the row
+        data at all. Type is fixed to "Sports" (BSC only sells sports
+        cards) and isn't asked for. Primary Player, Team, and Section
+        are all optional - leaving them blank is fine, and Section
+        should be blank for almost every search. Returns None if the
+        user cancels Sport (the one field that really matters).
         """
         sport, ok = QInputDialog.getText(self, "Extract Checklist", "Sport:")
         if not ok:
             return None
+
+        primary_player, ok = QInputDialog.getText(
+            self,
+            "Extract Checklist",
+            "Primary Player (optional) - if this search is filtered to\n"
+            "one player, type their name here (e.g. Mike Trout). Any\n"
+            "card whose Name field has other text mixed in (insert\n"
+            "titles, other players, acronyms) keeps just this name as\n"
+            "Player and moves the rest into Sub_Type. Leave blank if\n"
+            "not filtered to one player.",
+        )
+        if not ok:
+            primary_player = ""
 
         team, ok = QInputDialog.getText(
             self, "Extract Checklist", "Team (optional, leave blank if not applicable):"
@@ -114,6 +127,7 @@ class MainWindow(QMainWindow):
         return {
             "sport": sport.strip(),
             "type": DEFAULT_TYPE,
+            "primary_player": primary_player.strip(),
             "team": team.strip(),
             "section": section.strip(),
         }
