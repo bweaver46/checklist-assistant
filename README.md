@@ -16,17 +16,18 @@ python main.py
 
 ## Status
 
-v0.6.0 — Section context (for continuation-numbering subsections like
-"Prospects" - set/card_number never renumbered, section name goes into
-sub_type instead) and insert-name punctuation standardization
-(hyphen/space normalization) added per Brandon's direction. App now
-prompts for Sport/Type/Team/Section once per extraction run.
+v0.7.0 — **First successful live test passed**: a real extraction
+against Mike Trout / 2026 Bowman pulled 564 rows across multiple pages
+and merged them down to 68 unique cards with no errors.
 
-**Not yet run end-to-end inside the actual desktop app against a live
-page** — that's the next step.
+Fixed from that test: Type prompt removed (hardcoded to "Sports" since
+BSC is sports-only), Section prompt reworded for clarity, and CSV output
+paths are now reported as full absolute paths so it's obvious where the
+files landed (they were always being written correctly - just not
+obviously located).
 
-See `docs/VISION.md` "Open Questions" for what's still unresolved (the
-"Blue Mojo" vs "Blue Mojo Refractor" rule, and whatever else turns up
-once this runs against real data).
+See `docs/VISION.md` for the full open-questions list (the "Refractor
+in card data" edge cases, continuation-numbering scenarios as more turn
+up, etc.).
 
 Run tests with: `PYTHONPATH=. python3 tests/test_exporter_pipeline.py`
