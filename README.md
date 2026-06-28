@@ -16,11 +16,14 @@ python main.py
 
 ## Status
 
-v0.3.0 — Full Phase 1-8 pipeline (read all pages → raw CSV → checklist
-format → merge parallels → cleanup → final CSV) is wired and unit-tested
-against fake data. **Not yet validated against the live BuySportsCards
-site** — `settings/selectors.py` and `exporter/convert.py`'s field
-mapping are placeholder guesses until confirmed against the real DOM.
-See `docs/VISION.md` "Blocked On" for the exact next step.
+v0.4.0 — Selectors and field mapping confirmed against the live,
+logged-in BuySportsCards table (see `docs/VISION.md`). Full Phase 1-8
+pipeline (read all pages → raw CSV → checklist format → merge parallels
+→ cleanup → final CSV) is wired and tested against fake data shaped
+exactly like the real table. **Not yet run end-to-end inside the actual
+desktop app against a live page** — that's the next step.
+
+See `docs/VISION.md` "Open Questions" for what's still unresolved
+(autograph representation, sport/year/brand context, naming rules).
 
 Run tests with: `PYTHONPATH=. python3 tests/test_exporter_pipeline.py`

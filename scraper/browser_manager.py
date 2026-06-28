@@ -22,7 +22,7 @@ from __future__ import annotations
 from playwright.sync_api import sync_playwright, Browser, Page, Playwright, Locator
 
 from scraper.card_record import CardRecord
-from settings.selectors import ROW_SELECTOR, FIELD_SELECTORS, NEXT_BUTTON_SELECTOR
+from settings.selectors import ROW_SELECTOR, FIELD_SELECTORS, PAGINATION_NAV_SELECTOR
 
 
 class BrowserManager:
@@ -94,30 +94,68 @@ class BrowserManager:
     # ------------------------------------------------------------------
     # Phase 2: read all pages
     # ------------------------------------------------------------------
+    #
+    # BuySportsCards' pagination is a numbered page list (1, 2, 3 ... N)
+    # inside a single <nav>. The prev/next arrow icons at each end are
+    # NOT real <button> elements (just <p><svg>), so they can't be
+    # reliably clicked or checked for a disabled state. Instead, find the
+    # currently active page via [aria-current="true"] and click the
+    # button for current+1. Confirmed working against the live site.
 
-    def has_next_page(self, next_selector: str = NEXT_BUTTON_SELECTOR) -> bool:
-        """Return True if a Next button exists and is enabled/clickable."""
+    def _pagination_status(self, nav_selector: str = PAGINATION_NAV_SELECTOR) -> tuple[int | None, int]:
+        """Return (current_page, highest_page_number_visible).
+
+        highest_page_number_visible is the largest numbered button found
+        in the nav at this moment. BuySportsCards keeps the last page
+        number visible in the sliding window, so this is the true total
+        page count in practice - not just whatever's currently rendered.
+        """
         page = self._require_page()
-        next_button = page.locator(next_selector)
-        if next_button.count() == 0:
+        nav = page.locator(nav_selector)
+        buttons = nav.locator("button")
+        count = buttons.count()
+
+        current: int | None = None
+        highest = 0
+        for i in range(count):
+            button = buttons.nth(i)
+            text = button.inner_text().strip()
+            if text.isdigit():
+                num = int(text)
+                highest = max(highest, num)
+                if button.get_attribute("aria-current") == "true":
+                    current = num
+        return current, highest
+
+    def has_next_page(self, nav_selector: str = PAGINATION_NAV_SELECTOR) -> bool:
+        current, highest = self._pagination_status(nav_selector)
+        if current is None:
             return False
-        return next_button.is_enabled()
+        return current < highest
 
     def click_next(
         self,
-        next_selector: str = NEXT_BUTTON_SELECTOR,
+        nav_selector: str = PAGINATION_NAV_SELECTOR,
         row_selector: str = ROW_SELECTOR,
     ) -> None:
-        """Click Next and wait for the table to reload.
-
-        NOTE: this wait strategy is a best guess (settle delay + wait for
-        rows to be present again). If BuySportsCards' pagination is a full
-        page navigation rather than an AJAX refresh, or vice versa, this
-        may need to switch to page.wait_for_load_state() or wait for a
-        specific row's text to change. Validate against the live site.
-        """
+        """Click the button for current_page + 1 and wait for the table to reload."""
         page = self._require_page()
-        page.locator(next_selector).click()
+        current, _ = self._pagination_status(nav_selector)
+        if current is None:
+            raise RuntimeError("Could not determine current page from pagination nav.")
+
+        next_page = current + 1
+        nav = page.locator(nav_selector)
+        buttons = nav.locator("button")
+        count = buttons.count()
+        for i in range(count):
+            button = buttons.nth(i)
+            if button.inner_text().strip() == str(next_page):
+                button.click()
+                break
+        else:
+            raise RuntimeError(f"Could not find a page button for page {next_page}.")
+
         page.wait_for_timeout(500)
         page.wait_for_selector(row_selector)
 

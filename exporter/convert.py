@@ -3,15 +3,24 @@ Phase 5: convert raw CardRecord objects into ChecklistRow objects.
 
 Still one row per website row at this point - merging happens in Phase 6.
 
-*** This mapping is a best guess. ***
-BuySportsCards' "variant" field is assumed to hold something like
-"Gold /50", which split_serial() splits into a parallel name and a serial
-number. sport / year / brand / type / insert / sub_type / team are NOT
-present in the row data the vision doc describes, so they're pulled from
-`context` - metadata about the current search/filter that has to be
-supplied some other way (read from the page header, parsed from the URL,
-or typed in by Brandon before running extraction). Revisit this once we
-have real extracted rows to look at.
+Confirmed against the live BuySportsCards table (2026-06-28):
+    - `variant` is a category: "Base" or "Insert". Base rows get no
+      parallel at all.
+    - `variant_name` holds the actual parallel/insert name, e.g.
+      "Anime Red Refractors". "-" means not applicable.
+    - `attributes` holds serial number as "SN<digits>" and/or an
+      autograph flag "AU", comma-separated when both present, e.g.
+      "AU, SN150". "-" means no attributes.
+
+*** OPEN QUESTION for Brandon: how should autographed cards (AU) show up
+*** in the final checklist? Right now the parallel name gets " (AU)"
+*** appended as a placeholder. If your checklist format wants a separate
+*** AU column instead, say so and this gets a one-line fix.
+
+sport / year / brand / type / insert / sub_type / team are NOT present in
+the row data at all - they come from `context`, metadata about the
+current search that has to be supplied some other way (read from the
+page header/URL, or typed in before extracting). Still unresolved.
 """
 
 import re
@@ -19,17 +28,18 @@ import re
 from scraper.card_record import CardRecord
 from exporter.checklist_template import ChecklistRow
 
-SERIAL_PATTERN = re.compile(r"/(\d+)")
+SERIAL_PATTERN = re.compile(r"SN(\d+)")
+AUTOGRAPH_PATTERN = re.compile(r"\bAU\b")
 
 
-def split_serial(text: str) -> tuple[str, str]:
-    """'Gold /50' -> ('Gold', '50'). No serial found -> (text, '')."""
-    if not text:
-        return "", ""
-    match = SERIAL_PATTERN.search(text)
-    serial = match.group(1) if match else ""
-    name = SERIAL_PATTERN.sub("", text).strip()
-    return name, serial
+def parse_attributes(attributes: str) -> tuple[str, bool]:
+    """'AU, SN150' -> ('150', True). 'SN10' -> ('10', False). '-' -> ('', False)."""
+    if not attributes or attributes == "-":
+        return "", False
+    serial_match = SERIAL_PATTERN.search(attributes)
+    serial = serial_match.group(1) if serial_match else ""
+    is_autograph = bool(AUTOGRAPH_PATTERN.search(attributes))
+    return serial, is_autograph
 
 
 def convert_record(record: CardRecord, context: dict | None = None) -> ChecklistRow:
@@ -46,9 +56,16 @@ def convert_record(record: CardRecord, context: dict | None = None) -> Checklist
         player=record.name,
         team=context.get("team", ""),
     )
-    parallel_name, serial = split_serial(record.variant)
-    if parallel_name:
-        row.parallels.append((parallel_name, serial))
+
+    is_base = record.variant.strip().lower() == "base"
+    if not is_base:
+        parallel_name = record.variant_name.strip()
+        if parallel_name and parallel_name != "-":
+            serial, is_autograph = parse_attributes(record.attributes)
+            if is_autograph:
+                parallel_name = f"{parallel_name} (AU)"
+            row.parallels.append((parallel_name, serial))
+
     return row
 
 

@@ -121,32 +121,46 @@ extraction.
 - [x] Cleanup rules: remove redundant Base, normalize serials, dedupe (Phase 7, partial)
 - [x] Final checklist CSV export (Phase 8)
 
-## Blocked On
+## Confirmed Against Live Site (2026-06-28)
 
-The full pipeline above (Phases 1-8) is wired and unit-tested against
-fake data (see tests/test_exporter_pipeline.py - reproduces the Mike
-Trout merge example from this doc exactly). It has NOT been run against
-the live BuySportsCards site yet, because:
+Selectors and field mapping were confirmed by inspecting the live,
+logged-in BuySportsCards inventory table (via Claude in Chrome). Real
+table structure:
 
-1. `settings/selectors.py` (ROW_SELECTOR, FIELD_SELECTORS,
-   NEXT_BUTTON_SELECTOR) are placeholder guesses, not confirmed against
-   the real DOM.
-2. `exporter/convert.py`'s mapping from raw fields to checklist columns
-   (sport, year, brand, type, insert, sub_type, team) is a best guess -
-   those values aren't in the row data the original vision doc
-   describes, so where they actually come from needs to be confirmed
-   against a real search page.
+- Rows: `table tbody tr.MuiTableRow-root.MuiTableRow-hover`
+- Columns: checkbox, Name, Card #, Set, Variant (Base/Insert), Variant
+  Name (the actual parallel/insert name), Attribute(s) (serial as
+  `SN<digits>` and/or autograph flag `AU`), Add button
+- Pagination: a `<nav>` with numbered page buttons (no real "Next"
+  button exists - the arrow icons aren't `<button>` elements). Click
+  current-page-number + 1 instead. Confirmed working live.
+
+`settings/selectors.py` and `exporter/convert.py` have been updated and
+are no longer placeholders. `tests/test_exporter_pipeline.py` uses
+fake data shaped exactly like real confirmed rows (Mike Trout / 2026
+Bowman / Anime insert / Rookie and Veteran Autographs Purple).
+
+## Open Questions
+
+1. How should autographed cards (AU) appear in the final checklist?
+   Currently the parallel name gets " (AU)" appended as a placeholder
+   (see `exporter/convert.py`). If your checklist format wants a
+   separate AU column, say so.
+2. sport / year / brand / type / insert / sub_type / team aren't present
+   in the row data at all. Where should these come from - parsed from
+   the page/search context, or entered manually before extracting?
 3. Phase 7's "continuation numbering" and "standardize names" rules
-   aren't implemented - they depend on conventions only Brandon has.
-
-Next concrete step: log into BuySportsCards, run a search, inspect the
-table HTML (or extract once with the placeholder selectors and look at
-raw_export.csv), and feed back the real selectors and a sample of real
-rows so convert.py and selectors.py can be corrected.
+   still aren't implemented - need your specific conventions.
+4. The full pipeline has NOT yet been run end-to-end against a live
+   page inside the actual desktop app (only validated via direct DOM
+   inspection + unit tests against realistically-shaped fake data).
+   Next real test: click Extract Checklist for real and check the
+   output CSVs.
 
 ## Next Milestone
 
-Confirm real selectors and field mapping against the live site.
+Run Extract Checklist for real against a live BuySportsCards search
+and check the resulting CSVs.
 
 ## Following Milestones
 
@@ -210,20 +224,22 @@ stable releases, and easy maintenance.
 
 ## Current Version
 
-**Version: 0.3.0 (Full pipeline, unverified against live site)**
+**Version: 0.4.0 (Selectors and field mapping confirmed against live site)**
 
 Current capabilities:
 - Launches as a desktop application
 - Opens a Playwright-controlled Chromium browser
 - Maintains a BrowserManager that owns the browser instance
-- Reads every row across every page (Phases 1-2)
+- Reads every row across every page using selectors confirmed against
+  the real, logged-in BuySportsCards table (Phases 1-2)
 - Converts raw rows into checklist template rows, merges parallels,
   applies basic cleanup, and exports both a raw debug CSV and a final
-  checklist CSV (Phases 3-8)
+  checklist CSV - logic confirmed against realistically-shaped fake
+  data matching the real table structure (Phases 3-8)
 
-All of the above is unit-tested against fake data but not yet run
-against the real BuySportsCards site - see "Blocked On" above.
+Not yet done: a real, live, end-to-end run of Extract Checklist inside
+the actual desktop app. See "Open Questions" above for what's still
+unresolved.
 
-Next goal (v0.4.0): confirm real selectors and field mapping against a
-live, logged-in BuySportsCards search, then validate the full pipeline
-end to end on a real checklist.
+Next goal (v0.5.0): run Extract Checklist for real, validate output
+against the live site, and resolve the open questions above.
