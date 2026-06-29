@@ -26,15 +26,17 @@ screen) are set in `settings/window_layout.py` if you want to move them.
 
 ## Status
 
-v0.10.0 — Added optional per-card Team fetching for full-set pulls
-spanning multiple teams. Team isn't shown in BSC's results table at
-all - only on the detail page reached by clicking "Add" - so this is
-an explicit opt-in choice (it's meaningfully slower: one extra page
-visit per card) with a Yes/No prompt before each extraction, not a
-silent default. Confirmed safe to navigate into and back out of
-(doesn't submit or create a listing) - not yet confirmed safe at very
-high volume against BSC's systems, so test on a moderate batch first.
+v0.10.1 — Added a per-player Team cache: "Add" now only gets clicked
+once per distinct player name for the whole extraction run, not once
+per row - most rows in any set are parallels of the same player, so
+this is a large speedup for full-set pulls with Team fetching enabled.
+Also added `docs/HANDOFF_1.md`, a comprehensive project handoff.
 
-See `docs/VISION.md` for the full open-questions list.
+See `docs/VISION.md` for the full open-questions list, and
+`docs/HANDOFF_1.md` for full project orientation.
 
-Run tests with: `PYTHONPATH=. python3 tests/test_exporter_pipeline.py`
+Run tests with:
+```
+PYTHONPATH=. python3 tests/test_exporter_pipeline.py
+PYTHONPATH=. python3 tests/test_browser_manager.py
+```

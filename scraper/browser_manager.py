@@ -36,6 +36,14 @@ class BrowserManager:
         self._playwright: Playwright | None = None
         self._browser: Browser | None = None
         self._page: Page | None = None
+        # Maps Name (the raw website text) -> Team, reset at the start
+        # of each extract_all_pages() run. Most rows in a set are
+        # parallels of the SAME player appearing over and over - this
+        # means "Add" only needs to be clicked once per distinct player
+        # name, not once per row. Caches a failed lookup (empty string)
+        # too, so one bad/slow row doesn't get retried 20 times across
+        # all its parallels.
+        self._team_cache: dict[str, str] = {}
 
     @property
     def is_launched(self) -> bool:
@@ -109,6 +117,11 @@ class BrowserManager:
         confirmed by Brandon clicking through it manually first) but
         should be used deliberately, not as a default - see the
         fetch_team prompt in app/main_window.py.
+
+        Team lookups are cached per distinct Name text for the whole
+        extraction run (see self._team_cache) - most rows in a set are
+        parallels of the same player, so this avoids re-clicking "Add"
+        for every single parallel of a player already looked up.
         """
         page = self._require_page()
         records: list[CardRecord] = []
@@ -123,7 +136,13 @@ class BrowserManager:
             row = page.locator(selector).nth(i)
             record = self.read_row(row)
             if fetch_team:
-                record.team = self.fetch_team_for_row(row)
+                if record.name in self._team_cache:
+                    record.team = self._team_cache[record.name]
+                else:
+                    team = self.fetch_team_for_row(row)
+                    record.team = team
+                    if record.name:
+                        self._team_cache[record.name] = team
             records.append(record)
 
         return records
@@ -239,8 +258,13 @@ class BrowserManager:
         max_pages is a safety cap so a pagination-detection bug can't
         spin forever against the live site. fetch_team is passed
         through to read_all_rows - see its docstring for the real cost
-        of turning this on.
+        of turning this on. The per-player team cache is reset here, at
+        the start of each fresh extraction run, so a new search never
+        reuses team data left over from a previous one.
         """
+        if fetch_team:
+            self._team_cache = {}
+
         all_records: list[CardRecord] = []
         page_num = 1
         while True:

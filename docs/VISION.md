@@ -326,6 +326,18 @@ anything (treated the same as "Insert" - any non-Base variant uses its
 Variant Name as-is), but worth keeping in mind if more Parallel-
 specific quirks turn up.
 
+## Per-Player Team Caching (per Brandon, 2026-06-29)
+
+Brandon's own observation: most rows in any set are parallels of the
+SAME player, not unique lookups. Fetching Team via "Add" for every
+single row was wasteful when the vast majority of rows share a player
+with a row already looked up. Fixed by caching Team per distinct Name
+text for the whole extraction run (`BrowserManager._team_cache`,
+reset at the start of each `extract_all_pages()` call) - "Add" now
+only gets clicked once per distinct player name, not once per row.
+Tested with lightweight fakes (no real browser) in
+`tests/test_browser_manager.py`.
+
 ## Open Questions
 
 1. The "Blue Mojo" vs "Blue Mojo Refractor" rule - when is a trailing
@@ -421,15 +433,14 @@ stable releases, and easy maintenance.
 
 ## Current Version
 
-**Version: 0.10.0 (Optional per-card Team fetching for multi-team full-set pulls)**
+**Version: 0.10.1 (Per-player team cache; HANDOFF_1.md added)**
 
-Current capabilities: everything in v0.9.2, plus:
-- Optional "Fetch Team per card?" prompt - when enabled, clicks into
-  each row's Add/detail page to read its actual Team, then navigates
-  back. Confirmed safe (doesn't submit/create anything) but
-  meaningfully slower - one extra page visit per card.
-- Per-card fetched team overrides the manual Team value for that row;
-  falls back to the manual value when not fetched.
+Current capabilities: everything in v0.10.0, plus:
+- Team lookups cached per distinct player Name for the whole
+  extraction run - "Add" only clicked once per distinct player, not
+  once per row (most rows in a set are parallels of the same player)
+- `docs/HANDOFF_1.md` - comprehensive handoff document for picking
+  this project back up cold
 
 Next goal (v1.0.0): keep validating against real, larger-volume CSV
 output and fix whatever else turns up.
