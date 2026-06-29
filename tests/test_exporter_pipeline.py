@@ -20,7 +20,7 @@ from scraper.card_record import CardRecord
 from exporter.convert import (
     convert_all, parse_set, parse_serial, split_trailing_slash_serial,
     clean_card_number, extract_card_number_prefix, split_primary_player,
-    normalize_plural_terms,
+    normalize_plural_terms, load_brand_set_exceptions,
 )
 from exporter.merge import build_checklist_rows, longest_common_word_prefix, strip_common_prefix
 from exporter.cleanup import apply_cleanup
@@ -38,6 +38,19 @@ def test_parse_set_brand_is_first_word_rest_is_set():
     assert parse_set("2026 Bowman") == ("2026", "Bowman", "")
     assert parse_set("1991 Topps Baseball") == ("1991", "Topps", "Baseball")
     assert parse_set("") == ("", "", "")
+
+
+def test_parse_set_brand_exceptions_loaded_from_csv():
+    # These come from settings/brand_set_exceptions.csv, editable in
+    # Excel/Numbers without touching code. Real cases (2026-06-29):
+    # product lines that don't follow the simple first-word-is-brand rule.
+    exceptions = load_brand_set_exceptions()
+    assert len(exceptions) > 0, "brand_set_exceptions.csv should be loadable"
+
+    assert parse_set("2026 Finest") == ("2026", "Topps", "Finest")
+    assert parse_set("2026 Topps Now") == ("2026", "Topps", "Topps Now")
+    assert parse_set("2026 Bowman's Best") == ("2026", "Bowman", "Bowman's Best")
+    assert parse_set("2026 Stadium Club") == ("2026", "Topps", "Stadium Club")
 
 
 # --- parse_serial / PR-as-SN ---
@@ -244,6 +257,7 @@ def test_different_card_numbers_do_not_merge():
 
 if __name__ == "__main__":
     test_parse_set_brand_is_first_word_rest_is_set()
+    test_parse_set_brand_exceptions_loaded_from_csv()
     test_parse_serial()
     test_trailing_slash_serial_fallback()
     test_normalize_plural_terms_singularizes_without_dropping()

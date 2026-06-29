@@ -26,14 +26,11 @@ screen) are set in `settings/window_layout.py` if you want to move them.
 
 ## Status
 
-v0.9.0 — Major data model change to match `sets-template-2.csv` exactly:
-Insert and Sub_Type are now scalar (one value per card), computed from
-what's common across all of a card's print versions. Only
-Parallel/Serial repeat. The "drop redundant Refractor" rule was removed
-(it conflicted with real data - Refractors now singularize instead of
-disappearing). Brand/Set split changed to "brand = first word after
-year, set = everything else." Extraction prompts now wrap properly
-instead of stretching across the screen.
+v0.9.1 — Added `settings/brand_set_exceptions.csv`, an editable
+spreadsheet for product lines that don't follow the default
+"first-word-after-year-is-brand" rule (Finest, Topps Now, Bowman's
+Best, Stadium Club confirmed so far). Open it in Excel/Numbers, add a
+row, save as CSV - no code changes needed.
 
 See `docs/VISION.md` for the full open-questions list.
 

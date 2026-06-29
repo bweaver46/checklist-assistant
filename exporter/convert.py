@@ -9,9 +9,16 @@ every print version of that card), not from any single row in isolation.
 
 Field mapping (per Brandon, 2026-06-28 through 2026-06-29):
     - year: parsed from the leading 4 digits of the website's Set string.
-    - brand: the first word remaining after the year is stripped.
+    - brand: the first word remaining after the year is stripped, UNLESS
+      it matches a known exception (see settings/brand_set_exceptions.csv) -
+      some product lines don't follow the simple first-word rule, e.g.
+      "Finest" has no real brand word at all (it's a Topps product), and
+      multi-word lines like "Topps Now", "Bowman's Best", "Stadium Club"
+      would otherwise get split in the middle of their actual name.
     - set: everything else after the brand (can be blank - that's fine,
-      better than repeating the brand).
+      better than repeating the brand) - UNLESS an exception applies, in
+      which case the exception's own set value is used (which may
+      legitimately repeat the brand, e.g. "Topps Now" / "Topps Now").
     - card_number: "#" stripped. If the number has a trailing run of
       digits (e.g. "T91-1", "TBC15"), everything before that run is a
       prefix that later gets prepended to the card's Insert. Purely
@@ -32,8 +39,10 @@ designation.
 
 from __future__ import annotations
 
+import csv
 import re
 from dataclasses import dataclass
+from pathlib import Path
 
 from scraper.card_record import CardRecord
 
@@ -53,6 +62,52 @@ WHITESPACE_PATTERN = re.compile(r"\s+")
 # removed because it conflicted with real data: "Anime Black Refractors"
 # needs to become "Black Refractor", not just "Black".)
 PLURAL_TERM_PATTERN = re.compile(r"\b(Prizms|\w*[Ff]ractors)\b")
+
+# Editable in Excel/Numbers - re-saved as CSV, no code changes needed.
+# Columns: pattern, brand, set. `pattern` is matched word-wise against
+# the start of the Set text remaining after the year is stripped
+# (case-insensitive). Longer patterns are checked first so e.g.
+# "Topps Now" matches before any shorter, more general pattern would.
+BRAND_SET_EXCEPTIONS_PATH = Path(__file__).resolve().parent.parent / "settings" / "brand_set_exceptions.csv"
+
+_brand_set_exceptions_cache: list[tuple[list[str], str, str]] | None = None
+
+
+def load_brand_set_exceptions() -> list[tuple[list[str], str, str]]:
+    """Returns [(pattern_words, brand, set), ...], longest pattern
+    first. Cached after first load. Missing file -> empty list, no
+    crash - exceptions are an enhancement, not a requirement."""
+    global _brand_set_exceptions_cache
+    if _brand_set_exceptions_cache is not None:
+        return _brand_set_exceptions_cache
+
+    exceptions = []
+    if BRAND_SET_EXCEPTIONS_PATH.exists():
+        with open(BRAND_SET_EXCEPTIONS_PATH, newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                pattern = (row.get("pattern") or "").strip()
+                brand = (row.get("brand") or "").strip()
+                set_value = (row.get("set") or "").strip()
+                if pattern:
+                    exceptions.append((pattern.split(), brand, set_value))
+
+    exceptions.sort(key=lambda e: len(e[0]), reverse=True)
+    _brand_set_exceptions_cache = exceptions
+    return exceptions
+
+
+def match_brand_set_exception(remainder_words: list[str]) -> tuple[str, str] | None:
+    """If remainder_words starts with a known exception pattern
+    (case-insensitive, word-wise), return that exception's (brand, set).
+    Otherwise None."""
+    for pattern_words, brand, set_value in load_brand_set_exceptions():
+        if len(remainder_words) < len(pattern_words):
+            continue
+        head = [w.lower() for w in remainder_words[: len(pattern_words)]]
+        if head == [w.lower() for w in pattern_words]:
+            return brand, set_value
+    return None
 
 
 @dataclass
@@ -80,7 +135,10 @@ def parse_set(set_text: str) -> tuple[str, str, str]:
     """'2026 Panini Prizm' -> ('2026', 'Panini', 'Prizm').
     '2026 Bowman' -> ('2026', 'Bowman', '') - brand is just the first
     word after the year, everything else is set (blank if nothing
-    remains)."""
+    remains) - UNLESS a known exception applies (see
+    settings/brand_set_exceptions.csv), e.g. "Finest" -> brand "Topps",
+    or "Topps Now" -> brand "Topps", set "Topps Now" (deliberately
+    repeating, since that IS the correct full product name)."""
     if not set_text:
         return "", "", ""
     match = SET_YEAR_PATTERN.match(set_text)
@@ -88,12 +146,20 @@ def parse_set(set_text: str) -> tuple[str, str, str]:
         words = set_text.strip().split()
         if not words:
             return "", "", ""
+        exception = match_brand_set_exception(words)
+        if exception:
+            return "", exception[0], exception[1]
         return "", words[0], " ".join(words[1:])
 
     year = match.group(1)
     remainder_words = match.group(2).strip().split()
     if not remainder_words:
         return year, "", ""
+
+    exception = match_brand_set_exception(remainder_words)
+    if exception:
+        return year, exception[0], exception[1]
+
     brand = remainder_words[0]
     set_value = " ".join(remainder_words[1:])
     return year, brand, set_value

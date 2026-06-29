@@ -245,6 +245,34 @@ the data model changed in an important way:
   normalization so the prefix's own hyphen is never touched by the
   hyphen-to-space rule.
 
+## Brand/Set Exception Spreadsheet (per Brandon, 2026-06-29)
+
+`settings/brand_set_exceptions.csv` overrides the default "first word
+after year is brand, the rest is set" rule for product lines that
+don't follow that pattern. Editable directly in Excel/Numbers - just
+save back as CSV, no code changes needed.
+
+Columns: `pattern, brand, set`. `pattern` is matched word-by-word
+against the start of the Set text (after the year is stripped),
+case-insensitive. Longer patterns are checked first.
+
+Current entries:
+| pattern | brand | set |
+|---|---|---|
+| Finest | Topps | Finest |
+| Topps Now | Topps | Topps Now |
+| Bowman's Best | Bowman | Bowman's Best |
+| Stadium Club | Topps | Stadium Club |
+
+Note some of these deliberately repeat the brand inside set (e.g.
+"Topps Now" / "Topps Now") - that's intentional per Brandon, an
+exception to the general "don't repeat" rule, because that repetition
+IS the correct full product name in these specific cases.
+
+To add more: open the CSV, add a row, save. No restart needed beyond
+the next time Extract Checklist runs (the file is cached per-run, not
+per-app-launch).
+
 ## Open Questions
 
 1. The "Blue Mojo" vs "Blue Mojo Refractor" rule - when is a trailing
@@ -340,20 +368,12 @@ stable releases, and easy maintenance.
 
 ## Current Version
 
-**Version: 0.9.0 (Major model change: Insert/Sub_Type are scalar, matches sets-template-2.csv exactly)**
+**Version: 0.9.1 (Brand/Set exception spreadsheet for product lines that don't follow the first-word-is-brand rule)**
 
-Current capabilities: everything in v0.8.0, restructured so:
-- Insert and Sub_Type are one value per card (not per print version)
-- Insert = longest common text across a card's print versions' Variant
-  Name; Parallel = the per-version leftover after stripping that
-  common text, normalized (singularized, never dropped)
-- Brand/Set split: brand is the first word after the year, set is
-  everything else
-- Final CSV columns match `sets-template-2.csv` exactly: type, sport,
-  year, brand, set, insert, sub_type, card_number, player, team,
-  parallel_1, serial_1, ... (always paired, expanding only as needed)
-- Extraction prompts now word-wrap at a fixed width instead of
-  stretching across the screen
+Current capabilities: everything in v0.9.0, plus:
+- `settings/brand_set_exceptions.csv` - editable spreadsheet overriding
+  brand/set for product lines like Finest, Topps Now, Bowman's Best,
+  Stadium Club, where the default first-word split is wrong
 
 Next goal (v1.0.0): keep validating against real, larger-volume CSV
 output and fix whatever else turns up.
