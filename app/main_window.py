@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QStatusBar,
     QInputDialog,
     QLabel,
+    QMessageBox,
 )
 
 from scraper.browser_manager import BrowserManager
@@ -97,6 +98,27 @@ class MainWindow(QMainWindow):
         ok = dialog.exec() == QInputDialog.Accepted
         return dialog.textValue(), ok
 
+    def _prompt_fetch_team(self) -> bool:
+        """Team isn't shown in the search results table at all - only on
+        the 'Add' detail page for each individual card. Fetching it for
+        every row is MUCH slower (one extra page visit per card,
+        confirmed safe since 'Add' only opens BSC's listing-creation
+        form without submitting anything - it doesn't get clicked) and
+        should be a deliberate choice, not a silent default."""
+        answer = QMessageBox.question(
+            self,
+            "Extract Checklist",
+            "Fetch Team per card from BuySportsCards?\n\n"
+            "This is MUCH slower - one extra page visit per card "
+            "instead of one per ~50 cards. Worth it for a search that "
+            "spans multiple teams (a full set). Not worth it if this "
+            "search is all one team/player - choose No and just type "
+            "the team once instead.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        return answer == QMessageBox.Yes
+
     def _prompt_for_context(self) -> dict | None:
         """Ask for Sport, Primary Player, Team, and Section once per
         extraction run - the fields that aren't derivable from the row
@@ -122,11 +144,15 @@ class MainWindow(QMainWindow):
         if not ok:
             primary_player = ""
 
-        team, ok = self._prompt_text(
-            "Extract Checklist", "Team (optional, leave blank if not applicable):"
-        )
-        if not ok:
-            team = ""
+        fetch_team = self._prompt_fetch_team()
+
+        team = ""
+        if not fetch_team:
+            team, ok = self._prompt_text(
+                "Extract Checklist", "Team (optional, leave blank if not applicable):"
+            )
+            if not ok:
+                team = ""
 
         section, ok = self._prompt_text(
             "Extract Checklist",
@@ -148,6 +174,7 @@ class MainWindow(QMainWindow):
             "primary_player": primary_player.strip(),
             "team": team.strip(),
             "section": section.strip(),
+            "fetch_team": fetch_team,
         }
 
     def on_extract_checklist(self) -> None:
@@ -163,7 +190,7 @@ class MainWindow(QMainWindow):
 
         try:
             self.statusBar().showMessage("Reading rows across all pages...")
-            records = self.browser_manager.extract_all_pages()
+            records = self.browser_manager.extract_all_pages(fetch_team=context["fetch_team"])
 
             print(f"--- Extracted {len(records)} raw rows ---")
             for record in records:

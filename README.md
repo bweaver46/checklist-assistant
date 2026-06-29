@@ -26,12 +26,14 @@ screen) are set in `settings/window_layout.py` if you want to move them.
 
 ## Status
 
-v0.9.2 — Added more brand/set exceptions (President's Choice, Lauran
-Taylor, Upper Deck, UD->Upper Deck), fixed a gap where exception
-matches dropped trailing words (e.g. "UD Series 1" was losing "Series
-1"), sorted the final CSV by brand, and raised the page extraction
-safety cap from 200 to 2000 (a large search was hitting the old limit
-and stopping early).
+v0.10.0 — Added optional per-card Team fetching for full-set pulls
+spanning multiple teams. Team isn't shown in BSC's results table at
+all - only on the detail page reached by clicking "Add" - so this is
+an explicit opt-in choice (it's meaningfully slower: one extra page
+visit per card) with a Yes/No prompt before each extraction, not a
+silent default. Confirmed safe to navigate into and back out of
+(doesn't submit or create a listing) - not yet confirmed safe at very
+high volume against BSC's systems, so test on a moderate batch first.
 
 See `docs/VISION.md` for the full open-questions list.
 

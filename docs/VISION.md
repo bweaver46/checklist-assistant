@@ -290,6 +290,42 @@ per-app-launch).
   (`settings/extraction_limits.py`, MAX_PAGES) - a large search was
   hitting the old cap and stopping early.
 
+## Per-Card Team Fetching (per Brandon, 2026-06-29)
+
+Team is NOT shown in the search results table at all - confirmed by
+inspecting it live. It only appears on the "Sell Your Card" detail page
+reached by clicking a row's "Add" control (URL pattern
+`/sellers/sell-your-card/add/<id>`). That page only opens BSC's
+listing-creation FORM - it does not submit or create anything unless a
+submit button is explicitly clicked, which this app never does, so
+navigating into it and back is safe. Brandon confirmed clicking Back
+restores the exact same results page/scroll position.
+
+Team's label ("Team:") and value sit in two sibling `<div>`s, each
+holding a generic `<h6>` with a dynamically-generated class name (e.g.
+"jss156988") that will change between site builds - so the label text
+itself is used to find it, not the class.
+
+This is now an explicit opt-in choice (`_prompt_fetch_team` in
+`app/main_window.py`), NOT a silent default, because the cost is real:
+one extra full page visit per row instead of one per ~50 rows. Good for
+a full-set pull spanning many teams; not worth it for a single-player
+search where Team is constant - use the manual Team prompt instead for
+those. If a row's team IS fetched, it overrides the manual Team value
+for that row; otherwise the manual value is used as a fallback.
+
+Not yet confirmed: whether clicking "Add" hundreds/thousands of times
+rapidly raises any rate-limiting or anti-bot flag on BSC's side. Test
+on a moderate-size batch before trying this on a huge multi-thousand-
+card full-set pull.
+
+Also noted while inspecting this: BSC's Variant column can show
+"Parallel" as a third category (not just "Base"/"Insert") - e.g.
+"Parallel (Optic Gold Velocity)". This doesn't currently break
+anything (treated the same as "Insert" - any non-Base variant uses its
+Variant Name as-is), but worth keeping in mind if more Parallel-
+specific quirks turn up.
+
 ## Open Questions
 
 1. The "Blue Mojo" vs "Blue Mojo Refractor" rule - when is a trailing
@@ -385,15 +421,15 @@ stable releases, and easy maintenance.
 
 ## Current Version
 
-**Version: 0.9.2 (More brand/set exceptions, trailing-words fix, sort by brand, higher page cap)**
+**Version: 0.10.0 (Optional per-card Team fetching for multi-team full-set pulls)**
 
-Current capabilities: everything in v0.9.1, plus:
-- Added President's Choice, Lauran Taylor, Upper Deck, and UD->Upper
-  Deck to the exception spreadsheet
-- Fixed exception matching to preserve words after the matched pattern
-  instead of dropping them
-- Final CSV sorted by brand
-- Page extraction cap raised from 200 to 2000
+Current capabilities: everything in v0.9.2, plus:
+- Optional "Fetch Team per card?" prompt - when enabled, clicks into
+  each row's Add/detail page to read its actual Team, then navigates
+  back. Confirmed safe (doesn't submit/create anything) but
+  meaningfully slower - one extra page visit per card.
+- Per-card fetched team overrides the manual Team value for that row;
+  falls back to the manual value when not fetched.
 
 Next goal (v1.0.0): keep validating against real, larger-volume CSV
 output and fix whatever else turns up.

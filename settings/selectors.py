@@ -39,3 +39,11 @@ FIELD_SELECTORS = {
 # finds the current page via [aria-current="true"] and clicks the button
 # for current+1, which is confirmed working against the live site.
 PAGINATION_NAV_SELECTOR = "nav"
+
+# Confirmed 2026-06-29 against the "Sell Your Card" detail page (reached
+# by clicking "Add" on a row). Team's label and value sit in two SIBLING
+# <div>s, each holding a generic <h6> with a dynamically-generated class
+# (e.g. "jss156988") - that class WILL change between site builds, so
+# matching on the literal label text "Team:" instead is the durable way
+# to find it. The value is in the next sibling div.
+TEAM_DETAIL_LABEL_SELECTOR = "h6:text-is('Team:')"

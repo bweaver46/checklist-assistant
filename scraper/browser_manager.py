@@ -22,7 +22,9 @@ from __future__ import annotations
 from playwright.sync_api import sync_playwright, Browser, Page, Playwright, Locator
 
 from scraper.card_record import CardRecord
-from settings.selectors import ROW_SELECTOR, FIELD_SELECTORS, PAGINATION_NAV_SELECTOR
+from settings.selectors import (
+    ROW_SELECTOR, FIELD_SELECTORS, PAGINATION_NAV_SELECTOR, TEAM_DETAIL_LABEL_SELECTOR,
+)
 from settings.window_layout import BROWSER_WINDOW_POSITION, BROWSER_WINDOW_SIZE
 from settings.extraction_limits import MAX_PAGES
 
@@ -95,12 +97,73 @@ class BrowserManager:
             values[field_name] = cell.inner_text().strip() if cell.count() else ""
         return CardRecord(**values)
 
-    def read_all_rows(self, selector: str = ROW_SELECTOR) -> list[CardRecord]:
-        """Read every row currently displayed on the page."""
+    def read_all_rows(self, selector: str = ROW_SELECTOR, fetch_team: bool = False) -> list[CardRecord]:
+        """Read every row currently displayed on the page.
+
+        If fetch_team is True, also clicks into each row's "Add" page
+        to read its Team (BSC doesn't show Team in the table itself -
+        only on that detail page), then navigates back before moving to
+        the next row. This is MUCH slower (one extra page visit per
+        row) and was confirmed safe (clicking "Add" only opens BSC's
+        listing-creation form, it doesn't submit or create anything -
+        confirmed by Brandon clicking through it manually first) but
+        should be used deliberately, not as a default - see the
+        fetch_team prompt in app/main_window.py.
+        """
         page = self._require_page()
+        records: list[CardRecord] = []
         rows = page.locator(selector)
         count = rows.count()
-        return [self.read_row(rows.nth(i)) for i in range(count)]
+
+        for i in range(count):
+            # Re-query fresh each time: after navigating away to the
+            # detail page and back, the original `rows` handle may be
+            # stale even though Brandon confirmed Back restores the
+            # exact same page/scroll state.
+            row = page.locator(selector).nth(i)
+            record = self.read_row(row)
+            if fetch_team:
+                record.team = self.fetch_team_for_row(row)
+            records.append(record)
+
+        return records
+
+    def fetch_team_for_row(self, row: Locator) -> str:
+        """Click this row's "Add" control, read Team off the resulting
+        detail page, then navigate back. Returns "" if anything about
+        this row's Add control or the Team field can't be found -
+        never raises, so one bad row doesn't kill the whole extraction.
+        """
+        page = self._require_page()
+        add_control = row.get_by_role("button", name="Add", exact=True)
+        if add_control.count() == 0:
+            return ""
+
+        add_control.first.click()
+        try:
+            page.wait_for_selector(TEAM_DETAIL_LABEL_SELECTOR, timeout=15000)
+            team = self.read_team_from_detail_page()
+        except Exception:
+            team = ""
+        finally:
+            page.go_back()
+            page.wait_for_selector(ROW_SELECTOR, timeout=15000)
+            page.wait_for_timeout(300)  # brief politeness delay between rows
+
+        return team
+
+    def read_team_from_detail_page(self) -> str:
+        """Team's label ('Team:') and value sit in two sibling <div>s on
+        the Sell-Your-Card detail page - the value is the only <h6>
+        inside the label's next sibling div."""
+        page = self._require_page()
+        label = page.locator(TEAM_DETAIL_LABEL_SELECTOR)
+        if label.count() == 0:
+            return ""
+        value = label.locator("xpath=../following-sibling::div[1]//h6")
+        if value.count() == 0:
+            return ""
+        return value.first.inner_text().strip()
 
     # ------------------------------------------------------------------
     # Phase 2: read all pages
@@ -170,16 +233,18 @@ class BrowserManager:
         page.wait_for_timeout(500)
         page.wait_for_selector(row_selector)
 
-    def extract_all_pages(self, max_pages: int = MAX_PAGES) -> list[CardRecord]:
+    def extract_all_pages(self, max_pages: int = MAX_PAGES, fetch_team: bool = False) -> list[CardRecord]:
         """Read every row across every page until Next is exhausted.
 
         max_pages is a safety cap so a pagination-detection bug can't
-        spin forever against the live site.
+        spin forever against the live site. fetch_team is passed
+        through to read_all_rows - see its docstring for the real cost
+        of turning this on.
         """
         all_records: list[CardRecord] = []
         page_num = 1
         while True:
-            all_records.extend(self.read_all_rows())
+            all_records.extend(self.read_all_rows(fetch_team=fetch_team))
             if not self.has_next_page() or page_num >= max_pages:
                 break
             self.click_next()

@@ -236,6 +236,24 @@ def test_card_number_prefix_with_hyphen_survives_normalization():
     assert row.team == "Los Angeles Angels"
 
 
+def test_per_card_fetched_team_overrides_manual_context_team():
+    # When Team is fetched per-card (record.team is set), it must win
+    # over the manual Team context value typed once for the whole run -
+    # that's the whole point of fetching it per-card for multi-team sets.
+    records = [
+        CardRecord(name="Payton Tolle", card_number="#94", set="2026 Donruss",
+                   variant="Parallel", variant_name="Optic Gold Velocity",
+                   attributes="SN10", team="Boston Red Sox"),
+        CardRecord(name="Mike Trout", card_number="#100", set="2026 Donruss",
+                   variant="Base", variant_name="-", attributes="-", team=""),
+    ]
+    rows = convert_and_build(records, {"team": "Los Angeles Angels"})
+    by_player = {r.player: r for r in rows}
+    assert by_player["Payton Tolle"].team == "Boston Red Sox"
+    # No fetched team for this row -> falls back to the manual context value.
+    assert by_player["Mike Trout"].team == "Los Angeles Angels"
+
+
 def test_primary_player_real_example_integration():
     records = [
         CardRecord(name="Stars Align (Mike TroutZach Neto) CPC", card_number="#517",
@@ -300,6 +318,7 @@ if __name__ == "__main__":
     test_autograph_insert_no_redundant_subtype()
     test_autograph_gets_subtype_when_not_redundant()
     test_card_number_prefix_with_hyphen_survives_normalization()
+    test_per_card_fetched_team_overrides_manual_context_team()
     test_primary_player_real_example_integration()
     test_section_records_without_renumbering()
     test_sort_rows_by_brand()

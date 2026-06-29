@@ -18,6 +18,7 @@ class CardRecord:
     variant: str = ""
     variant_name: str = ""
     attributes: str = ""
+    team: str = ""  # only populated if per-card team fetching was used
 
     def to_dict(self) -> dict:
         return asdict(self)
