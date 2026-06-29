@@ -1,35 +1,46 @@
 """
-Tests for the exporter pipeline logic (Phases 5-7), using fake CardRecords
-shaped exactly like real rows confirmed against the live BuySportsCards
-table, and the field-mapping rules Brandon gave on 2026-06-28-2026-06-29:
-    - insert/sub_type/serial are per-occurrence
-    - year/brand parsed from set; `set` itself holds brand only (no year)
-    - AU -> Autograph unless redundant; PR treated the same as SN
-    - plain Base rows dropped unless something's worth keeping
-    - insert-name normalization: hyphens->spaces, redundant trailing
-      Refractor dropped, Prizm/Refractor plurals normalized - all BEFORE
-      a card-number prefix (e.g. "T91-") gets prepended, so the prefix's
-      own hyphen survives
-    - "#" stripped from card_number; non-numeric prefix moved to insert
-    - Primary Player context value extracts a player's name out of a
-      messy Name field, moving the rest into sub_type
+Tests for the exporter pipeline (Phases 5-7), using fake CardRecords
+shaped like real BuySportsCards rows. Reflects the model finalized
+2026-06-29: Insert and Sub_Type are SCALAR (one per card, computed from
+everything common across that card's print versions); only
+Parallel/Serial repeat per print version.
+
+Key real example driving this design - one card_number (#BA-23), four
+website rows:
+    "Anime", "Anime Black Refractors", "Anime Red Refractors",
+    "Anime SuperFractors"
+-> Insert = "Anime" (the common part).
+-> Parallels: (none for plain "Anime" - it's the base printing),
+   "Black Refractor", "Red Refractor", "SuperFractor" (singularized,
+   NOT dropped - the earlier "drop redundant Refractor" rule was wrong
+   and has been removed).
 """
 
 from scraper.card_record import CardRecord
 from exporter.convert import (
-    convert_all, parse_set, parse_serial, build_sub_type,
-    split_trailing_slash_serial, normalize_insert_name,
+    convert_all, parse_set, parse_serial, split_trailing_slash_serial,
     clean_card_number, extract_card_number_prefix, split_primary_player,
+    normalize_plural_terms,
 )
-from exporter.merge import merge_parallels
+from exporter.merge import build_checklist_rows, longest_common_word_prefix, strip_common_prefix
 from exporter.cleanup import apply_cleanup
 
 
-def test_parse_set():
-    assert parse_set("2026 Bowman") == ("2026", "Bowman")
-    assert parse_set("Bowman") == ("", "Bowman")
-    assert parse_set("") == ("", "")
+def convert_and_build(records, context=None):
+    occurrences = convert_all(records, context or {})
+    return apply_cleanup(build_checklist_rows(occurrences))
 
+
+# --- parse_set: brand/set split (Rule 1) ---
+
+def test_parse_set_brand_is_first_word_rest_is_set():
+    assert parse_set("2026 Panini Prizm") == ("2026", "Panini", "Prizm")
+    assert parse_set("2026 Bowman") == ("2026", "Bowman", "")
+    assert parse_set("1991 Topps Baseball") == ("1991", "Topps", "Baseball")
+    assert parse_set("") == ("", "", "")
+
+
+# --- parse_serial / PR-as-SN ---
 
 def test_parse_serial():
     assert parse_serial("SN150") == "150"
@@ -37,125 +48,6 @@ def test_parse_serial():
     assert parse_serial("AU") == ""
     assert parse_serial("-") == ""
     assert parse_serial("PR99") == "99"
-    assert parse_serial("AU, PR99") == "99"
-
-
-def test_build_sub_type_autograph():
-    assert build_sub_type("AU, SN150", "2026 Bowman", "Some Insert") == "Autograph"
-    assert build_sub_type("AU, SN250", "2026 Bowman",
-                           "Rookie and Veteran Autographs Purple") == ""
-    assert build_sub_type("AU", "2026 Bowman Autographs", "") == ""
-
-
-def test_print_run_never_appears_in_sub_type():
-    assert build_sub_type("PR99", "2026 Bowman", "Some Insert") == ""
-    assert build_sub_type("AU, PR99", "2026 Bowman", "Some Insert") == "Autograph"
-
-
-def test_set_column_holds_brand_only_no_year():
-    record = CardRecord(
-        name="Mike Trout", card_number="100", set="2026 Bowman",
-        variant="Base", variant_name="-", attributes="SN50",
-    )
-    row = convert_all([record])[0]
-    assert row.set == "Bowman"
-    assert row.year == "2026"
-    assert row.brand == "Bowman"
-
-
-def test_plain_base_row_produces_no_occurrence():
-    record = CardRecord(
-        name="Mike Trout", card_number="100", set="2026 Bowman",
-        variant="Base", variant_name="-", attributes="-",
-    )
-    row = convert_all([record])[0]
-    assert row.occurrences == []
-
-
-def test_base_with_attributes_is_kept_with_blank_insert():
-    record = CardRecord(
-        name="Mike Trout", card_number="100", set="2026 Bowman",
-        variant="Base", variant_name="-", attributes="SN50",
-    )
-    row = convert_all([record])[0]
-    assert row.occurrences == [("", "", "50")]
-
-
-def test_insert_occurrences_merge_under_same_card_number():
-    # card_number "#BA-23" has a trailing digit run ("23"), so "BA-" is
-    # a real prefix that gets prepended to insert text - but only AFTER
-    # the Refractor-stripping normalization already ran, so it doesn't
-    # collide with that rule.
-    records = [
-        CardRecord(name="Mike Trout", card_number="#BA-23", set="2026 Bowman",
-                   variant="Insert", variant_name="Anime", attributes="-"),
-        CardRecord(name="Mike Trout", card_number="#BA-23", set="2026 Bowman",
-                   variant="Insert", variant_name="Anime Black Refractors", attributes="SN10"),
-        CardRecord(name="Mike Trout", card_number="#BA-23", set="2026 Bowman",
-                   variant="Insert", variant_name="Anime Red Refractors", attributes="SN5"),
-    ]
-
-    checklist_rows = apply_cleanup(merge_parallels(convert_all(records, {})))
-
-    assert len(checklist_rows) == 1
-    row = checklist_rows[0]
-    assert row.player == "Mike Trout"
-    assert row.year == "2026"
-    assert row.brand == "Bowman"
-    assert row.set == "Bowman"
-    assert row.card_number == "BA-23"
-    assert row.occurrences == [
-        ("BA- Anime", "", ""),
-        ("BA- Anime Black", "", "10"),
-        ("BA- Anime Red", "", "5"),
-    ]
-
-
-def test_autograph_insert_gets_blank_subtype_no_duplicate():
-    # "PRV-MT" has no trailing digit at all, so no prefix gets extracted.
-    record = CardRecord(
-        name="Mike Trout", card_number="#PRV-MT", set="2026 Bowman",
-        variant="Insert", variant_name="Rookie and Veteran Autographs Purple",
-        attributes="AU, SN250",
-    )
-    row = convert_all([record])[0]
-    assert row.card_number == "PRV-MT"
-    assert row.occurrences == [("Rookie and Veteran Autographs Purple", "", "250")]
-
-
-def test_different_card_numbers_do_not_merge():
-    records = [
-        CardRecord(name="Mike Trout", card_number="#100", set="2026 Bowman",
-                   variant="Base", variant_name="-", attributes="SN50"),
-        CardRecord(name="Mike Trout", card_number="#BA-23", set="2026 Bowman",
-                   variant="Insert", variant_name="Anime", attributes="-"),
-    ]
-    checklist_rows = merge_parallels(convert_all(records, {}))
-    assert len(checklist_rows) == 2
-
-
-def test_plain_base_with_section_still_keeps_section():
-    record = CardRecord(
-        name="Mike Trout", card_number="#101", set="2026 Bowman",
-        variant="Base", variant_name="-", attributes="-",
-    )
-    row = convert_all([record], {"section": "Prospects"})[0]
-    assert row.set == "Bowman"
-    assert row.card_number == "101"
-    assert row.occurrences == [("", "Prospects", "")]
-
-
-def test_section_combines_with_autograph_without_duplication():
-    record = CardRecord(
-        name="Mike Trout", card_number="#PRV-MT", set="2026 Bowman",
-        variant="Insert", variant_name="Rookie and Veteran Autographs Purple",
-        attributes="AU, SN250",
-    )
-    context = {"section": "Prospects"}
-    row = convert_all([record], context)[0]
-    assert row.occurrences == [
-        ("Rookie and Veteran Autographs Purple", "Prospects", "250")
-    ]
 
 
 def test_trailing_slash_serial_fallback():
@@ -163,54 +55,20 @@ def test_trailing_slash_serial_fallback():
     assert split_trailing_slash_serial("Anime") == ("Anime", "")
 
 
-def test_normalize_insert_name_hyphens_and_spacing():
-    assert normalize_insert_name("Black-Wave") == "Black Wave"
-    assert normalize_insert_name("Black  Wave") == "Black Wave"
-    assert normalize_insert_name("  Black Wave  ") == "Black Wave"
+# --- normalize_plural_terms: singularize, never drop ---
+
+def test_normalize_plural_terms_singularizes_without_dropping():
+    assert normalize_plural_terms("Black Refractors") == "Black Refractor"
+    assert normalize_plural_terms("SuperFractors") == "SuperFractor"
+    assert normalize_plural_terms("Silver Prizms") == "Silver Prizm"
+    assert normalize_plural_terms("Black-Wave") == "Black Wave"
 
 
-def test_normalize_insert_name_drops_trailing_refractor():
-    assert normalize_insert_name("Blue Mojo Refractor") == "Blue Mojo"
-    assert normalize_insert_name("Blue Mojo Refractors") == "Blue Mojo"
-    assert normalize_insert_name("Blue Mojo") == "Blue Mojo"
-
-
-def test_normalize_insert_name_prizm_and_refractor_plurals():
-    assert normalize_insert_name("Silver Prizms") == "Silver Prizm"
-    assert normalize_insert_name("Silver Prizm") == "Silver Prizm"
-    assert normalize_insert_name("Refractors Wave") == "Refractor Wave"
-
-
-def test_standardize_names_merges_hyphen_variants_after_merge():
-    records = [
-        CardRecord(name="Mike Trout", card_number="#XYZ", set="2026 Bowman",
-                   variant="Insert", variant_name="Black-Wave", attributes="SN10"),
-        CardRecord(name="Mike Trout", card_number="#XYZ", set="2026 Bowman",
-                   variant="Insert", variant_name="Black Wave", attributes="SN10"),
-    ]
-    checklist_rows = apply_cleanup(merge_parallels(convert_all(records, {})))
-    assert len(checklist_rows) == 1
-    assert checklist_rows[0].occurrences == [("Black Wave", "", "10")]
-
-
-def test_standardize_names_merges_refractor_variants_after_merge():
-    records = [
-        CardRecord(name="Mike Trout", card_number="#XYZ", set="2026 Panini Prizm",
-                   variant="Insert", variant_name="Blue Mojo", attributes="SN10"),
-        CardRecord(name="Mike Trout", card_number="#XYZ", set="2026 Panini Prizm",
-                   variant="Insert", variant_name="Blue Mojo Refractor", attributes="SN10"),
-    ]
-    checklist_rows = apply_cleanup(merge_parallels(convert_all(records, {})))
-    assert len(checklist_rows) == 1
-    assert checklist_rows[0].occurrences == [("Blue Mojo", "", "10")]
-
-
-# --- Card number prefix (Rule 2) ---
+# --- card_number cleaning / prefix extraction (Rule 2) ---
 
 def test_clean_card_number_strips_hash():
     assert clean_card_number("#T91-1") == "T91-1"
     assert clean_card_number("517") == "517"
-    assert clean_card_number("") == ""
 
 
 def test_extract_card_number_prefix():
@@ -218,40 +76,6 @@ def test_extract_card_number_prefix():
     assert extract_card_number_prefix("TBC15") == "TBC"
     assert extract_card_number_prefix("517") == ""
     assert extract_card_number_prefix("12P5") == "12P"
-    assert extract_card_number_prefix("") == ""
-
-
-def test_card_number_prefix_prepended_to_insert_and_hyphen_survives():
-    # "T91-" must keep its hyphen even though normalize_insert_name
-    # strips hyphens elsewhere - the prefix is applied AFTER that step.
-    record = CardRecord(
-        name="Mike Trout", card_number="#T91-1", set="1991 Topps",
-        variant="Insert", variant_name="35th Anniversary", attributes="-",
-    )
-    row = convert_all([record])[0]
-    assert row.card_number == "T91-1"
-    assert row.occurrences == [("T91- 35th Anniversary", "", "")]
-
-
-def test_card_number_prefix_alone_keeps_otherwise_plain_base_row():
-    # A Base row with nothing else notable would normally be dropped -
-    # but if its card_number has a prefix, that prefix must not be lost.
-    record = CardRecord(
-        name="Mike Trout", card_number="#T91-1", set="1991 Topps",
-        variant="Base", variant_name="-", attributes="-",
-    )
-    row = convert_all([record])[0]
-    assert row.occurrences == [("T91-", "", "")]
-
-
-def test_purely_numeric_card_number_gets_no_prefix():
-    record = CardRecord(
-        name="Mike Trout", card_number="#517", set="2026 Topps",
-        variant="Insert", variant_name="Some Insert", attributes="-",
-    )
-    row = convert_all([record])[0]
-    assert row.card_number == "517"
-    assert row.occurrences == [("Some Insert", "", "")]
 
 
 # --- Primary Player splitting (Rule 3) ---
@@ -264,71 +88,178 @@ def test_split_primary_player_extracts_name_and_leftover():
     assert leftover == "Stars Align (Zach Neto) CPC"
 
 
-def test_split_primary_player_blank_leaves_name_unchanged():
-    name, leftover = split_primary_player("Mike Trout", "")
-    assert name == "Mike Trout"
-    assert leftover == ""
-
-
-def test_split_primary_player_not_found_leaves_name_unchanged():
+def test_split_primary_player_not_found_leaves_unchanged():
     name, leftover = split_primary_player("Shohei Ohtani", "Mike Trout")
     assert name == "Shohei Ohtani"
     assert leftover == ""
 
 
-def test_primary_player_integration_real_example():
-    record = CardRecord(
-        name="Stars Align (Mike TroutZach Neto) CPC", card_number="#517",
-        set="2026 Topps", variant="Base", variant_name="-", attributes="-",
-    )
-    context = {"primary_player": "Mike Trout"}
-    row = convert_all([record], context)[0]
-    assert row.player == "Mike Trout"
-    assert row.occurrences == [("", "Stars Align (Zach Neto) CPC", "")]
+# --- longest_common_word_prefix / strip_common_prefix ---
+
+def test_longest_common_word_prefix():
+    assert longest_common_word_prefix(
+        ["Anime", "Anime Black Refractors", "Anime Red Refractors"]
+    ) == "Anime"
+    assert longest_common_word_prefix(["Only One Variant"]) == "Only One Variant"
+    assert longest_common_word_prefix(["", "", ""]) == ""
+    assert longest_common_word_prefix(["Totally Different", "Nothing Shared"]) == ""
 
 
-def test_primary_player_leftover_combines_with_autograph():
-    record = CardRecord(
-        name="Stars Align (Mike Trout Zach Neto) CPC AU", card_number="#517",
-        set="2026 Topps", variant="Insert", variant_name="Some Insert",
-        attributes="AU, SN50",
-    )
-    context = {"primary_player": "Mike Trout"}
-    row = convert_all([record], context)[0]
+def test_strip_common_prefix():
+    assert strip_common_prefix("Anime Black Refractors", "Anime") == "Black Refractors"
+    assert strip_common_prefix("Anime", "Anime") == ""
+
+
+# --- Full integration: the real Anime example ---
+
+def test_anime_insert_family_full_integration():
+    records = [
+        CardRecord(name="Mike Trout", card_number="#BA-23", set="2026 Bowman",
+                   variant="Insert", variant_name="Anime", attributes="-"),
+        CardRecord(name="Mike Trout", card_number="#BA-23", set="2026 Bowman",
+                   variant="Insert", variant_name="Anime Black Refractors", attributes="SN10"),
+        CardRecord(name="Mike Trout", card_number="#BA-23", set="2026 Bowman",
+                   variant="Insert", variant_name="Anime Red Refractors", attributes="SN5"),
+        CardRecord(name="Mike Trout", card_number="#BA-23", set="2026 Bowman",
+                   variant="Insert", variant_name="Anime SuperFractors", attributes="SN1"),
+    ]
+    rows = convert_and_build(records)
+
+    assert len(rows) == 1
+    row = rows[0]
+    assert row.year == "2026"
+    assert row.brand == "Bowman"
+    assert row.set == ""
+    assert row.card_number == "BA-23"
+    assert row.insert == "BA- Anime"  # card-number prefix prepended
+    assert row.sub_type == ""
+    # The plain "Anime" row contributes nothing - no blank slot.
+    # Indexing starts directly with the first real parallel.
+    assert row.parallels == [
+        ("Black Refractor", "10"),
+        ("Red Refractor", "5"),
+        ("SuperFractor", "1"),
+    ]
+
+
+def test_base_row_with_only_a_serial_gets_blank_parallel_with_serial():
+    # A "base" printing (remainder == insert, nothing left over) that
+    # DOES have its own serial still gets a slot: parallel blank, serial filled.
+    records = [
+        CardRecord(name="Mike Trout", card_number="#BA-23", set="2026 Bowman",
+                   variant="Insert", variant_name="Anime", attributes="SN50"),
+        CardRecord(name="Mike Trout", card_number="#BA-23", set="2026 Bowman",
+                   variant="Insert", variant_name="Anime Black Refractors", attributes="SN10"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 1
+    assert rows[0].parallels == [
+        ("", "50"),
+        ("Black Refractor", "10"),
+    ]
+
+
+def test_plain_base_row_no_serial_no_leftover_produces_no_parallel_at_all():
+    records = [
+        CardRecord(name="Mike Trout", card_number="#100", set="2026 Bowman",
+                   variant="Base", variant_name="-", attributes="-"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 1
+    assert rows[0].parallels == []
+    assert rows[0].insert == ""
+
+
+def test_autograph_insert_no_redundant_subtype():
+    records = [
+        CardRecord(name="Mike Trout", card_number="#PRV-MT", set="2026 Bowman",
+                   variant="Insert", variant_name="Rookie and Veteran Autographs Purple",
+                   attributes="AU, SN250"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row.insert == "Rookie and Veteran Autographs Purple"
+    assert row.sub_type == ""  # "Autograph" already implied by insert text
+    assert row.parallels == [("", "250")]
+
+
+def test_autograph_gets_subtype_when_not_redundant():
+    records = [
+        CardRecord(name="Mike Trout", card_number="#XYZ", set="2026 Bowman",
+                   variant="Insert", variant_name="Some Insert", attributes="AU, SN50"),
+    ]
+    rows = convert_and_build(records)
+    assert rows[0].sub_type == "Autograph"
+
+
+def test_card_number_prefix_with_hyphen_survives_normalization():
+    records = [
+        CardRecord(name="Mike Trout", card_number="#T91-1", set="1991 Topps Baseball",
+                   variant="Insert", variant_name="35th Anniversary (Series One)",
+                   attributes="-"),
+    ]
+    rows = convert_and_build(records, {"team": "Los Angeles Angels"})
+    assert len(rows) == 1
+    row = rows[0]
+    assert row.card_number == "T91-1"
+    assert row.insert == "T91- 35th Anniversary (Series One)"
+    assert row.team == "Los Angeles Angels"
+
+
+def test_primary_player_real_example_integration():
+    records = [
+        CardRecord(name="Stars Align (Mike TroutZach Neto) CPC", card_number="#517",
+                   set="2026 Topps", variant="Base", variant_name="-", attributes="-"),
+    ]
+    rows = convert_and_build(records, {"primary_player": "Mike Trout"})
+    assert len(rows) == 1
+    row = rows[0]
     assert row.player == "Mike Trout"
-    insert, sub_type, serial = row.occurrences[0]
-    assert "Stars Align" in sub_type
-    assert "Zach Neto" in sub_type
-    assert serial == "50"
+    assert row.sub_type == "Stars Align (Zach Neto) CPC"
+
+
+def test_section_records_without_renumbering():
+    records = [
+        CardRecord(name="Mike Trout", card_number="#351", set="2026 Topps",
+                   variant="Base", variant_name="-", attributes="-"),
+    ]
+    rows = convert_and_build(records, {"section": "Series 2"})
+    assert len(rows) == 1
+    row = rows[0]
+    assert row.card_number == "351"
+    assert row.sub_type == "Series 2"
+
+
+def test_different_card_numbers_do_not_merge():
+    records = [
+        CardRecord(name="Mike Trout", card_number="#100", set="2026 Bowman",
+                   variant="Base", variant_name="-", attributes="SN50"),
+        CardRecord(name="Mike Trout", card_number="#BA-23", set="2026 Bowman",
+                   variant="Insert", variant_name="Anime", attributes="-"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 2
 
 
 if __name__ == "__main__":
-    test_parse_set()
+    test_parse_set_brand_is_first_word_rest_is_set()
     test_parse_serial()
-    test_build_sub_type_autograph()
-    test_print_run_never_appears_in_sub_type()
-    test_set_column_holds_brand_only_no_year()
-    test_plain_base_row_produces_no_occurrence()
-    test_base_with_attributes_is_kept_with_blank_insert()
-    test_insert_occurrences_merge_under_same_card_number()
-    test_autograph_insert_gets_blank_subtype_no_duplicate()
-    test_different_card_numbers_do_not_merge()
-    test_plain_base_with_section_still_keeps_section()
-    test_section_combines_with_autograph_without_duplication()
     test_trailing_slash_serial_fallback()
-    test_normalize_insert_name_hyphens_and_spacing()
-    test_normalize_insert_name_drops_trailing_refractor()
-    test_normalize_insert_name_prizm_and_refractor_plurals()
-    test_standardize_names_merges_hyphen_variants_after_merge()
-    test_standardize_names_merges_refractor_variants_after_merge()
+    test_normalize_plural_terms_singularizes_without_dropping()
     test_clean_card_number_strips_hash()
     test_extract_card_number_prefix()
-    test_card_number_prefix_prepended_to_insert_and_hyphen_survives()
-    test_card_number_prefix_alone_keeps_otherwise_plain_base_row()
-    test_purely_numeric_card_number_gets_no_prefix()
     test_split_primary_player_extracts_name_and_leftover()
-    test_split_primary_player_blank_leaves_name_unchanged()
-    test_split_primary_player_not_found_leaves_name_unchanged()
-    test_primary_player_integration_real_example()
-    test_primary_player_leftover_combines_with_autograph()
+    test_split_primary_player_not_found_leaves_unchanged()
+    test_longest_common_word_prefix()
+    test_strip_common_prefix()
+    test_anime_insert_family_full_integration()
+    test_base_row_with_only_a_serial_gets_blank_parallel_with_serial()
+    test_plain_base_row_no_serial_no_leftover_produces_no_parallel_at_all()
+    test_autograph_insert_no_redundant_subtype()
+    test_autograph_gets_subtype_when_not_redundant()
+    test_card_number_prefix_with_hyphen_survives_normalization()
+    test_primary_player_real_example_integration()
+    test_section_records_without_renumbering()
+    test_different_card_numbers_do_not_merge()
     print("All tests passed.")

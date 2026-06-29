@@ -207,6 +207,44 @@ From reviewing the actual 564-row live extraction:
   record at all: no attributes, no section, no card-number prefix, AND
   no Primary-Player leftover text.
 
+## Field Mapping Rules - Round 3: Scalar Insert/Sub_Type (per Brandon, 2026-06-29)
+
+After reviewing real output against the actual template (`sets-template-2.csv`),
+the data model changed in an important way:
+
+- **Insert and Sub_Type are now SCALAR** - one value per card, not
+  per-print-version. Only Parallel/Serial repeat
+  (parallel_1/serial_1, parallel_2/serial_2, ...).
+- **Insert = whatever's common** across all of a card's print versions'
+  Variant Name text (computed via longest common word-prefix, not
+  hardcoded to any specific insert name). Using the real Anime example
+  (#BA-23, four rows: "Anime", "Anime Black Refractors", "Anime Red
+  Refractors", "Anime SuperFractors") -> Insert = "Anime".
+- **Parallel = the leftover** after stripping that common prefix off
+  each row's Variant Name, normalized (plural->singular only - see
+  below). For the Anime example: "" (the plain Anime row - the base
+  printing, contributes nothing), "Black Refractor", "Red Refractor",
+  "SuperFractor".
+- A row contributes a parallel_N/serial_N slot only if it has a
+  non-blank leftover OR its own serial number. A row with neither
+  (like the plain "Anime" row above) contributes nothing - no blank
+  slot, indexing starts directly at parallel_1 with the first real
+  parallel.
+- **The "drop redundant trailing Refractor" rule has been REMOVED.**
+  It directly conflicted with the real Anime data: "Black Refractors"
+  needs to become "Black Refractor" (kept, singularized), not "Black"
+  (dropped). Only plural->singular normalization remains (Refractors->
+  Refractor, SuperFractors->SuperFractor, Prizms->Prizm) - nothing
+  gets deleted anymore.
+- **Brand/Set split changed**: brand is just the FIRST WORD after the
+  year; everything else is set. "2026 Panini Prizm" -> brand="Panini",
+  set="Prizm". "2026 Bowman" -> brand="Bowman", set="" (blank - that's
+  fine, better than repeating the brand).
+- card_number's prefix (e.g. "T91-") still prepends to Insert (now the
+  scalar Insert, not a per-occurrence value), applied AFTER plural
+  normalization so the prefix's own hyphen is never touched by the
+  hyphen-to-space rule.
+
 ## Open Questions
 
 1. The "Blue Mojo" vs "Blue Mojo Refractor" rule - when is a trailing
@@ -302,16 +340,20 @@ stable releases, and easy maintenance.
 
 ## Current Version
 
-**Version: 0.8.0 (Round 2 fixes from reviewing real extraction output: set without year, card-number prefix into insert, Primary Player splitting, desktop launcher, window positioning)**
+**Version: 0.9.0 (Major model change: Insert/Sub_Type are scalar, matches sets-template-2.csv exactly)**
 
-Current capabilities: everything in v0.7.0, plus:
-- `set` column holds brand only (year stripped, already has its own column)
-- card_number prefix (e.g. "T91-", "BA-") moves to the front of insert,
-  applied after insert-name normalization so its hyphen survives
-- optional "Primary Player" prompt splits a player's name out of a
-  messy Name field, moving everything else into sub_type
-- double-clickable `.command` launcher for Finder
-- main window and browser window open at configured screen positions
+Current capabilities: everything in v0.8.0, restructured so:
+- Insert and Sub_Type are one value per card (not per print version)
+- Insert = longest common text across a card's print versions' Variant
+  Name; Parallel = the per-version leftover after stripping that
+  common text, normalized (singularized, never dropped)
+- Brand/Set split: brand is the first word after the year, set is
+  everything else
+- Final CSV columns match `sets-template-2.csv` exactly: type, sport,
+  year, brand, set, insert, sub_type, card_number, player, team,
+  parallel_1, serial_1, ... (always paired, expanding only as needed)
+- Extraction prompts now word-wrap at a fixed width instead of
+  stretching across the screen
 
-Next goal (v0.9.0): keep reviewing real CSV output at volume and fixing
-whatever else turns up.
+Next goal (v1.0.0): keep validating against real, larger-volume CSV
+output and fix whatever else turns up.

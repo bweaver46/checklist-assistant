@@ -26,12 +26,14 @@ screen) are set in `settings/window_layout.py` if you want to move them.
 
 ## Status
 
-v0.8.0 — Fixes from reviewing the actual 564-row live extraction output:
-`set` strips the year (already has its own column), card-number
-prefixes like "T91-" or "BA-" now move to the front of insert (applied
-after hyphen-normalization so the prefix's own hyphen survives), and an
-optional "Primary Player" prompt splits a player's name out of a messy
-multi-name Name field, moving the rest into sub_type.
+v0.9.0 — Major data model change to match `sets-template-2.csv` exactly:
+Insert and Sub_Type are now scalar (one value per card), computed from
+what's common across all of a card's print versions. Only
+Parallel/Serial repeat. The "drop redundant Refractor" rule was removed
+(it conflicted with real data - Refractors now singularize instead of
+disappearing). Brand/Set split changed to "brand = first word after
+year, set = everything else." Extraction prompts now wrap properly
+instead of stretching across the screen.
 
 See `docs/VISION.md` for the full open-questions list.
 
