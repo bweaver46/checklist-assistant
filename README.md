@@ -26,11 +26,12 @@ screen) are set in `settings/window_layout.py` if you want to move them.
 
 ## Status
 
-v0.9.1 — Added `settings/brand_set_exceptions.csv`, an editable
-spreadsheet for product lines that don't follow the default
-"first-word-after-year-is-brand" rule (Finest, Topps Now, Bowman's
-Best, Stadium Club confirmed so far). Open it in Excel/Numbers, add a
-row, save as CSV - no code changes needed.
+v0.9.2 — Added more brand/set exceptions (President's Choice, Lauran
+Taylor, Upper Deck, UD->Upper Deck), fixed a gap where exception
+matches dropped trailing words (e.g. "UD Series 1" was losing "Series
+1"), sorted the final CSV by brand, and raised the page extraction
+safety cap from 200 to 2000 (a large search was hitting the old limit
+and stopping early).
 
 See `docs/VISION.md` for the full open-questions list.
 

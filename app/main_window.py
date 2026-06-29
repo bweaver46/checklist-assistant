@@ -27,7 +27,7 @@ from exporter.raw_export import write_raw_csv
 from exporter.convert import convert_all
 from exporter.merge import build_checklist_rows
 from exporter.cleanup import apply_cleanup
-from exporter.final_export import write_final_csv
+from exporter.final_export import write_final_csv, sort_rows_by_brand
 from settings.window_layout import MAIN_WINDOW_POSITION
 
 # BuySportsCards only sells sports cards, so Type is fixed and never
@@ -175,6 +175,7 @@ class MainWindow(QMainWindow):
             occurrences = convert_all(records, context)
             checklist_rows = build_checklist_rows(occurrences)
             checklist_rows = apply_cleanup(checklist_rows)
+            checklist_rows = sort_rows_by_brand(checklist_rows)
 
             final_path = os.path.abspath("checklist_export.csv")
             write_final_csv(checklist_rows, final_path)

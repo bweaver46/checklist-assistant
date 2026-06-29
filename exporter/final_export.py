@@ -19,6 +19,12 @@ BASE_COLUMNS = [
 ]
 
 
+def sort_rows_by_brand(rows: list[ChecklistRow]) -> list[ChecklistRow]:
+    """Sort by brand first, then set/year/card_number for a stable,
+    predictable order within each brand."""
+    return sorted(rows, key=lambda r: (r.brand, r.set, r.year, r.card_number))
+
+
 def write_final_csv(rows: list[ChecklistRow], path: str) -> None:
     max_parallels = max((len(row.parallels) for row in rows), default=0)
     max_parallels = max(max_parallels, 1)  # template always has at least parallel_1/serial_1

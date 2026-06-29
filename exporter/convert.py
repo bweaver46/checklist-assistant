@@ -100,13 +100,20 @@ def load_brand_set_exceptions() -> list[tuple[list[str], str, str]]:
 def match_brand_set_exception(remainder_words: list[str]) -> tuple[str, str] | None:
     """If remainder_words starts with a known exception pattern
     (case-insensitive, word-wise), return that exception's (brand, set).
-    Otherwise None."""
+    Any words in remainder_words AFTER the matched pattern get appended
+    onto the exception's set value (e.g. pattern "UD" matched against
+    "UD Series 1" -> set "Upper Deck Series 1", not just "Upper Deck" -
+    nothing gets silently dropped). Otherwise None."""
     for pattern_words, brand, set_value in load_brand_set_exceptions():
         if len(remainder_words) < len(pattern_words):
             continue
         head = [w.lower() for w in remainder_words[: len(pattern_words)]]
         if head == [w.lower() for w in pattern_words]:
-            return brand, set_value
+            leftover_words = remainder_words[len(pattern_words):]
+            final_set = set_value
+            if leftover_words:
+                final_set = (set_value + " " + " ".join(leftover_words)).strip()
+            return brand, final_set
     return None
 
 

@@ -24,6 +24,7 @@ from playwright.sync_api import sync_playwright, Browser, Page, Playwright, Loca
 from scraper.card_record import CardRecord
 from settings.selectors import ROW_SELECTOR, FIELD_SELECTORS, PAGINATION_NAV_SELECTOR
 from settings.window_layout import BROWSER_WINDOW_POSITION, BROWSER_WINDOW_SIZE
+from settings.extraction_limits import MAX_PAGES
 
 
 class BrowserManager:
@@ -169,7 +170,7 @@ class BrowserManager:
         page.wait_for_timeout(500)
         page.wait_for_selector(row_selector)
 
-    def extract_all_pages(self, max_pages: int = 200) -> list[CardRecord]:
+    def extract_all_pages(self, max_pages: int = MAX_PAGES) -> list[CardRecord]:
         """Read every row across every page until Next is exhausted.
 
         max_pages is a safety cap so a pagination-detection bug can't

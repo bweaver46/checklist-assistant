@@ -24,6 +24,8 @@ from exporter.convert import (
 )
 from exporter.merge import build_checklist_rows, longest_common_word_prefix, strip_common_prefix
 from exporter.cleanup import apply_cleanup
+from exporter.checklist_template import ChecklistRow
+from exporter.final_export import sort_rows_by_brand
 
 
 def convert_and_build(records, context=None):
@@ -51,6 +53,20 @@ def test_parse_set_brand_exceptions_loaded_from_csv():
     assert parse_set("2026 Topps Now") == ("2026", "Topps", "Topps Now")
     assert parse_set("2026 Bowman's Best") == ("2026", "Bowman", "Bowman's Best")
     assert parse_set("2026 Stadium Club") == ("2026", "Topps", "Stadium Club")
+    assert parse_set("2026 Upper Deck") == ("2026", "Upper Deck", "Upper Deck")
+    assert parse_set("2026 UD") == ("2026", "Upper Deck", "Upper Deck")
+    assert parse_set("2026 President's Choice") == (
+        "2026", "President's Choice", "President's Choice"
+    )
+    assert parse_set("2026 Lauran Taylor") == ("2026", "Lauran Taylor", "Lauran Taylor")
+
+
+def test_brand_set_exception_preserves_trailing_words():
+    # An exception match must not silently drop words that come AFTER
+    # the matched pattern - e.g. "UD Series 1" needs the "Series 1"
+    # preserved, not just "Upper Deck" with the rest thrown away.
+    assert parse_set("2026 UD Series 1") == ("2026", "Upper Deck", "Upper Deck Series 1")
+    assert parse_set("2026 Stadium Club Chrome") == ("2026", "Topps", "Stadium Club Chrome")
 
 
 # --- parse_serial / PR-as-SN ---
@@ -244,6 +260,16 @@ def test_section_records_without_renumbering():
     assert row.sub_type == "Series 2"
 
 
+def test_sort_rows_by_brand():
+    rows = [
+        ChecklistRow(brand="Topps", set="Now", card_number="6"),
+        ChecklistRow(brand="Bowman", set="", card_number="100"),
+        ChecklistRow(brand="Upper Deck", set="Series 1", card_number="1"),
+    ]
+    sorted_rows = sort_rows_by_brand(rows)
+    assert [r.brand for r in sorted_rows] == ["Bowman", "Topps", "Upper Deck"]
+
+
 def test_different_card_numbers_do_not_merge():
     records = [
         CardRecord(name="Mike Trout", card_number="#100", set="2026 Bowman",
@@ -258,6 +284,7 @@ def test_different_card_numbers_do_not_merge():
 if __name__ == "__main__":
     test_parse_set_brand_is_first_word_rest_is_set()
     test_parse_set_brand_exceptions_loaded_from_csv()
+    test_brand_set_exception_preserves_trailing_words()
     test_parse_serial()
     test_trailing_slash_serial_fallback()
     test_normalize_plural_terms_singularizes_without_dropping()
@@ -275,5 +302,6 @@ if __name__ == "__main__":
     test_card_number_prefix_with_hyphen_survives_normalization()
     test_primary_player_real_example_integration()
     test_section_records_without_renumbering()
+    test_sort_rows_by_brand()
     test_different_card_numbers_do_not_merge()
     print("All tests passed.")

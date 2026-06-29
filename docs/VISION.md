@@ -263,6 +263,15 @@ Current entries:
 | Topps Now | Topps | Topps Now |
 | Bowman's Best | Bowman | Bowman's Best |
 | Stadium Club | Topps | Stadium Club |
+| President's Choice | President's Choice | President's Choice |
+| Lauran Taylor | Lauran Taylor | Lauran Taylor |
+| Upper Deck | Upper Deck | Upper Deck |
+| UD | Upper Deck | Upper Deck |
+
+Fixed a real gap (2026-06-29): exception matches now preserve any
+words AFTER the matched pattern instead of discarding them - e.g. "UD
+Series 1" correctly becomes "Upper Deck Series 1", not just
+"Upper Deck" with "Series 1" silently dropped.
 
 Note some of these deliberately repeat the brand inside set (e.g.
 "Topps Now" / "Topps Now") - that's intentional per Brandon, an
@@ -272,6 +281,14 @@ IS the correct full product name in these specific cases.
 To add more: open the CSV, add a row, save. No restart needed beyond
 the next time Extract Checklist runs (the file is cached per-run, not
 per-app-launch).
+
+## Other Fixes (2026-06-29)
+
+- Final CSV is now sorted by brand (then set, year, card_number as
+  stable secondary keys) before export.
+- Page extraction safety cap raised from 200 to 2000
+  (`settings/extraction_limits.py`, MAX_PAGES) - a large search was
+  hitting the old cap and stopping early.
 
 ## Open Questions
 
@@ -368,12 +385,15 @@ stable releases, and easy maintenance.
 
 ## Current Version
 
-**Version: 0.9.1 (Brand/Set exception spreadsheet for product lines that don't follow the first-word-is-brand rule)**
+**Version: 0.9.2 (More brand/set exceptions, trailing-words fix, sort by brand, higher page cap)**
 
-Current capabilities: everything in v0.9.0, plus:
-- `settings/brand_set_exceptions.csv` - editable spreadsheet overriding
-  brand/set for product lines like Finest, Topps Now, Bowman's Best,
-  Stadium Club, where the default first-word split is wrong
+Current capabilities: everything in v0.9.1, plus:
+- Added President's Choice, Lauran Taylor, Upper Deck, and UD->Upper
+  Deck to the exception spreadsheet
+- Fixed exception matching to preserve words after the matched pattern
+  instead of dropping them
+- Final CSV sorted by brand
+- Page extraction cap raised from 200 to 2000
 
 Next goal (v1.0.0): keep validating against real, larger-volume CSV
 output and fix whatever else turns up.
