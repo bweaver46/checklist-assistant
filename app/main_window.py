@@ -108,22 +108,13 @@ class MainWindow(QMainWindow):
     def _prompt_combo(
         self, title: str, label: str, items: list[str], default: str = ""
     ) -> tuple[str, bool]:
-        """Drop-down selection dialog with word-wrap, fixed width, and
-        an optional pre-selected default item."""
-        dialog = QInputDialog(self)
-        dialog.setWindowTitle(title)
-        dialog.setLabelText(label)
-        dialog.setInputMode(QInputDialog.ComboBoxInput)
-        dialog.setComboBoxItems(items)
-        if default in items:
-            dialog.setComboBoxCurrentIndex(items.index(default))
-        dialog.setFixedWidth(PROMPT_DIALOG_WIDTH)
-
-        for child in dialog.findChildren(QLabel):
-            child.setWordWrap(True)
-
-        ok = dialog.exec() == QInputDialog.Accepted
-        return dialog.textValue(), ok
+        """Drop-down selection dialog with an optional pre-selected
+        default item. Uses getItem() to avoid PySide6 enum differences."""
+        current = items.index(default) if default in items else 0
+        value, ok = QInputDialog.getItem(
+            self, title, label, items, current, False
+        )
+        return value, ok
 
     def _prompt_fetch_team(self, last_fetch_team: bool = False) -> bool:
         """Yes/No prompt for per-card team fetching. Defaults the button
