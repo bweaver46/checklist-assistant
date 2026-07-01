@@ -142,20 +142,20 @@ def build_checklist_rows(
             for occ, _ in group
         )
 
-        sub_type_parts = []
+        card_attrs_parts = []
         if section.strip():
-            sub_type_parts.append(section.strip())
+            card_attrs_parts.append(section.strip())
         for leftover in leftover_texts:
-            if leftover.strip() and leftover.strip() not in sub_type_parts:
-                sub_type_parts.append(leftover.strip())
+            if leftover.strip() and leftover.strip() not in card_attrs_parts:
+                card_attrs_parts.append(leftover.strip())
 
         already_says_autograph = any(
             "autograph" in (text or "").lower()
             for text in [set_value, insert, section] + leftover_texts
         )
         if has_autograph and not already_says_autograph:
-            sub_type_parts.append("Autograph")
-        sub_type = ", ".join(sub_type_parts)
+            card_attrs_parts.append("Autograph")
+        card_attrs = ", ".join(card_attrs_parts)
 
         parallels: list[tuple[str, str]] = []
         for occ, fallback_serial in non_base_group:
@@ -180,12 +180,12 @@ def build_checklist_rows(
         rows.append(
             ChecklistRow(
                 type=type_,
-                sport=sport,
+                sub_type=sport,       # sport value goes into sub_type column
                 year=year,
                 brand=brand,
                 set=set_value,
                 insert=insert,
-                sub_type=sub_type,
+                attributes=card_attrs,  # was sub_type
                 card_number=card_number,
                 player=player,
                 team=team,

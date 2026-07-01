@@ -21,6 +21,7 @@ from exporter.convert import (
     convert_all, parse_set, parse_serial, split_trailing_slash_serial,
     clean_card_number, extract_card_number_prefix, split_primary_player,
     normalize_plural_terms, load_brand_set_exceptions,
+    split_concatenated_names, normalize_team_separators,
 )
 from exporter.merge import build_checklist_rows, longest_common_word_prefix, strip_common_prefix
 from exporter.cleanup import apply_cleanup
@@ -163,7 +164,7 @@ def test_anime_insert_family_full_integration():
     assert row.set == ""
     assert row.card_number == "BA-23"
     assert row.insert == "Anime"  # card-number prefix no longer prepended
-    assert row.sub_type == ""
+    assert row.attributes == ""
     # The plain "Anime" row contributes nothing - no blank slot.
     # Indexing starts directly with the first real parallel.
     assert row.parallels == [
@@ -211,7 +212,7 @@ def test_autograph_insert_no_redundant_subtype():
     assert len(rows) == 1
     row = rows[0]
     assert row.insert == "Rookie and Veteran Autographs Purple"
-    assert row.sub_type == ""  # "Autograph" already implied by insert text
+    assert row.attributes == ""  # "Autograph" already implied by insert text
     assert row.parallels == [("", "250")]
 
 
@@ -221,7 +222,7 @@ def test_autograph_gets_subtype_when_not_redundant():
                    variant="Insert", variant_name="Some Insert", attributes="AU, SN50"),
     ]
     rows = convert_and_build(records)
-    assert rows[0].sub_type == "Autograph"
+    assert rows[0].attributes == "Autograph"
 
 
 def test_card_number_prefix_no_longer_prepended_to_insert():
@@ -268,7 +269,7 @@ def test_primary_player_real_example_integration():
     assert len(rows) == 1
     row = rows[0]
     assert row.player == "Mike Trout"
-    assert row.sub_type == "Stars Align (Zach Neto) CPC"
+    assert row.attributes == "Stars Align (Zach Neto) CPC"
 
 
 def test_section_records_without_renumbering():
@@ -280,7 +281,7 @@ def test_section_records_without_renumbering():
     assert len(rows) == 1
     row = rows[0]
     assert row.card_number == "351"
-    assert row.sub_type == "Series 2"
+    assert row.attributes == "Series 2"
 
 
 def test_sort_rows_by_brand():
@@ -358,6 +359,47 @@ def test_season_year_formats_use_first_year():
     assert parse_set("2026 Topps") == ("2026", "Topps", "")
 
 
+def test_split_concatenated_names():
+    # Main case: BSC concatenates multiple players with no separator
+    assert split_concatenated_names("Dave JollyJim PendletonKarl Spooner") == \
+        "Dave Jolly / Jim Pendleton / Karl Spooner"
+    # Single name - unchanged
+    assert split_concatenated_names("Mike Trout") == "Mike Trout"
+    # Two players
+    assert split_concatenated_names("Hank AaronWillie Mays") == "Hank Aaron / Willie Mays"
+    # Already has spaces everywhere - unchanged
+    assert split_concatenated_names("") == ""
+
+
+def test_normalize_team_separators():
+    # Comma-separated teams become slash-separated
+    assert normalize_team_separators(
+        "Milwaukee Braves, Milwaukee Braves, Brooklyn Dodgers"
+    ) == "Milwaukee Braves / Milwaukee Braves / Brooklyn Dodgers"
+    # Single team - unchanged
+    assert normalize_team_separators("Milwaukee Braves") == "Milwaukee Braves"
+    assert normalize_team_separators("") == ""
+
+
+def test_concatenated_names_applied_in_pipeline():
+    records = [
+        CardRecord(name="Dave JollyJim PendletonKarl Spooner", card_number="#1",
+                   set="1956 Topps", variant="Base", variant_name="-", attributes="-"),
+    ]
+    rows = convert_and_build(records)
+    assert rows[0].player == "Dave Jolly / Jim Pendleton / Karl Spooner"
+
+
+def test_team_commas_converted_to_slashes_in_pipeline():
+    records = [
+        CardRecord(name="Dave Jolly", card_number="#1", set="1956 Topps",
+                   variant="Base", variant_name="-", attributes="-",
+                   team="Milwaukee Braves, Milwaukee Braves, Brooklyn Dodgers"),
+    ]
+    rows = convert_and_build(records)
+    assert rows[0].team == "Milwaukee Braves / Milwaukee Braves / Brooklyn Dodgers"
+
+
 if __name__ == "__main__":
     test_parse_set_brand_is_first_word_rest_is_set()
     test_parse_set_brand_exceptions_loaded_from_csv()
@@ -386,4 +428,8 @@ if __name__ == "__main__":
     test_base_serial_blank_when_base_row_has_no_serial()
     test_base_serial_blank_for_insert_only_card()
     test_season_year_formats_use_first_year()
+    test_split_concatenated_names()
+    test_normalize_team_separators()
+    test_concatenated_names_applied_in_pipeline()
+    test_team_commas_converted_to_slashes_in_pipeline()
     print("All tests passed.")

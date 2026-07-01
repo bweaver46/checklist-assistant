@@ -186,6 +186,35 @@ def extract_card_number_prefix(card_number: str) -> str:
     return ""
 
 
+def split_concatenated_names(text: str) -> str:
+    """BSC sometimes concatenates multiple player names with no separator:
+    'Dave JollyJim PendletonKarl Spooner' -> 'Dave Jolly / Jim Pendleton / Karl Spooner'.
+
+    The split point is wherever a lowercase letter is immediately followed
+    by an uppercase letter with no space between them - that boundary is
+    where one name ends and the next begins.
+
+    Known limitation: names with internal capitals (McDonald, DeShields,
+    O'Brien) will split incorrectly at those points. These are uncommon
+    enough on vintage cards that manual correction is simpler than trying
+    to enumerate every exception."""
+    if not text:
+        return text
+    # Insert ' / ' before any uppercase letter that immediately follows
+    # a lowercase letter (the name boundary).
+    result = re.sub(r'([a-z])([A-Z])', r'\1 / \2', text)
+    return WHITESPACE_PATTERN.sub(' ', result).strip()
+
+
+def normalize_team_separators(team: str) -> str:
+    """BSC sometimes returns multiple teams as a comma-separated string:
+    'Milwaukee Braves, Milwaukee Braves, Brooklyn Dodgers'
+    -> 'Milwaukee Braves / Milwaukee Braves / Brooklyn Dodgers'."""
+    if not team:
+        return team
+    return team.replace(", ", " / ")
+
+
 def split_primary_player(name_text: str, primary_player: str) -> tuple[str, str]:
     """If primary_player is found inside name_text, return
     (primary_player, leftover_text_with_it_removed). If primary_player
@@ -253,8 +282,12 @@ def build_raw_occurrence(record: CardRecord, context: dict | None = None) -> tup
 
     primary_player = context.get("primary_player", "")
     player, leftover_name_text = split_primary_player(record.name, primary_player)
+    player = split_concatenated_names(player)
 
     variant_name, fallback_serial = clean_variant_name(record)
+
+    raw_team = record.team.strip() if record.team and record.team.strip() else context.get("team", "")
+    team = normalize_team_separators(raw_team)
 
     occurrence = RawOccurrence(
         type=context.get("type", ""),
@@ -265,7 +298,7 @@ def build_raw_occurrence(record: CardRecord, context: dict | None = None) -> tup
         card_number=card_number,
         card_number_prefix=card_number_prefix,
         player=player,
-        team=(record.team.strip() if record.team and record.team.strip() else context.get("team", "")),
+        team=team,
         section=context.get("section", ""),
         variant_name=variant_name,
         attributes=record.attributes,
