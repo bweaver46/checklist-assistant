@@ -40,6 +40,8 @@ DEFAULT_TYPE = "Sports"
 # onto multiple lines instead of stretching the dialog across the screen.
 PROMPT_DIALOG_WIDTH = 420
 
+CHECKLIST_TYPES = ["Set", "Player", "Team"]
+
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
@@ -98,6 +100,21 @@ class MainWindow(QMainWindow):
         ok = dialog.exec() == QInputDialog.Accepted
         return dialog.textValue(), ok
 
+    def _prompt_combo(self, title: str, label: str, items: list[str]) -> tuple[str, bool]:
+        """Drop-down selection dialog with a fixed width."""
+        dialog = QInputDialog(self)
+        dialog.setWindowTitle(title)
+        dialog.setLabelText(label)
+        dialog.setInputMode(QInputDialog.ComboBoxInput)
+        dialog.setComboBoxItems(items)
+        dialog.setFixedWidth(PROMPT_DIALOG_WIDTH)
+
+        for child in dialog.findChildren(QLabel):
+            child.setWordWrap(True)
+
+        ok = dialog.exec() == QInputDialog.Accepted
+        return dialog.textValue(), ok
+
     def _prompt_fetch_team(self) -> bool:
         """Team isn't shown in the search results table at all - only on
         the 'Add' detail page for each individual card. Fetching it for
@@ -120,30 +137,39 @@ class MainWindow(QMainWindow):
         return answer == QMessageBox.Yes
 
     def _prompt_for_context(self) -> dict | None:
-        """Ask for Sport, Primary Player, Team, and Section once per
-        extraction run - the fields that aren't derivable from the row
-        data at all. Type is fixed to "Sports" (BSC only sells sports
-        cards) and isn't asked for. Primary Player, Team, and Section
-        are all optional - leaving them blank is fine, and Section
-        should be blank for almost every search. Returns None if the
-        user cancels Sport (the one field that really matters).
+        """Ask for checklist type first, then a conditional set of
+        questions based on that choice:
+
+        Set:    Sport -> Fetch Team per card? -> (if No) Team -> Section
+        Player: Sport -> Primary Player -> Team
+        Team:   Sport -> Team
+
+        Returns None if the user cancels on the type or sport prompt.
         """
+        # --- Step 1: checklist type ---
+        checklist_type, ok = self._prompt_combo(
+            "Extract Checklist",
+            "What type of checklist are you extracting?",
+            CHECKLIST_TYPES,
+        )
+        if not ok:
+            return None
+
+        # --- Step 2: Sport (required for all types) ---
         sport, ok = self._prompt_text("Extract Checklist", "Sport:")
         if not ok:
             return None
 
-        primary_player, ok = self._prompt_text(
-            "Extract Checklist",
-            "Primary Player (optional) - if this search is filtered to "
-            "one player, type their name here (e.g. Mike Trout). Any "
-            "card whose Name field has other text mixed in (insert "
-            "titles, other players, acronyms) keeps just this name as "
-            "Player and moves the rest into Sub_Type. Leave blank if "
-            "not filtered to one player.",
-        )
-        if not ok:
-            primary_player = ""
+        # --- Step 3: type-specific questions ---
+        if checklist_type == "Set":
+            return self._prompt_set_context(sport)
+        elif checklist_type == "Player":
+            return self._prompt_player_context(sport)
+        else:  # Team
+            return self._prompt_team_context(sport)
 
+    def _prompt_set_context(self, sport: str) -> dict | None:
+        """Set flow: Fetch Team? -> (if No) Team -> Section."""
         fetch_team = self._prompt_fetch_team()
 
         team = ""
@@ -169,19 +195,67 @@ class MainWindow(QMainWindow):
             section = ""
 
         return {
+            "checklist_type": "Set",
             "sport": sport.strip(),
             "type": DEFAULT_TYPE,
-            "primary_player": primary_player.strip(),
+            "primary_player": "",
             "team": team.strip(),
             "section": section.strip(),
             "fetch_team": fetch_team,
         }
 
+    def _prompt_player_context(self, sport: str) -> dict | None:
+        """Player flow: Primary Player -> Team."""
+        primary_player, ok = self._prompt_text(
+            "Extract Checklist",
+            "Player name (e.g. Mike Trout) - used to extract the "
+            "player's name from BSC's Name field. Any card whose Name "
+            "field has other text mixed in (insert titles, other "
+            "players, acronyms) keeps just this name as Player and "
+            "moves the rest into Sub_Type.",
+        )
+        if not ok:
+            primary_player = ""
+
+        team, ok = self._prompt_text(
+            "Extract Checklist", "Team (optional, leave blank if not applicable):"
+        )
+        if not ok:
+            team = ""
+
+        return {
+            "checklist_type": "Player",
+            "sport": sport.strip(),
+            "type": DEFAULT_TYPE,
+            "primary_player": primary_player.strip(),
+            "team": team.strip(),
+            "section": "",
+            "fetch_team": False,
+        }
+
+    def _prompt_team_context(self, sport: str) -> dict | None:
+        """Team flow: Team."""
+        team, ok = self._prompt_text(
+            "Extract Checklist", "Team (optional, leave blank if not applicable):"
+        )
+        if not ok:
+            team = ""
+
+        return {
+            "checklist_type": "Team",
+            "sport": sport.strip(),
+            "type": DEFAULT_TYPE,
+            "primary_player": "",
+            "team": team.strip(),
+            "section": "",
+            "fetch_team": False,
+        }
+
     def on_extract_checklist(self) -> None:
-        """Run the full extraction pipeline: ask for Sport/Primary
-        Player/Team/Section, read every page, export raw CSV, clean
-        each row, group into cards (computing Insert/Sub_Type/Parallels),
-        clean up, and export the final CSV.
+        """Run the full extraction pipeline: ask for checklist type and
+        its associated context fields, read every page, export raw CSV,
+        clean each row, group into cards (computing Insert/Sub_Type/
+        Parallels), clean up, and export the final CSV.
         """
         context = self._prompt_for_context()
         if context is None:

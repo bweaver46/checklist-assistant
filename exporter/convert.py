@@ -136,6 +136,7 @@ class RawOccurrence:
     variant_name: str  # "" for Base, otherwise the website's Variant Name
     attributes: str
     leftover_name_text: str  # leftover from Primary Player extraction
+    is_base: bool = False    # True when the website's Variant column read "Base"
 
 
 def parse_set(set_text: str) -> tuple[str, str, str]:
@@ -273,6 +274,7 @@ def build_raw_occurrence(record: CardRecord, context: dict | None = None) -> tup
         variant_name=variant_name,
         attributes=record.attributes,
         leftover_name_text=leftover_name_text,
+        is_base=(record.variant.strip().lower() == "base"),
     )
     return occurrence, fallback_serial
 

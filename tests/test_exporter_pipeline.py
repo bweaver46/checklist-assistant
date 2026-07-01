@@ -299,6 +299,50 @@ def test_different_card_numbers_do_not_merge():
     assert len(rows) == 2
 
 
+def test_base_serial_populated_when_base_row_has_serial():
+    # A Base row with SN/PR should have that serial captured in base_serial.
+    # The base column itself is always blank from the parser.
+    records = [
+        CardRecord(name="Mike Trout", card_number="#100", set="2026 Topps",
+                   variant="Base", variant_name="-", attributes="SN50"),
+        CardRecord(name="Mike Trout", card_number="#100", set="2026 Topps",
+                   variant="Parallel", variant_name="Gold", attributes="SN10"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row.base == ""
+    assert row.base_serial == "50"
+    assert row.parallels == [("Gold", "10")]
+
+
+def test_base_serial_blank_when_base_row_has_no_serial():
+    records = [
+        CardRecord(name="Mike Trout", card_number="#100", set="2026 Topps",
+                   variant="Base", variant_name="-", attributes="-"),
+        CardRecord(name="Mike Trout", card_number="#100", set="2026 Topps",
+                   variant="Parallel", variant_name="Gold", attributes="SN10"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row.base == ""
+    assert row.base_serial == ""
+
+
+def test_base_serial_blank_for_insert_only_card():
+    # No Base row in this group at all - base_serial stays blank.
+    records = [
+        CardRecord(name="Mike Trout", card_number="#BA-23", set="2026 Bowman",
+                   variant="Insert", variant_name="Anime", attributes="-"),
+        CardRecord(name="Mike Trout", card_number="#BA-23", set="2026 Bowman",
+                   variant="Insert", variant_name="Anime Black Refractors", attributes="SN10"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 1
+    assert rows[0].base_serial == ""
+
+
 if __name__ == "__main__":
     test_parse_set_brand_is_first_word_rest_is_set()
     test_parse_set_brand_exceptions_loaded_from_csv()
@@ -323,4 +367,7 @@ if __name__ == "__main__":
     test_section_records_without_renumbering()
     test_sort_rows_by_brand()
     test_different_card_numbers_do_not_merge()
+    test_base_serial_populated_when_base_row_has_serial()
+    test_base_serial_blank_when_base_row_has_no_serial()
+    test_base_serial_blank_for_insert_only_card()
     print("All tests passed.")

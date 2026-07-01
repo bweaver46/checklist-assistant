@@ -15,7 +15,7 @@ from exporter.checklist_template import ChecklistRow
 
 BASE_COLUMNS = [
     "type", "sport", "year", "brand", "set", "insert", "sub_type",
-    "card_number", "player", "team",
+    "card_number", "player", "team", "base", "base_serial",
 ]
 
 

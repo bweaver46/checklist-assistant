@@ -108,8 +108,24 @@ def build_checklist_rows(
         type_, sport, year, brand, set_value, card_number, player, team = key
         first_occurrence = group[0][0]
 
-        variant_texts = [occ.variant_name for occ, _ in group]
-        common_prefix = longest_common_word_prefix(variant_texts)
+        # Base rows (is_base=True) are excluded from the common-prefix
+        # calculation entirely - their blank variant_name would corrupt
+        # the Insert prefix for the rest of the group, and their serial
+        # goes into base_serial, not the parallels list.
+        non_base_group = [(occ, fb) for occ, fb in group if not occ.is_base]
+        has_base_rows = len(non_base_group) < len(group)
+        variant_texts = [occ.variant_name for occ, _ in non_base_group]
+
+        # When base rows are present, the non-base rows are parallels OF
+        # the base card. A single non-base text should be a parallel, not
+        # the Insert - only derive a common Insert prefix when 2+ non-base
+        # rows share one. (The single-item-is-its-own-prefix behavior is
+        # intentional for Insert-only groups with one print version, not
+        # for base+parallel groups.)
+        if has_base_rows and len(non_base_group) <= 1:
+            common_prefix = ""
+        else:
+            common_prefix = longest_common_word_prefix(variant_texts)
 
         card_number_prefix = first_occurrence.card_number_prefix
         insert = normalize_plural_terms(common_prefix)
@@ -142,7 +158,7 @@ def build_checklist_rows(
         sub_type = ", ".join(sub_type_parts)
 
         parallels: list[tuple[str, str]] = []
-        for occ, fallback_serial in group:
+        for occ, fallback_serial in non_base_group:
             remainder = strip_common_prefix(occ.variant_name, common_prefix)
             remainder = normalize_plural_terms(remainder)
             serial = parse_serial(occ.attributes) or fallback_serial
@@ -151,6 +167,15 @@ def build_checklist_rows(
                 continue  # nothing to record for this print version
 
             parallels.append((remainder, serial))
+
+        # base_serial: if any row in this group was a Base row and had a
+        # serial (SN/PR), capture it here. base itself is always blank
+        # from the parser - filled manually after export when needed.
+        base_serial = ""
+        for occ, fallback_serial in group:
+            if occ.is_base:
+                base_serial = parse_serial(occ.attributes) or fallback_serial
+                break  # at most one base row per card group
 
         rows.append(
             ChecklistRow(
@@ -164,6 +189,8 @@ def build_checklist_rows(
                 card_number=card_number,
                 player=player,
                 team=team,
+                base="",
+                base_serial=base_serial,
                 parallels=parallels,
             )
         )
