@@ -48,7 +48,7 @@ from scraper.card_record import CardRecord
 
 SERIAL_PATTERN = re.compile(r"(?:SN|PR)(\d+)")
 AUTOGRAPH_PATTERN = re.compile(r"\bAU\b")
-SET_YEAR_PATTERN = re.compile(r"^\s*(\d{4})\s+(.*)$")
+SET_YEAR_PATTERN = re.compile(r"^\s*(\d{4})(?:-\d{2,4})?\s+(.*)$")
 TRAILING_SLASH_SERIAL_PATTERN = re.compile(r"^(.*)/\s*(\d+)\s*$")
 CARD_NUMBER_PREFIX_PATTERN = re.compile(r"^(.*?)(\d+)$")
 WHITESPACE_PATTERN = re.compile(r"\s+")
@@ -181,12 +181,8 @@ def clean_card_number(card_number: str) -> str:
 
 
 def extract_card_number_prefix(card_number: str) -> str:
-    """'T91-1' -> 'T91-'. 'TBC15' -> 'TBC'. '517' -> ''. '12P5' -> '12P'."""
-    if not card_number:
-        return ""
-    match = CARD_NUMBER_PREFIX_PATTERN.match(card_number)
-    if match:
-        return match.group(1)
+    """Prefix extraction removed - prepending card number prefixes (e.g.
+    'O-' from 'O-123') to Insert produced wrong output. Always blank."""
     return ""
 
 

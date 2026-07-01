@@ -101,10 +101,12 @@ def test_clean_card_number_strips_hash():
 
 
 def test_extract_card_number_prefix():
-    assert extract_card_number_prefix("T91-1") == "T91-"
-    assert extract_card_number_prefix("TBC15") == "TBC"
+    # Prefix extraction is disabled - always blank regardless of input.
+    assert extract_card_number_prefix("T91-1") == ""
+    assert extract_card_number_prefix("TBC15") == ""
     assert extract_card_number_prefix("517") == ""
-    assert extract_card_number_prefix("12P5") == "12P"
+    assert extract_card_number_prefix("12P5") == ""
+    assert extract_card_number_prefix("O-123") == ""
 
 
 # --- Primary Player splitting (Rule 3) ---
@@ -160,7 +162,7 @@ def test_anime_insert_family_full_integration():
     assert row.brand == "Bowman"
     assert row.set == ""
     assert row.card_number == "BA-23"
-    assert row.insert == "BA- Anime"  # card-number prefix prepended
+    assert row.insert == "Anime"  # card-number prefix no longer prepended
     assert row.sub_type == ""
     # The plain "Anime" row contributes nothing - no blank slot.
     # Indexing starts directly with the first real parallel.
@@ -222,7 +224,10 @@ def test_autograph_gets_subtype_when_not_redundant():
     assert rows[0].sub_type == "Autograph"
 
 
-def test_card_number_prefix_with_hyphen_survives_normalization():
+def test_card_number_prefix_no_longer_prepended_to_insert():
+    # Card number prefixes (e.g. "T91-" from "T91-1") are no longer
+    # prepended to Insert - that was producing wrong output (e.g. "O-123"
+    # -> "O- Anime"). Insert is now taken purely from variant_name.
     records = [
         CardRecord(name="Mike Trout", card_number="#T91-1", set="1991 Topps Baseball",
                    variant="Insert", variant_name="35th Anniversary (Series One)",
@@ -232,7 +237,7 @@ def test_card_number_prefix_with_hyphen_survives_normalization():
     assert len(rows) == 1
     row = rows[0]
     assert row.card_number == "T91-1"
-    assert row.insert == "T91- 35th Anniversary (Series One)"
+    assert row.insert == "35th Anniversary (Series One)"
     assert row.team == "Los Angeles Angels"
 
 
@@ -343,6 +348,16 @@ def test_base_serial_blank_for_insert_only_card():
     assert rows[0].base_serial == ""
 
 
+def test_season_year_formats_use_first_year():
+    # "2021-22 Panini Prizm" -> year "2021", not blank
+    assert parse_set("2021-22 Panini Prizm") == ("2021", "Panini", "Prizm")
+    assert parse_set("2020-21 Topps UEFA") == ("2020", "Topps", "UEFA")
+    # YYYY-YYYY four-digit suffix also handled
+    assert parse_set("2019-2020 Panini Mosaic") == ("2019", "Panini", "Mosaic")
+    # Standard 4-digit year still works
+    assert parse_set("2026 Topps") == ("2026", "Topps", "")
+
+
 if __name__ == "__main__":
     test_parse_set_brand_is_first_word_rest_is_set()
     test_parse_set_brand_exceptions_loaded_from_csv()
@@ -361,7 +376,7 @@ if __name__ == "__main__":
     test_plain_base_row_no_serial_no_leftover_produces_no_parallel_at_all()
     test_autograph_insert_no_redundant_subtype()
     test_autograph_gets_subtype_when_not_redundant()
-    test_card_number_prefix_with_hyphen_survives_normalization()
+    test_card_number_prefix_no_longer_prepended_to_insert()
     test_per_card_fetched_team_overrides_manual_context_team()
     test_primary_player_real_example_integration()
     test_section_records_without_renumbering()
@@ -370,4 +385,5 @@ if __name__ == "__main__":
     test_base_serial_populated_when_base_row_has_serial()
     test_base_serial_blank_when_base_row_has_no_serial()
     test_base_serial_blank_for_insert_only_card()
+    test_season_year_formats_use_first_year()
     print("All tests passed.")
