@@ -6,4 +6,7 @@ __pycache__/
 .vscode/
 .DS_Store
 *.log
+settings/last_run.json
+raw_export.csv
+checklist_export.csv
 
