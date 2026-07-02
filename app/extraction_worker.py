@@ -26,6 +26,7 @@ from exporter.merge import build_checklist_rows
 from exporter.cleanup import apply_cleanup
 from exporter.final_export import write_final_csv, sort_rows_by_brand
 from settings.accumulator import load_accumulated, save_accumulated
+from settings.team_cache import load_team_cache, save_team_cache
 
 
 class ExtractionWorker(QThread):
@@ -87,6 +88,16 @@ class ExtractionWorker(QThread):
             start_page = self._context.get("start_page", 1)
             end_page = self._context.get("end_page", 0)
 
+            # Load the persisted team cache so players seen in previous
+            # runs don't need their "Add" page visited again.
+            if fetch_team:
+                self._browser_manager._team_cache = load_team_cache()
+                cached_count = len(self._browser_manager._team_cache)
+                if cached_count:
+                    self.progress.emit(
+                        f"Loaded {cached_count:,} cached team lookups from previous runs…"
+                    )
+
             page_desc = f"pages {start_page}–{end_page}" if end_page else f"page {start_page} onwards"
             self.progress.emit(f"Scraping {page_desc}…")
 
@@ -96,6 +107,11 @@ class ExtractionWorker(QThread):
                 start_page=start_page,
                 end_page=end_page,
             )
+
+            # Save the team cache back so the next run picks up where
+            # this one left off without re-fetching any player.
+            if fetch_team:
+                save_team_cache(self._browser_manager._team_cache)
 
             # Load whatever was accumulated from previous runs and
             # append this batch so the CSV reflects all runs combined.

@@ -84,9 +84,12 @@ def test_team_cache_does_not_fetch_at_all_when_fetch_team_is_false():
     assert all(r.team == "" for r in records)
 
 
-def test_team_cache_resets_between_extraction_runs():
+def test_team_cache_persists_across_extraction_runs():
+    # The cache is now managed by ExtractionWorker (loaded from disk before
+    # each run, saved after). extract_all_pages() no longer resets it, so a
+    # player seen in run 1 is NOT re-fetched in run 2.
     bm = BrowserManager()
-    bm._team_cache = {"Mike Trout": "Stale Old Team"}
+    bm._team_cache = {"Mike Trout": "Los Angeles Angels"}  # pre-loaded from disk
     bm.has_next_page = lambda: False
     bm.read_row = lambda row: CardRecord(name=row.player_name)
 
@@ -103,13 +106,13 @@ def test_team_cache_resets_between_extraction_runs():
 
     records = bm.extract_all_pages(fetch_team=True)
 
-    # The stale cache entry must NOT survive into a new extraction run.
-    assert call_log == ["Mike Trout"]
-    assert records[0].team == "Fresh Team"
+    # Cache hit - no fetch should have happened.
+    assert call_log == []
+    assert records[0].team == "Los Angeles Angels"
 
 
 if __name__ == "__main__":
     test_team_cache_only_fetches_once_per_distinct_player()
     test_team_cache_does_not_fetch_at_all_when_fetch_team_is_false()
-    test_team_cache_resets_between_extraction_runs()
+    test_team_cache_persists_across_extraction_runs()
     print("All tests passed.")

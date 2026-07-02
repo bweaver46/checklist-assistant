@@ -28,6 +28,7 @@ from app.extraction_worker import ExtractionWorker
 from settings.window_layout import MAIN_WINDOW_POSITION
 from settings.last_run import load_last_run, save_last_run
 from settings.accumulator import clear_accumulated, accumulated_count
+from settings.team_cache import clear_team_cache
 
 DEFAULT_TYPE = "Sports"
 PROMPT_DIALOG_WIDTH = 420
@@ -377,7 +378,8 @@ class MainWindow(QMainWindow):
         )
         if answer == QMessageBox.Yes:
             clear_accumulated()
-            self.statusBar().showMessage(f"Cleared {count:,} accumulated rows.")
+            clear_team_cache()
+            self.statusBar().showMessage(f"Cleared {count:,} accumulated rows and team cache.")
 
     def _on_worker_error(self, message: str) -> None:
         self._teardown_worker()

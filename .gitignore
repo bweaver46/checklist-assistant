@@ -9,6 +9,7 @@ __pycache__/
 settings/last_run.json
 settings/brand_set_exceptions.csv
 settings/accumulator.json
+settings/team_cache.json
 raw_export.csv
 checklist_export.csv
 

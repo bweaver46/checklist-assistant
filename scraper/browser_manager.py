@@ -320,8 +320,9 @@ class BrowserManager:
         pause_callback: called between every team fetch and every page
             turn so the run can be paused mid-scrape.
         """
-        if fetch_team:
-            self._team_cache = {}
+        # Team cache is loaded from disk by the caller (ExtractionWorker)
+        # before this method is invoked, so it already contains any
+        # lookups from previous runs. Do NOT reset it here.
 
         if start_page > 1:
             self.navigate_to_page(start_page)
