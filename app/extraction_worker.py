@@ -85,8 +85,16 @@ class ExtractionWorker:
             end_page = self._context.get("end_page", 0)
 
             if fetch_team:
-                self._browser_manager._team_cache = load_team_cache()
-                cached_count = len(self._browser_manager._team_cache)
+                # Merge the disk cache into whatever is already in memory.
+                # The BrowserManager instance lives for the whole app session,
+                # so its _team_cache already contains everything from prior
+                # runs within this session. Disk fills in any gaps (e.g. after
+                # an app restart). In-memory always takes priority over disk so
+                # a failed/empty save never wipes a working in-memory cache.
+                disk_cache = load_team_cache()
+                merged = {**disk_cache, **self._browser_manager._team_cache}
+                self._browser_manager._team_cache = merged
+                cached_count = len(merged)
                 if cached_count:
                     self._on_progress(
                         f"Loaded {cached_count:,} cached team lookups — scraping…"
