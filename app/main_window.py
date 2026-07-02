@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QInputDialog,
     QLabel,
     QMessageBox,
+    QApplication,
 )
 
 from scraper.browser_manager import BrowserManager
@@ -339,6 +340,10 @@ class MainWindow(QMainWindow):
         if context is None:
             self.statusBar().showMessage("Extraction cancelled.")
             return
+
+        # Force all lingering dialogs to close and the UI to repaint
+        # before the extraction blocks the main thread.
+        QApplication.processEvents()
 
         try:
             self.statusBar().showMessage("Reading rows across all pages...")
