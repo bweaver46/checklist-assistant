@@ -90,7 +90,7 @@ def load_brand_set_exceptions() -> list[tuple[list[str], str, str]]:
                 brand = (row.get("brand") or "").strip()
                 set_value = (row.get("set") or "").strip()
                 if pattern:
-                    exceptions.append((pattern.split(), brand, set_value))
+                    exceptions.append((pattern.split(), brand, set_value.strip()))
 
     exceptions.sort(key=lambda e: len(e[0]), reverse=True)
     _brand_set_exceptions_cache = exceptions
