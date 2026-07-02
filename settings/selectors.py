@@ -47,3 +47,6 @@ PAGINATION_NAV_SELECTOR = "nav"
 # matching on the literal label text "Team:" instead is the durable way
 # to find it. The value is in the next sibling div.
 TEAM_DETAIL_LABEL_SELECTOR = "h6:text-is('Team:')"
+
+# Same structure as Team - label text is the durable anchor.
+DESCRIPTION_DETAIL_LABEL_SELECTOR = "h6:text-is('Description:')"

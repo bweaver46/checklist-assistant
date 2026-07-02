@@ -18,7 +18,8 @@ class CardRecord:
     variant: str = ""
     variant_name: str = ""
     attributes: str = ""
-    team: str = ""  # only populated if per-card team fetching was used
+    team: str = ""         # only populated if per-card team fetching was used
+    description: str = ""  # from the Add page; used for lettered variant parallel names
 
     def to_dict(self) -> dict:
         return asdict(self)

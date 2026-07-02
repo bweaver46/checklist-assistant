@@ -6,7 +6,7 @@ player, so "Add" only needs to be clicked once per distinct player
 name, not once per row).
 
 Uses lightweight fakes for Page/Locator/Row rather than real Playwright
-objects, with read_row and fetch_team_for_row monkeypatched - this lets
+objects, with read_row and fetch_card_details_for_row monkeypatched - this lets
 us verify the caching behavior in isolation without a browser.
 """
 
@@ -55,7 +55,7 @@ def test_team_cache_only_fetches_once_per_distinct_player():
         call_log.append(row.player_name)
         return {"Mike Trout": "Los Angeles Angels", "Zach Neto": "Boston Red Sox"}[row.player_name]
 
-    bm.fetch_team_for_row = fake_fetch
+    bm.fetch_card_details_for_row = lambda row: (fake_fetch(row), "")
 
     records = bm.read_all_rows(fetch_team=True)
 
@@ -76,7 +76,7 @@ def test_team_cache_does_not_fetch_at_all_when_fetch_team_is_false():
     bm.read_row = lambda row: CardRecord(name=row.player_name)
 
     call_log = []
-    bm.fetch_team_for_row = lambda row: call_log.append(row.player_name)
+    bm.fetch_card_details_for_row = lambda row: (call_log.append(row.player_name), "")[1] or ("", "")
 
     records = bm.read_all_rows(fetch_team=False)
 
@@ -102,7 +102,7 @@ def test_team_cache_persists_across_extraction_runs():
         call_log.append(row.player_name)
         return "Fresh Team"
 
-    bm.fetch_team_for_row = fake_fetch
+    bm.fetch_card_details_for_row = lambda row: (fake_fetch(row), "")
 
     records = bm.extract_all_pages(fetch_team=True)
 

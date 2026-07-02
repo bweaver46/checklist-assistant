@@ -23,7 +23,7 @@ from exporter.convert import (
     normalize_plural_terms, load_brand_set_exceptions,
     split_concatenated_names, normalize_team_separators,
 )
-from exporter.merge import build_checklist_rows, longest_common_word_prefix, strip_common_prefix
+from exporter.merge import build_checklist_rows, longest_common_word_prefix, strip_common_prefix, clean_description, attributes_extra
 from exporter.cleanup import apply_cleanup
 from exporter.checklist_template import ChecklistRow
 from exporter.final_export import sort_rows_by_brand
@@ -400,6 +400,66 @@ def test_team_commas_converted_to_slashes_in_pipeline():
     assert rows[0].team == "Milwaukee Braves / Milwaukee Braves / Brooklyn Dodgers"
 
 
+def test_clean_description():
+    assert clean_description("VAR: Dancing Dodgers Variation") == "Dancing Dodgers"
+    assert clean_description("SP: Short Print") == "Short Print"
+    assert clean_description("VAR: Batting Stance Variation") == "Batting Stance"
+    assert clean_description("") == ""
+
+
+def test_attributes_extra():
+    assert attributes_extra("SP, VAR", "-") == "SP"
+    assert attributes_extra("SP", "SP") == ""       # same as base -> nothing extra
+    assert attributes_extra("VAR", "-") == ""        # VAR alone is excluded
+    assert attributes_extra("-", "-") == ""
+    assert attributes_extra("SN50, SP", "-") == "SP" # serial excluded
+
+
+def test_lettered_variants_group_with_base_and_become_parallels():
+    # #1, #1b, #1c should all group under card_number "1".
+    # #1b and #1c become parallels using their description field.
+    records = [
+        CardRecord(name="Shohei Ohtani", card_number="#1", set="2025 Topps",
+                   variant="Base", variant_name="-", attributes="-"),
+        CardRecord(name="Shohei Ohtani", card_number="#1b", set="2025 Topps",
+                   variant="Base", variant_name="-", attributes="SP, VAR",
+                   description="VAR: Dancing Dodgers Variation"),
+        CardRecord(name="Shohei Ohtani", card_number="#1c", set="2025 Topps",
+                   variant="Base", variant_name="-", attributes="SP, VAR",
+                   description="VAR: Batting Stance Variation"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row.card_number == "1"
+    assert row.player == "Shohei Ohtani"
+    # Both lettered variants become parallels with cleaned description + extra attr
+    assert ("SP Dancing Dodgers", "") in row.parallels
+    assert ("SP Batting Stance", "") in row.parallels
+
+
+def test_letter_stripped_from_card_number_in_output():
+    records = [
+        CardRecord(name="Thairo Estrada", card_number="#2b", set="2025 Topps",
+                   variant="Base", variant_name="-", attributes="VAR",
+                   description="VAR: Fielding Variation"),
+    ]
+    rows = convert_and_build(records)
+    assert rows[0].card_number == "2"
+    assert rows[0].parallels == [("Fielding", "")]
+
+
+def test_non_lettered_card_numbers_not_affected():
+    # BA-23, T91-1, 517 should NOT be treated as lettered variants.
+    for num in ["#BA-23", "#T91-1", "#517"]:
+        records = [
+            CardRecord(name="Mike Trout", card_number=num, set="2026 Topps",
+                       variant="Base", variant_name="-", attributes="-"),
+        ]
+        rows = convert_and_build(records)
+        assert rows[0].card_number == num.lstrip("#"), f"Failed for {num}"
+
+
 if __name__ == "__main__":
     test_parse_set_brand_is_first_word_rest_is_set()
     test_parse_set_brand_exceptions_loaded_from_csv()
@@ -432,4 +492,9 @@ if __name__ == "__main__":
     test_normalize_team_separators()
     test_concatenated_names_applied_in_pipeline()
     test_team_commas_converted_to_slashes_in_pipeline()
+    test_clean_description()
+    test_attributes_extra()
+    test_lettered_variants_group_with_base_and_become_parallels()
+    test_letter_stripped_from_card_number_in_output()
+    test_non_lettered_card_numbers_not_affected()
     print("All tests passed.")

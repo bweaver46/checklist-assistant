@@ -37,6 +37,54 @@ from exporter.convert import RawOccurrence, normalize_plural_terms, parse_serial
 
 WHITESPACE_PATTERN = re.compile(r"\s+")
 
+# Prefixes like "VAR: " or "SP: " that BSC prepends to description text.
+DESCRIPTION_PREFIX_PATTERN = re.compile(r'^[A-Z]+:\s*')
+
+
+def clean_description(description: str) -> str:
+    """Clean a BSC Add-page description into a usable parallel name.
+
+    'VAR: Dancing Dodgers Variation' -> 'Dancing Dodgers'
+    'SP: Short Print'                -> 'Short Print'
+
+    Rules:
+    - Strip any leading 'XXX: ' prefix (the abbreviation BSC uses to
+      classify the description type - we don't need it)
+    - Strip trailing ' Variation' (redundant - the whole point of a
+      parallel slot is that it IS a variation)
+    - Collapse whitespace
+    """
+    if not description:
+        return ""
+    text = DESCRIPTION_PREFIX_PATTERN.sub("", description)
+    if text.lower().endswith(" variation"):
+        text = text[:-len(" variation")]
+    return WHITESPACE_PATTERN.sub(" ", text).strip()
+
+
+def attributes_extra(variant_attrs: str, base_attrs: str) -> str:
+    """Return the attribute tokens present in variant_attrs but NOT in
+    base_attrs, excluding 'VAR' (which is implied by being a parallel).
+
+    'SP, VAR' vs '-'  -> 'SP'
+    'SN50'    vs '-'  -> ''   (serials are handled via parse_serial)
+    'SP'      vs 'SP' -> ''   (same as base, goes to card attributes)
+    """
+    def tokenize(attrs: str) -> set[str]:
+        if not attrs or attrs.strip() == "-":
+            return set()
+        return {
+            t.strip()
+            for t in attrs.split(",")
+            if t.strip() and t.strip().upper() != "VAR"
+            and not re.match(r'^(SN|PR)\d+$', t.strip(), re.IGNORECASE)
+        }
+
+    base_tokens = tokenize(base_attrs)
+    variant_tokens = tokenize(variant_attrs)
+    extra = variant_tokens - base_tokens
+    return ", ".join(sorted(extra))
+
 
 def longest_common_word_prefix(texts: list[str]) -> str:
     """Word-wise common leading prefix across all non-empty texts,
@@ -109,10 +157,12 @@ def build_checklist_rows(
         first_occurrence = group[0][0]
 
         # Base rows (is_base=True) are excluded from the common-prefix
-        # calculation entirely - their blank variant_name would corrupt
-        # the Insert prefix for the rest of the group, and their serial
-        # goes into base_serial, not the parallels list.
-        non_base_group = [(occ, fb) for occ, fb in group if not occ.is_base]
+        # calculation entirely - UNLESS they are lettered variants (1b, 1c),
+        # which BSC marks as "Base" even though they are really parallels.
+        non_base_group = [
+            (occ, fb) for occ, fb in group
+            if not occ.is_base or occ.is_letter_variant
+        ]
         has_base_rows = len(non_base_group) < len(group)
         variant_texts = [occ.variant_name for occ, _ in non_base_group]
 
@@ -157,25 +207,49 @@ def build_checklist_rows(
             card_attrs_parts.append("Autograph")
         card_attrs = ", ".join(card_attrs_parts)
 
+        # Separate lettered variants (1b, 1c) from regular non-base rows.
+        # Lettered variants always build their parallel from the description
+        # fetched from the Add page, not from the variant_name prefix logic.
+        letter_group = [(occ, fb) for occ, fb in non_base_group if occ.is_letter_variant]
+        regular_group = [(occ, fb) for occ, fb in non_base_group if not occ.is_letter_variant]
+
+        # Find the base (non-lettered, non-base-variant) row's attributes
+        # for comparison when building lettered variant parallel names.
+        base_occ_attrs = "-"
+        for occ, _ in group:
+            if occ.is_base and not occ.is_letter_variant:
+                base_occ_attrs = occ.attributes
+                break
+
         parallels: list[tuple[str, str]] = []
-        for occ, fallback_serial in non_base_group:
+
+        # Regular (non-lettered) parallels via the existing prefix logic.
+        for occ, fallback_serial in regular_group:
             remainder = strip_common_prefix(occ.variant_name, common_prefix)
             remainder = normalize_plural_terms(remainder)
             serial = parse_serial(occ.attributes) or fallback_serial
 
             if not remainder.strip() and not serial:
-                continue  # nothing to record for this print version
+                continue
 
             parallels.append((remainder, serial))
+
+        # Lettered variant parallels built from Add-page description.
+        for occ, fallback_serial in letter_group:
+            desc = clean_description(occ.description)
+            extra_attrs = attributes_extra(occ.attributes, base_occ_attrs)
+            parallel_name = f"{extra_attrs} {desc}".strip() if extra_attrs else desc
+            serial = parse_serial(occ.attributes) or fallback_serial
+            parallels.append((parallel_name, serial))
 
         # base_serial: if any row in this group was a Base row and had a
         # serial (SN/PR), capture it here. base itself is always blank
         # from the parser - filled manually after export when needed.
         base_serial = ""
         for occ, fallback_serial in group:
-            if occ.is_base:
+            if occ.is_base and not occ.is_letter_variant:
                 base_serial = parse_serial(occ.attributes) or fallback_serial
-                break  # at most one base row per card group
+                break
 
         rows.append(
             ChecklistRow(

@@ -19,11 +19,14 @@ Everything goes through this class.
 
 from __future__ import annotations
 
+import re
+
 from playwright.sync_api import sync_playwright, Browser, Page, Playwright, Locator
 
 from scraper.card_record import CardRecord
 from settings.selectors import (
-    ROW_SELECTOR, FIELD_SELECTORS, PAGINATION_NAV_SELECTOR, TEAM_DETAIL_LABEL_SELECTOR,
+    ROW_SELECTOR, FIELD_SELECTORS, PAGINATION_NAV_SELECTOR,
+    TEAM_DETAIL_LABEL_SELECTOR, DESCRIPTION_DETAIL_LABEL_SELECTOR,
 )
 from settings.window_layout import BROWSER_WINDOW_POSITION, BROWSER_WINDOW_SIZE
 from settings.extraction_limits import MAX_PAGES
@@ -138,58 +141,69 @@ class BrowserManager:
         count = rows.count()
 
         for i in range(count):
-            # Re-query fresh each time: after navigating away to the
-            # detail page and back, the original `rows` handle may be
-            # stale even though Brandon confirmed Back restores the
-            # exact same page/scroll state.
             row = page.locator(selector).nth(i)
             record = self.read_row(row)
-            if fetch_team:
-                if record.name in self._team_cache:
+
+            # Lettered card numbers (e.g. #1b, #1c) ALWAYS get their
+            # details fetched - we need the description to build the
+            # parallel name. Team is read at the same time as a bonus.
+            # Non-lettered rows only visit the Add page when fetch_team
+            # is on (and only on a cache miss).
+            raw_num = record.card_number.lstrip("#").strip()
+            is_letter_variant = bool(re.match(r'^\d+[a-z]$', raw_num))
+
+            needs_fetch = is_letter_variant or fetch_team
+            if needs_fetch:
+                if not is_letter_variant and record.name in self._team_cache:
+                    # Non-lettered cache hit - skip the page visit.
                     record.team = self._team_cache[record.name]
                 else:
-                    team = self.fetch_team_for_row(row)
+                    team, description = self.fetch_card_details_for_row(row)
+                    record.description = description
                     record.team = team
-                    if record.name:
+                    if record.name and not is_letter_variant:
+                        # Only cache team by player name for non-lettered
+                        # rows - lettered rows may share a player name but
+                        # have different descriptions, so they're never
+                        # served from this cache.
                         self._team_cache[record.name] = team
-                    # Check for pause after every real fetch (cache hits
-                    # are instant, so no need to check there).
                     if pause_callback:
                         pause_callback()
             records.append(record)
 
         return records
 
-    def fetch_team_for_row(self, row: Locator) -> str:
-        """Click this row's "Add" control, read Team off the resulting
-        detail page, then navigate back. Returns "" if anything about
-        this row's Add control or the Team field can't be found -
-        never raises, so one bad row doesn't kill the whole extraction.
+    def fetch_card_details_for_row(self, row: Locator) -> tuple[str, str]:
+        """Click this row's "Add" control, read Team and Description off
+        the resulting detail page, then navigate back.
+        Returns (team, description) - either may be "" if not found.
+        Never raises, so one bad row doesn't kill the whole extraction.
         """
         page = self._require_page()
         add_control = row.get_by_role("button", name="Add", exact=True)
         if add_control.count() == 0:
-            return ""
+            return "", ""
 
         add_control.first.click()
         try:
             page.wait_for_selector(TEAM_DETAIL_LABEL_SELECTOR, timeout=15000)
-            team = self.read_team_from_detail_page()
+            team = self.read_detail_field(TEAM_DETAIL_LABEL_SELECTOR)
+            description = self.read_detail_field(DESCRIPTION_DETAIL_LABEL_SELECTOR)
         except Exception:
-            team = ""
+            team, description = "", ""
         finally:
             page.go_back()
             page.wait_for_selector(ROW_SELECTOR, timeout=15000)
-            page.wait_for_timeout(300)  # brief politeness delay between rows
+            page.wait_for_timeout(300)
 
-        return team
+        return team, description
 
-    def read_team_from_detail_page(self) -> str:
-        """Team's label ('Team:') and value sit in two sibling <div>s on
-        the Sell-Your-Card detail page - the value is the only <h6>
-        inside the label's next sibling div."""
+    def read_detail_field(self, label_selector: str) -> str:
+        """Read a labelled field value from the Sell-Your-Card detail
+        page. Label and value sit in two sibling <div>s; the value is
+        the <h6> inside the label's next sibling div."""
         page = self._require_page()
-        label = page.locator(TEAM_DETAIL_LABEL_SELECTOR)
+        label = page.locator(label_selector)
         if label.count() == 0:
             return ""
         value = label.locator("xpath=../following-sibling::div[1]//h6")

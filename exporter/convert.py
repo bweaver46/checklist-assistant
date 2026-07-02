@@ -48,6 +48,12 @@ from scraper.card_record import CardRecord
 
 SERIAL_PATTERN = re.compile(r"(?:SN|PR)(\d+)")
 AUTOGRAPH_PATTERN = re.compile(r"\bAU\b")
+# Matches card numbers that are purely digits followed by a single
+# lowercase letter suffix (e.g. "1b", "1c", "517b"). These are lettered
+# variants of the same card (Short Prints, Variations) and should group
+# with their base card rather than being treated as separate cards.
+# Does NOT match structural lettered numbers like "BA-23" or "T91-1".
+LETTER_VARIANT_PATTERN = re.compile(r'^(\d+)([a-z])$')
 SET_YEAR_PATTERN = re.compile(r"^\s*(\d{4})(?:-\d{2,4})?\s+(.*)$")
 TRAILING_SLASH_SERIAL_PATTERN = re.compile(r"^(.*)/\s*(\d+)\s*$")
 CARD_NUMBER_PREFIX_PATTERN = re.compile(r"^(.*?)(\d+)$")
@@ -136,7 +142,9 @@ class RawOccurrence:
     variant_name: str  # "" for Base, otherwise the website's Variant Name
     attributes: str
     leftover_name_text: str  # leftover from Primary Player extraction
-    is_base: bool = False    # True when the website's Variant column read "Base"
+    is_base: bool = False         # True when the website's Variant column read "Base"
+    is_letter_variant: bool = False  # True when card number has a trailing letter (1b, 1c)
+    description: str = ""         # from the Add page; used to build lettered variant parallel name
 
 
 def parse_set(set_text: str) -> tuple[str, str, str]:
@@ -280,6 +288,15 @@ def build_raw_occurrence(record: CardRecord, context: dict | None = None) -> tup
     card_number = clean_card_number(record.card_number)
     card_number_prefix = extract_card_number_prefix(card_number)
 
+    # Lettered card numbers (e.g. "1b", "1c") are variants of the same
+    # base card. Strip the letter so they group with the base card (#1)
+    # in merge. The letter suffix is captured in is_letter_variant so
+    # the merge step knows to build a parallel from the description.
+    letter_match = LETTER_VARIANT_PATTERN.match(card_number)
+    is_letter_variant = bool(letter_match)
+    if letter_match:
+        card_number = letter_match.group(1)  # "1b" -> "1"
+
     primary_player = context.get("primary_player", "")
     player, leftover_name_text = split_primary_player(record.name, primary_player)
     player = split_concatenated_names(player)
@@ -304,6 +321,8 @@ def build_raw_occurrence(record: CardRecord, context: dict | None = None) -> tup
         attributes=record.attributes,
         leftover_name_text=leftover_name_text,
         is_base=(record.variant.strip().lower() == "base"),
+        is_letter_variant=is_letter_variant,
+        description=record.description,
     )
     return occurrence, fallback_serial
 
