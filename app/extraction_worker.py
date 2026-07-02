@@ -1,23 +1,27 @@
 """
 ExtractionWorker
 
-Runs the full extraction pipeline on a background thread so the UI
-stays responsive during a long scrape. Supports pause/resume via a
-threading.Event that the browser_manager checks between every team
-fetch and between every page navigation.
+Runs the extraction pipeline on the MAIN thread (no QThread) to satisfy
+Playwright's requirement that all sync API calls happen on the thread
+where sync_playwright().start() was called.
 
-Accumulation: raw rows from each run are appended to
-settings/accumulator.json so the final CSV always reflects everything
-scraped so far across all page-range batches. Clear Accumulated Data
-resets that file.
+The pause_callback passed into browser_manager calls
+QApplication.processEvents() on every invocation so the UI stays alive
+during the scraping loop. If the user clicked Pause, the callback spins
+in a processEvents() loop until Resume is clicked.
+
+The worker is a plain class, not a QThread. MainWindow calls run()
+directly and updates the UI itself via the progress/status signals
+pattern (replaced here with direct statusBar calls via a provided
+callback).
 """
 
 from __future__ import annotations
 
 import os
-import threading
+import time
 
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtWidgets import QApplication
 
 from scraper.browser_manager import BrowserManager
 from exporter.raw_export import write_raw_csv
@@ -29,58 +33,50 @@ from settings.accumulator import load_accumulated, save_accumulated
 from settings.team_cache import load_team_cache, save_team_cache
 
 
-class ExtractionWorker(QThread):
-    """Background thread for the extraction pipeline.
+class ExtractionWorker:
+    """Runs the full extraction pipeline synchronously on the main thread.
 
-    Signals
-    -------
-    progress(str)
-        Status message to show in the status bar while running.
-    finished(int, int, int, str)
-        On success: (new_rows, total_rows, card_count, final_csv_path).
-    error(str)
-        Emitted if an exception kills the run.
-    paused()
-        Emitted when the worker actually stops and waits.
-    resumed()
-        Emitted when the worker continues after a pause.
+    pause() / resume() are called from button click handlers (which fire
+    during QApplication.processEvents() calls inside the pause_callback).
     """
 
-    progress = Signal(str)
-    finished = Signal(int, int, int, str)
-    error = Signal(str)
-    paused = Signal()
-    resumed = Signal()
-
-    def __init__(self, browser_manager: BrowserManager, context: dict) -> None:
-        super().__init__()
+    def __init__(
+        self,
+        browser_manager: BrowserManager,
+        context: dict,
+        on_progress,   # callable(str) -> None
+        on_finished,   # callable(int, int, int, str) -> None
+        on_error,      # callable(str) -> None
+        on_paused,     # callable() -> None
+        on_resumed,    # callable() -> None
+    ) -> None:
         self._browser_manager = browser_manager
         self._context = context
-
-        # When the event is SET the worker runs freely.
-        # When CLEAR it blocks inside _check_pause().
-        self._go = threading.Event()
-        self._go.set()
-
-    # ------------------------------------------------------------------
-    # Pause / resume API (called from the main thread)
-    # ------------------------------------------------------------------
+        self._on_progress = on_progress
+        self._on_finished = on_finished
+        self._on_error = on_error
+        self._on_paused = on_paused
+        self._on_resumed = on_resumed
+        self._paused = False
 
     def pause(self) -> None:
-        self._go.clear()
+        self._paused = True
 
     def resume(self) -> None:
-        self._go.set()
+        self._paused = False
 
-    def _check_pause(self) -> None:
-        if not self._go.is_set():
-            self.paused.emit()
-            self._go.wait()
-            self.resumed.emit()
-
-    # ------------------------------------------------------------------
-    # Thread entry point
-    # ------------------------------------------------------------------
+    def _pause_callback(self) -> None:
+        """Called between every team fetch and every page turn.
+        Processes Qt events to keep the UI alive. If paused, spins here
+        until resume() is called via a button click processed in the loop.
+        """
+        QApplication.processEvents()
+        if self._paused:
+            self._on_paused()
+            while self._paused:
+                QApplication.processEvents()
+                time.sleep(0.05)   # avoid burning the CPU while waiting
+            self._on_resumed()
 
     def run(self) -> None:
         try:
@@ -88,42 +84,40 @@ class ExtractionWorker(QThread):
             start_page = self._context.get("start_page", 1)
             end_page = self._context.get("end_page", 0)
 
-            # Load the persisted team cache so players seen in previous
-            # runs don't need their "Add" page visited again.
             if fetch_team:
                 self._browser_manager._team_cache = load_team_cache()
                 cached_count = len(self._browser_manager._team_cache)
                 if cached_count:
-                    self.progress.emit(
-                        f"Loaded {cached_count:,} cached team lookups from previous runs…"
+                    self._on_progress(
+                        f"Loaded {cached_count:,} cached team lookups — scraping…"
                     )
 
-            page_desc = f"pages {start_page}–{end_page}" if end_page else f"page {start_page} onwards"
-            self.progress.emit(f"Scraping {page_desc}…")
+            page_desc = (
+                f"pages {start_page}–{end_page}" if end_page
+                else f"page {start_page} onwards"
+            )
+            self._on_progress(f"Scraping {page_desc}…")
 
             new_records = self._browser_manager.extract_all_pages(
                 fetch_team=fetch_team,
-                pause_callback=self._check_pause,
+                pause_callback=self._pause_callback,
                 start_page=start_page,
                 end_page=end_page,
             )
 
-            # Save the team cache back so the next run picks up where
-            # this one left off without re-fetching any player.
             if fetch_team:
                 save_team_cache(self._browser_manager._team_cache)
 
-            # Load whatever was accumulated from previous runs and
-            # append this batch so the CSV reflects all runs combined.
             prior_records = load_accumulated()
             all_records = prior_records + new_records
             save_accumulated(all_records)
 
-            self.progress.emit(
-                f"Scraped {len(new_records)} new rows "
-                f"({len(prior_records)} prior + {len(new_records)} this run "
-                f"= {len(all_records)} total) — building checklist…"
+            self._on_progress(
+                f"+{len(new_records):,} new rows "
+                f"({len(prior_records):,} prior + {len(new_records):,} this run "
+                f"= {len(all_records):,} total) — building checklist…"
             )
+            QApplication.processEvents()
 
             raw_path = os.path.abspath("raw_export.csv")
             write_raw_csv(all_records, raw_path)
@@ -136,9 +130,9 @@ class ExtractionWorker(QThread):
             final_path = os.path.abspath("checklist_export.csv")
             write_final_csv(checklist_rows, final_path)
 
-            self.finished.emit(
+            self._on_finished(
                 len(new_records), len(all_records), len(checklist_rows), final_path
             )
 
         except Exception as exc:  # noqa: BLE001
-            self.error.emit(str(exc))
+            self._on_error(str(exc))

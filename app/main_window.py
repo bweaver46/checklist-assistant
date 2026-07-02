@@ -330,8 +330,6 @@ class MainWindow(QMainWindow):
             return
         if self.pause_button.text() == "Pause":
             self._worker.pause()
-            # Update label immediately; the "paused" signal will confirm
-            # once the worker actually stops.
             self.pause_button.setText("Resume")
             self.statusBar().showMessage("Pausing after current fetch… click Resume when ready.")
         else:
@@ -340,7 +338,7 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("Resuming…")
 
     # ------------------------------------------------------------------
-    # Worker signal handlers
+    # Worker callbacks (called from within the scraping loop)
     # ------------------------------------------------------------------
 
     def _on_worker_progress(self, message: str) -> None:
@@ -354,8 +352,7 @@ class MainWindow(QMainWindow):
 
     def _on_worker_finished(self, new_rows: int, total_rows: int, card_count: int, final_path: str) -> None:
         if self._worker is not None:
-            context = self._worker._context
-            save_last_run(context)
+            save_last_run(self._worker._context)
         self._teardown_worker()
         self.statusBar().showMessage(
             f"Done: +{new_rows:,} new rows ({total_rows:,} total accumulated) "
@@ -422,10 +419,13 @@ class MainWindow(QMainWindow):
         self.pause_button.setText("Pause")
         self.pause_button.setVisible(True)
 
-        self._worker = ExtractionWorker(self.browser_manager, context)
-        self._worker.progress.connect(self._on_worker_progress)
-        self._worker.paused.connect(self._on_worker_paused)
-        self._worker.resumed.connect(self._on_worker_resumed)
-        self._worker.finished.connect(self._on_worker_finished)
-        self._worker.error.connect(self._on_worker_error)
-        self._worker.start()
+        self._worker = ExtractionWorker(
+            browser_manager=self.browser_manager,
+            context=context,
+            on_progress=self._on_worker_progress,
+            on_finished=self._on_worker_finished,
+            on_error=self._on_worker_error,
+            on_paused=self._on_worker_paused,
+            on_resumed=self._on_worker_resumed,
+        )
+        self._worker.run()
