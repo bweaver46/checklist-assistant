@@ -4,12 +4,11 @@ Main Window
 The desktop UI shell for Checklist Assistant.
 
 Per design philosophy, this window contains almost no scraping logic.
-Its job is only to respond to button clicks and delegate to BrowserManager.
+Its job is only to respond to button clicks and delegate to BrowserManager
+(for launching) and ExtractionWorker (for the actual extraction pipeline).
 """
 
 from __future__ import annotations
-
-import os
 
 from PySide6.QtWidgets import (
     QMainWindow,
@@ -25,23 +24,12 @@ from PySide6.QtWidgets import (
 )
 
 from scraper.browser_manager import BrowserManager
-from exporter.raw_export import write_raw_csv
-from exporter.convert import convert_all
-from exporter.merge import build_checklist_rows
-from exporter.cleanup import apply_cleanup
-from exporter.final_export import write_final_csv, sort_rows_by_brand
+from app.extraction_worker import ExtractionWorker
 from settings.window_layout import MAIN_WINDOW_POSITION
 from settings.last_run import load_last_run, save_last_run
 
-# BuySportsCards only sells sports cards, so Type is fixed and never
-# asked for. If Checklist Assistant grows to support a non-sports source
-# later, this becomes a per-source value instead of a constant.
 DEFAULT_TYPE = "Sports"
-
-# Fixed width for the extraction prompts, so long explanatory text wraps
-# onto multiple lines instead of stretching the dialog across the screen.
 PROMPT_DIALOG_WIDTH = 420
-
 CHECKLIST_TYPES = ["Set", "Player", "Team"]
 
 
@@ -53,6 +41,7 @@ class MainWindow(QMainWindow):
         self.move(*MAIN_WINDOW_POSITION)
 
         self.browser_manager = BrowserManager()
+        self._worker: ExtractionWorker | None = None
 
         self._build_toolbar()
         self._build_central_widget()
@@ -74,12 +63,21 @@ class MainWindow(QMainWindow):
         self.extract_button.clicked.connect(self.on_extract_checklist)
         layout.addWidget(self.extract_button)
 
+        self.pause_button = QPushButton("Pause")
+        self.pause_button.clicked.connect(self.on_pause_resume)
+        self.pause_button.setVisible(False)
+        layout.addWidget(self.pause_button)
+
         central.setLayout(layout)
         self.setCentralWidget(central)
 
     def _build_status_bar(self) -> None:
         self.setStatusBar(QStatusBar())
         self.statusBar().showMessage("Ready")
+
+    # ------------------------------------------------------------------
+    # Browser launch
+    # ------------------------------------------------------------------
 
     def on_launch_browser(self) -> None:
         self.statusBar().showMessage("Launching browser...")
@@ -92,34 +90,24 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def _prompt_text(self, title: str, label: str, default: str = "") -> tuple[str, bool]:
-        """QInputDialog text prompt with word-wrap, fixed width, and an
-        optional pre-filled default value."""
         dialog = QInputDialog(self)
         dialog.setWindowTitle(title)
         dialog.setLabelText(label)
         dialog.setTextValue(default)
         dialog.setFixedWidth(PROMPT_DIALOG_WIDTH)
-
         for child in dialog.findChildren(QLabel):
             child.setWordWrap(True)
-
         ok = dialog.exec() == QInputDialog.Accepted
         return dialog.textValue(), ok
 
     def _prompt_combo(
         self, title: str, label: str, items: list[str], default: str = ""
     ) -> tuple[str, bool]:
-        """Drop-down selection dialog with an optional pre-selected
-        default item. Uses getItem() to avoid PySide6 enum differences."""
         current = items.index(default) if default in items else 0
-        value, ok = QInputDialog.getItem(
-            self, title, label, items, current, False
-        )
+        value, ok = QInputDialog.getItem(self, title, label, items, current, False)
         return value, ok
 
     def _prompt_fetch_team(self, last_fetch_team: bool = False) -> bool:
-        """Yes/No prompt for per-card team fetching. Defaults the button
-        to whatever was chosen last time."""
         default_button = QMessageBox.Yes if last_fetch_team else QMessageBox.No
         answer = QMessageBox.question(
             self,
@@ -140,13 +128,6 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def _prompt_reuse_or_new(self, last: dict) -> dict | None:
-        """If saved settings exist, ask whether to reuse them. Returns:
-        - the saved context as-is if the user says Yes (run immediately)
-        - None if the user cancels
-        - a sentinel string 'ask' to signal 'show prompts with defaults'
-        We represent that third case by returning the string 'ask' -
-        the caller checks for it.
-        """
         checklist_type = last.get("checklist_type", "Set")
         sport = last.get("sport", "")
         team = last.get("team", "")
@@ -154,7 +135,6 @@ class MainWindow(QMainWindow):
         section = last.get("section", "")
         fetch_team = last.get("fetch_team", False)
 
-        # Build a readable summary of last settings for the prompt.
         lines = [f"Type: {checklist_type}", f"Sport: {sport}"]
         if primary_player:
             lines.append(f"Player: {primary_player}")
@@ -165,12 +145,10 @@ class MainWindow(QMainWindow):
         if section:
             lines.append(f"Section: {section}")
 
-        summary = "\n".join(lines)
-
         answer = QMessageBox.question(
             self,
             "Extract Checklist",
-            f"Use the same settings as last time?\n\n{summary}",
+            f"Use the same settings as last time?\n\n" + "\n".join(lines),
             QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
             QMessageBox.Yes,
         )
@@ -179,23 +157,13 @@ class MainWindow(QMainWindow):
             return None
         if answer == QMessageBox.Yes:
             return last
-        return "ask"  # type: ignore[return-value]  # No -> show prompts with defaults
+        return "ask"  # type: ignore[return-value]
 
     # ------------------------------------------------------------------
     # Full context prompt chains
     # ------------------------------------------------------------------
 
     def _prompt_for_context(self, defaults: dict | None = None) -> dict | None:
-        """Ask for checklist type then conditional questions. If defaults
-        is provided, every prompt is pre-filled with the last-used value
-        so the user can accept or change each one.
-
-        Set:    Sport -> Fetch Team? -> (if No) Team -> Section
-        Player: Sport -> Primary Player -> Team
-        Team:   Sport -> Team
-
-        Returns None if the user cancels on the type or sport prompt.
-        """
         d = defaults or {}
 
         checklist_type, ok = self._prompt_combo(
@@ -208,9 +176,7 @@ class MainWindow(QMainWindow):
             return None
 
         sport, ok = self._prompt_text(
-            "Extract Checklist",
-            "Sport:",
-            default=d.get("sport", ""),
+            "Extract Checklist", "Sport:", default=d.get("sport", "")
         )
         if not ok:
             return None
@@ -223,7 +189,6 @@ class MainWindow(QMainWindow):
             return self._prompt_team_context(sport, d)
 
     def _prompt_set_context(self, sport: str, d: dict) -> dict | None:
-        """Set flow: Fetch Team? -> (if No) Team -> Section."""
         fetch_team = self._prompt_fetch_team(last_fetch_team=d.get("fetch_team", False))
 
         team = ""
@@ -262,14 +227,13 @@ class MainWindow(QMainWindow):
         }
 
     def _prompt_player_context(self, sport: str, d: dict) -> dict | None:
-        """Player flow: Primary Player -> Team."""
         primary_player, ok = self._prompt_text(
             "Extract Checklist",
             "Player name (e.g. Mike Trout) - used to extract the "
             "player's name from BSC's Name field. Any card whose Name "
             "field has other text mixed in (insert titles, other "
             "players, acronyms) keeps just this name as Player and "
-            "moves the rest into Sub_Type.",
+            "moves the rest into Attributes.",
             default=d.get("primary_player", ""),
         )
         if not ok:
@@ -294,7 +258,6 @@ class MainWindow(QMainWindow):
         }
 
     def _prompt_team_context(self, sport: str, d: dict) -> dict | None:
-        """Team flow: Team."""
         team, ok = self._prompt_text(
             "Extract Checklist",
             "Team (optional, leave blank if not applicable):",
@@ -314,15 +277,60 @@ class MainWindow(QMainWindow):
         }
 
     # ------------------------------------------------------------------
+    # Pause / resume
+    # ------------------------------------------------------------------
+
+    def on_pause_resume(self) -> None:
+        if self._worker is None:
+            return
+        if self.pause_button.text() == "Pause":
+            self._worker.pause()
+            # Update label immediately; the "paused" signal will confirm
+            # once the worker actually stops.
+            self.pause_button.setText("Resume")
+            self.statusBar().showMessage("Pausing after current fetch… click Resume when ready.")
+        else:
+            self._worker.resume()
+            self.pause_button.setText("Pause")
+            self.statusBar().showMessage("Resuming…")
+
+    # ------------------------------------------------------------------
+    # Worker signal handlers
+    # ------------------------------------------------------------------
+
+    def _on_worker_progress(self, message: str) -> None:
+        self.statusBar().showMessage(message)
+
+    def _on_worker_paused(self) -> None:
+        self.statusBar().showMessage("Paused — click Resume when ready.")
+
+    def _on_worker_resumed(self) -> None:
+        self.statusBar().showMessage("Resuming…")
+
+    def _on_worker_finished(self, raw_count: int, card_count: int, final_path: str) -> None:
+        if self._worker is not None:
+            context = self._worker._context
+            save_last_run(context)
+        self._teardown_worker()
+        self.statusBar().showMessage(
+            f"Done: {raw_count} rows → {card_count} cards. Saved to {final_path}"
+        )
+
+    def _on_worker_error(self, message: str) -> None:
+        self._teardown_worker()
+        self.statusBar().showMessage(f"Error: {message}")
+
+    def _teardown_worker(self) -> None:
+        self._worker = None
+        self.extract_button.setEnabled(True)
+        self.pause_button.setVisible(False)
+        self.pause_button.setText("Pause")
+
+    # ------------------------------------------------------------------
     # Main extraction handler
     # ------------------------------------------------------------------
 
     def on_extract_checklist(self) -> None:
-        """Run the full extraction pipeline. If saved settings from a
-        prior run exist, offer to reuse them (Yes = run immediately,
-        No = show prompts with those values pre-filled, Cancel = abort).
-        After a successful extraction, saves the settings for next time.
-        """
         last = load_last_run()
 
         if last is not None:
@@ -333,7 +341,7 @@ class MainWindow(QMainWindow):
             elif result == "ask":
                 context = self._prompt_for_context(defaults=last)
             else:
-                context = result  # Yes - use saved settings as-is
+                context = result
         else:
             context = self._prompt_for_context()
 
@@ -341,39 +349,18 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("Extraction cancelled.")
             return
 
-        # Force all lingering dialogs to close and the UI to repaint
-        # before the extraction blocks the main thread.
+        # All dialogs answered - force them off screen before work starts.
         QApplication.processEvents()
 
-        try:
-            self.statusBar().showMessage("Reading rows across all pages...")
-            records = self.browser_manager.extract_all_pages(fetch_team=context["fetch_team"])
+        # Disable Extract and show Pause for the duration of the run.
+        self.extract_button.setEnabled(False)
+        self.pause_button.setText("Pause")
+        self.pause_button.setVisible(True)
 
-            print(f"--- Extracted {len(records)} raw rows ---")
-            for record in records:
-                print(record.to_dict())
-
-            raw_path = os.path.abspath("raw_export.csv")
-            write_raw_csv(records, raw_path)
-
-            occurrences = convert_all(records, context)
-            checklist_rows = build_checklist_rows(occurrences)
-            checklist_rows = apply_cleanup(checklist_rows)
-            checklist_rows = sort_rows_by_brand(checklist_rows)
-
-            final_path = os.path.abspath("checklist_export.csv")
-            write_final_csv(checklist_rows, final_path)
-
-            # Save settings after a successful extraction so they're
-            # available next time.
-            save_last_run(context)
-
-            print(f"Raw CSV written to: {raw_path}")
-            print(f"Final CSV written to: {final_path}")
-
-            self.statusBar().showMessage(
-                f"Done: {len(records)} rows -> {len(checklist_rows)} cards. "
-                f"Saved to {final_path}"
-            )
-        except RuntimeError as exc:
-            self.statusBar().showMessage(str(exc))
+        self._worker = ExtractionWorker(self.browser_manager, context)
+        self._worker.progress.connect(self._on_worker_progress)
+        self._worker.paused.connect(self._on_worker_paused)
+        self._worker.resumed.connect(self._on_worker_resumed)
+        self._worker.finished.connect(self._on_worker_finished)
+        self._worker.error.connect(self._on_worker_error)
+        self._worker.start()

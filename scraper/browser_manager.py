@@ -105,7 +105,12 @@ class BrowserManager:
             values[field_name] = cell.inner_text().strip() if cell.count() else ""
         return CardRecord(**values)
 
-    def read_all_rows(self, selector: str = ROW_SELECTOR, fetch_team: bool = False) -> list[CardRecord]:
+    def read_all_rows(
+        self,
+        selector: str = ROW_SELECTOR,
+        fetch_team: bool = False,
+        pause_callback: callable = None,
+    ) -> list[CardRecord]:
         """Read every row currently displayed on the page.
 
         If fetch_team is True, also clicks into each row's "Add" page
@@ -122,6 +127,10 @@ class BrowserManager:
         extraction run (see self._team_cache) - most rows in a set are
         parallels of the same player, so this avoids re-clicking "Add"
         for every single parallel of a player already looked up.
+
+        pause_callback, if provided, is called after every team fetch so
+        the extraction can be paused mid-page without waiting for a full
+        page turn to finish.
         """
         page = self._require_page()
         records: list[CardRecord] = []
@@ -143,6 +152,10 @@ class BrowserManager:
                     record.team = team
                     if record.name:
                         self._team_cache[record.name] = team
+                    # Check for pause after every real fetch (cache hits
+                    # are instant, so no need to check there).
+                    if pause_callback:
+                        pause_callback()
             records.append(record)
 
         return records
@@ -252,7 +265,12 @@ class BrowserManager:
         page.wait_for_timeout(500)
         page.wait_for_selector(row_selector)
 
-    def extract_all_pages(self, max_pages: int = MAX_PAGES, fetch_team: bool = False) -> list[CardRecord]:
+    def extract_all_pages(
+        self,
+        max_pages: int = MAX_PAGES,
+        fetch_team: bool = False,
+        pause_callback: callable = None,
+    ) -> list[CardRecord]:
         """Read every row across every page until Next is exhausted.
 
         max_pages is a safety cap so a pagination-detection bug can't
@@ -261,6 +279,10 @@ class BrowserManager:
         of turning this on. The per-player team cache is reset here, at
         the start of each fresh extraction run, so a new search never
         reuses team data left over from a previous one.
+
+        pause_callback, if provided, is called between every page turn
+        and forwarded into read_all_rows so pausing can happen mid-page
+        too (after each team fetch).
         """
         if fetch_team:
             self._team_cache = {}
@@ -268,11 +290,18 @@ class BrowserManager:
         all_records: list[CardRecord] = []
         page_num = 1
         while True:
-            all_records.extend(self.read_all_rows(fetch_team=fetch_team))
+            all_records.extend(self.read_all_rows(
+                fetch_team=fetch_team,
+                pause_callback=pause_callback,
+            ))
             if not self.has_next_page() or page_num >= max_pages:
                 break
             self.click_next()
             page_num += 1
+            # Check for pause between pages too, so the user doesn't
+            # have to wait for a full page of team fetches to drain.
+            if pause_callback:
+                pause_callback()
         return all_records
 
     def close(self) -> None:
