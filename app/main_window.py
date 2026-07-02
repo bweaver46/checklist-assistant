@@ -27,6 +27,7 @@ from scraper.browser_manager import BrowserManager
 from app.extraction_worker import ExtractionWorker
 from settings.window_layout import MAIN_WINDOW_POSITION
 from settings.last_run import load_last_run, save_last_run
+from settings.accumulator import clear_accumulated, accumulated_count
 
 DEFAULT_TYPE = "Sports"
 PROMPT_DIALOG_WIDTH = 420
@@ -67,6 +68,10 @@ class MainWindow(QMainWindow):
         self.pause_button.clicked.connect(self.on_pause_resume)
         self.pause_button.setVisible(False)
         layout.addWidget(self.pause_button)
+
+        self.clear_button = QPushButton("Clear Accumulated Data")
+        self.clear_button.clicked.connect(self.on_clear_accumulated)
+        layout.addWidget(self.clear_button)
 
         central.setLayout(layout)
         self.setCentralWidget(central)
@@ -182,11 +187,50 @@ class MainWindow(QMainWindow):
             return None
 
         if checklist_type == "Set":
-            return self._prompt_set_context(sport, d)
+            context = self._prompt_set_context(sport, d)
         elif checklist_type == "Player":
-            return self._prompt_player_context(sport, d)
+            context = self._prompt_player_context(sport, d)
         else:
-            return self._prompt_team_context(sport, d)
+            context = self._prompt_team_context(sport, d)
+
+        if context is None:
+            return None
+
+        return self._prompt_page_range(context, d)
+
+    def _prompt_page_range(self, context: dict, d: dict) -> dict | None:
+        """Ask for start and end page. Both default to last-used values.
+        Leave end page blank to scrape through to the last page."""
+        prior = accumulated_count()
+        prior_note = f" ({prior:,} rows already accumulated)" if prior else ""
+
+        start_str, ok = self._prompt_text(
+            "Extract Checklist",
+            f"Start page (leave blank for page 1){prior_note}:",
+            default=str(d.get("start_page", 1)) if d.get("start_page", 1) > 1 else "",
+        )
+        if not ok:
+            return None
+        try:
+            start_page = max(1, int(start_str.strip())) if start_str.strip() else 1
+        except ValueError:
+            start_page = 1
+
+        end_str, ok = self._prompt_text(
+            "Extract Checklist",
+            "End page (leave blank to scrape all remaining pages):",
+            default=str(d.get("end_page", "")) if d.get("end_page", 0) else "",
+        )
+        if not ok:
+            return None
+        try:
+            end_page = max(0, int(end_str.strip())) if end_str.strip() else 0
+        except ValueError:
+            end_page = 0
+
+        context["start_page"] = start_page
+        context["end_page"] = end_page
+        return context
 
     def _prompt_set_context(self, sport: str, d: dict) -> dict | None:
         fetch_team = self._prompt_fetch_team(last_fetch_team=d.get("fetch_team", False))
@@ -307,14 +351,33 @@ class MainWindow(QMainWindow):
     def _on_worker_resumed(self) -> None:
         self.statusBar().showMessage("Resuming…")
 
-    def _on_worker_finished(self, raw_count: int, card_count: int, final_path: str) -> None:
+    def _on_worker_finished(self, new_rows: int, total_rows: int, card_count: int, final_path: str) -> None:
         if self._worker is not None:
             context = self._worker._context
             save_last_run(context)
         self._teardown_worker()
         self.statusBar().showMessage(
-            f"Done: {raw_count} rows → {card_count} cards. Saved to {final_path}"
+            f"Done: +{new_rows:,} new rows ({total_rows:,} total accumulated) "
+            f"→ {card_count:,} cards. Saved to {final_path}"
         )
+
+    def on_clear_accumulated(self) -> None:
+        count = accumulated_count()
+        if count == 0:
+            self.statusBar().showMessage("No accumulated data to clear.")
+            return
+        answer = QMessageBox.question(
+            self,
+            "Clear Accumulated Data",
+            f"Clear all {count:,} accumulated rows?\n\n"
+            "This removes the data from all previous page-range runs. "
+            "The next extraction will start fresh.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer == QMessageBox.Yes:
+            clear_accumulated()
+            self.statusBar().showMessage(f"Cleared {count:,} accumulated rows.")
 
     def _on_worker_error(self, message: str) -> None:
         self._teardown_worker()

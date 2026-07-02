@@ -8,6 +8,7 @@ __pycache__/
 *.log
 settings/last_run.json
 settings/brand_set_exceptions.csv
+settings/accumulator.json
 raw_export.csv
 checklist_export.csv
 

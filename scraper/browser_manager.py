@@ -265,43 +265,90 @@ class BrowserManager:
         page.wait_for_timeout(500)
         page.wait_for_selector(row_selector)
 
+    def navigate_to_page(
+        self,
+        target: int,
+        nav_selector: str = PAGINATION_NAV_SELECTOR,
+        row_selector: str = ROW_SELECTOR,
+    ) -> None:
+        """Navigate to a specific page number by clicking its button in
+        the pagination nav. Raises RuntimeError if the button for that
+        page isn't visible - BSC's sliding window may not show every
+        page number at once, so callers should ensure the target is
+        reachable from the current position."""
+        current, _ = self._pagination_status(nav_selector)
+        if current == target:
+            return  # already there
+
+        page = self._require_page()
+        nav = page.locator(nav_selector)
+        buttons = nav.locator("button")
+        count = buttons.count()
+        for i in range(count):
+            button = buttons.nth(i)
+            if button.inner_text().strip() == str(target):
+                button.click()
+                page.wait_for_timeout(500)
+                page.wait_for_selector(row_selector)
+                return
+
+        raise RuntimeError(
+            f"Page {target} button not found in pagination nav. "
+            f"BSC only shows a window of page numbers at a time - "
+            f"navigate closer to page {target} in the browser first, "
+            f"then run the extraction."
+        )
+
     def extract_all_pages(
         self,
         max_pages: int = MAX_PAGES,
         fetch_team: bool = False,
         pause_callback: callable = None,
+        start_page: int = 1,
+        end_page: int = 0,
     ) -> list[CardRecord]:
-        """Read every row across every page until Next is exhausted.
+        """Read every row across a range of pages.
 
-        max_pages is a safety cap so a pagination-detection bug can't
-        spin forever against the live site. fetch_team is passed
-        through to read_all_rows - see its docstring for the real cost
-        of turning this on. The per-player team cache is reset here, at
-        the start of each fresh extraction run, so a new search never
-        reuses team data left over from a previous one.
-
-        pause_callback, if provided, is called between every page turn
-        and forwarded into read_all_rows so pausing can happen mid-page
-        too (after each team fetch).
+        start_page: first page to scrape (1-based). If > 1 the browser
+            navigates to that page first by clicking its number in the
+            pagination nav.
+        end_page: last page to scrape, inclusive. 0 (default) means
+            scrape until the last page.
+        max_pages: hard safety cap on total pages visited regardless of
+            end_page, so a bug can't spin forever.
+        fetch_team: see read_all_rows docstring.
+        pause_callback: called between every team fetch and every page
+            turn so the run can be paused mid-scrape.
         """
         if fetch_team:
             self._team_cache = {}
 
+        if start_page > 1:
+            self.navigate_to_page(start_page)
+
         all_records: list[CardRecord] = []
-        page_num = 1
+        current_page = start_page
+        pages_visited = 0
+
         while True:
             all_records.extend(self.read_all_rows(
                 fetch_team=fetch_team,
                 pause_callback=pause_callback,
             ))
-            if not self.has_next_page() or page_num >= max_pages:
+            pages_visited += 1
+
+            at_end_page = end_page > 0 and current_page >= end_page
+            at_last_page = not self.has_next_page()
+            at_cap = pages_visited >= max_pages
+
+            if at_end_page or at_last_page or at_cap:
                 break
+
             self.click_next()
-            page_num += 1
-            # Check for pause between pages too, so the user doesn't
-            # have to wait for a full page of team fetches to drain.
+            current_page += 1
             if pause_callback:
                 pause_callback()
+
         return all_records
 
     def close(self) -> None:
