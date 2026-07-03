@@ -357,6 +357,7 @@ class BrowserManager:
         pause_callback: callable = None,
         start_page: int = 1,
         end_page: int = 0,
+        on_status: callable = None,
     ) -> list[CardRecord]:
         """Read every row across a range of pages.
 
@@ -376,6 +377,8 @@ class BrowserManager:
         # lookups from previous runs. Do NOT reset it here.
 
         if start_page > 1:
+            if on_status:
+                on_status(f"Navigating to page {start_page}…")
             self.navigate_to_page(start_page)
 
         all_records: list[CardRecord] = []
@@ -383,11 +386,18 @@ class BrowserManager:
         pages_visited = 0
 
         while True:
-            all_records.extend(self.read_all_rows(
+            if on_status:
+                on_status(f"Reading page {current_page}… ({len(all_records):,} rows so far)")
+
+            page_records = self.read_all_rows(
                 fetch_team=fetch_team,
                 pause_callback=pause_callback,
-            ))
+            )
+            all_records.extend(page_records)
             pages_visited += 1
+
+            if on_status:
+                on_status(f"Page {current_page}: {len(page_records)} rows — {len(all_records):,} total")
 
             at_end_page = end_page > 0 and current_page >= end_page
             at_last_page = not self.has_next_page()

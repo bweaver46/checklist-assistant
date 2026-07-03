@@ -111,6 +111,7 @@ class ExtractionWorker:
                 pause_callback=self._pause_callback,
                 start_page=start_page,
                 end_page=end_page,
+                on_status=self._on_progress,
             )
 
             if fetch_team:
