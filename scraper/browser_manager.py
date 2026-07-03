@@ -285,32 +285,66 @@ class BrowserManager:
         nav_selector: str = PAGINATION_NAV_SELECTOR,
         row_selector: str = ROW_SELECTOR,
     ) -> None:
-        """Navigate to a specific page number by clicking its button in
-        the pagination nav. Raises RuntimeError if the button for that
-        page isn't visible - BSC's sliding window may not show every
-        page number at once, so callers should ensure the target is
-        reachable from the current position."""
+        """Navigate to a specific page number.
+
+        Strategy (tried in order):
+        1. Already there - return immediately.
+        2. URL parameter - if the current URL has a 'page=' parameter,
+           replace its value and navigate directly. Most reliable.
+        3. Pagination button - if a button for the target page is visible
+           in BSC's sliding nav window, click it.
+        4. Sequential Next - click Next one step at a time until the
+           target page button becomes visible, then click it. Works from
+           any starting position but is slow for large jumps.
+        """
+        page = self._require_page()
         current, _ = self._pagination_status(nav_selector)
         if current == target:
-            return  # already there
+            return
 
-        page = self._require_page()
-        nav = page.locator(nav_selector)
-        buttons = nav.locator("button")
-        count = buttons.count()
-        for i in range(count):
-            button = buttons.nth(i)
-            if button.inner_text().strip() == str(target):
-                button.click()
-                page.wait_for_timeout(500)
-                page.wait_for_selector(row_selector)
+        # --- Strategy 2: URL parameter ---
+        current_url = page.url
+        if "page=" in current_url:
+            import re as _re
+            new_url = _re.sub(r'page=\d+', f'page={target}', current_url)
+            page.goto(new_url)
+            page.wait_for_selector(row_selector, timeout=15000)
+            page.wait_for_timeout(300)
+            return
+
+        # --- Strategy 3: Pagination button visible right now ---
+        def try_button() -> bool:
+            nav = page.locator(nav_selector)
+            buttons = nav.locator("button")
+            count = buttons.count()
+            for i in range(count):
+                button = buttons.nth(i)
+                if button.inner_text().strip() == str(target):
+                    button.click()
+                    page.wait_for_timeout(500)
+                    page.wait_for_selector(row_selector)
+                    return True
+            return False
+
+        if try_button():
+            return
+
+        # --- Strategy 4: Sequential Next until target button appears ---
+        for _ in range(MAX_PAGES):
+            cur, _ = self._pagination_status(nav_selector)
+            if cur is not None and cur >= target:
+                return  # overshot or landed on it
+            if try_button():
                 return
+            if not self.has_next_page():
+                break
+            self.click_next()
+            page.wait_for_timeout(300)
 
         raise RuntimeError(
-            f"Page {target} button not found in pagination nav. "
-            f"BSC only shows a window of page numbers at a time - "
-            f"navigate closer to page {target} in the browser first, "
-            f"then run the extraction."
+            f"Could not navigate to page {target}. "
+            f"Current URL has no 'page=' parameter and the sequential "
+            f"nav search exhausted all pages."
         )
 
     def extract_all_pages(
