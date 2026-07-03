@@ -258,13 +258,17 @@ class BrowserManager:
         nav_selector: str = PAGINATION_NAV_SELECTOR,
         row_selector: str = ROW_SELECTOR,
     ) -> None:
-        """Click the button for current_page + 1 and wait for the table to reload."""
+        """Advance to the next page. Tries the numbered button first; if
+        it's hidden in BSC's sliding-window ellipsis, falls back to URL
+        navigation so a run never stalls mid-set."""
         page = self._require_page()
         current, _ = self._pagination_status(nav_selector)
         if current is None:
             raise RuntimeError("Could not determine current page from pagination nav.")
 
         next_page = current + 1
+
+        # Try the numbered button first (fast, no page reload).
         nav = page.locator(nav_selector)
         buttons = nav.locator("button")
         count = buttons.count()
@@ -272,12 +276,29 @@ class BrowserManager:
             button = buttons.nth(i)
             if button.inner_text().strip() == str(next_page):
                 button.click()
-                break
-        else:
-            raise RuntimeError(f"Could not find a page button for page {next_page}.")
+                page.wait_for_timeout(500)
+                page.wait_for_selector(row_selector)
+                return
 
-        page.wait_for_timeout(500)
-        page.wait_for_selector(row_selector)
+        # Button not visible (hidden in BSC's "..." ellipsis) - navigate
+        # via URL instead, same as navigate_to_page does.
+        current_url = page.url
+        url_match = re.search(r'(?<=[?&])p=\d+', current_url)
+        if url_match:
+            new_url = (
+                current_url[:url_match.start()]
+                + f"p={next_page}"
+                + current_url[url_match.end():]
+            )
+            page.goto(new_url)
+            page.wait_for_selector(row_selector, timeout=15000)
+            page.wait_for_timeout(300)
+            return
+
+        raise RuntimeError(
+            f"Could not advance to page {next_page}: button not visible "
+            f"and URL has no p= parameter to modify."
+        )
 
     def navigate_to_page(
         self,
