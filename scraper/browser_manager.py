@@ -401,6 +401,12 @@ class BrowserManager:
             if on_status:
                 on_status(f"Navigating to page {start_page}…")
             self.navigate_to_page(start_page)
+            if on_status:
+                diag_current, diag_highest = self._pagination_status()
+                on_status(
+                    f"[DIAG] after navigate_to_page({start_page}): "
+                    f"current={diag_current}, highest={diag_highest}"
+                )
 
         all_records: list[CardRecord] = []
         current_page = start_page
@@ -425,6 +431,14 @@ class BrowserManager:
             at_cap = pages_visited >= max_pages
 
             if at_end_page or at_last_page or at_cap:
+                if on_status:
+                    diag_current, diag_highest = self._pagination_status()
+                    on_status(
+                        f"[DIAG] stopping after page {current_page} — "
+                        f"reason: end_page={at_end_page}, last_page={at_last_page}, "
+                        f"cap={at_cap} | pagination sees current={diag_current}, "
+                        f"highest={diag_highest}, end_page_setting={end_page}"
+                    )
                 break
 
             self.click_next()
