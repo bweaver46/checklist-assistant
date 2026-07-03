@@ -118,6 +118,20 @@ class ExtractionWorker:
 
             prior_records = load_accumulated()
             all_records = prior_records + new_records
+
+            # Deduplicate raw rows so overlapping page ranges (e.g. re-running
+            # page 999 to make sure it completed) don't produce duplicate card
+            # rows in the final CSV. Key is the full field tuple - two rows are
+            # only duplicates if every field matches exactly.
+            seen: set[tuple] = set()
+            deduped: list = []
+            for r in all_records:
+                key = (r.name, r.card_number, r.set, r.variant, r.variant_name, r.attributes)
+                if key not in seen:
+                    seen.add(key)
+                    deduped.append(r)
+            all_records = deduped
+
             save_accumulated(all_records)
 
             self._on_progress(
