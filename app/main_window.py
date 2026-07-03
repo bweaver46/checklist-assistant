@@ -187,10 +187,11 @@ class MainWindow(QMainWindow):
         prior = accumulated_count()
         prior_note = f" ({prior:,} rows already accumulated)" if prior else ""
 
+        last_start = d.get("start_page", 1)
         start_str, ok = self._prompt_text(
             "Extract Checklist",
             f"Start page (leave blank for page 1){prior_note}:",
-            default=str(d.get("start_page", 1)) if d.get("start_page", 1) > 1 else "",
+            default=str(last_start) if last_start > 1 else "",
         )
         if not ok:
             return None
@@ -199,16 +200,25 @@ class MainWindow(QMainWindow):
         except ValueError:
             start_page = 1
 
+        # Only pre-fill end page if it was greater than the new start page.
+        # A stale end_page <= start_page is always wrong and would stop
+        # the run immediately after one page.
+        last_end = d.get("end_page", 0)
+        end_default = str(last_end) if last_end and last_end > start_page else ""
         end_str, ok = self._prompt_text(
             "Extract Checklist",
             "End page (leave blank to scrape all remaining pages):",
-            default=str(d.get("end_page", "")) if d.get("end_page", 0) else "",
+            default=end_default,
         )
         if not ok:
             return None
         try:
             end_page = max(0, int(end_str.strip())) if end_str.strip() else 0
         except ValueError:
+            end_page = 0
+
+        # Safety: if end_page ended up <= start_page, treat as no limit.
+        if 0 < end_page < start_page:
             end_page = 0
 
         context["start_page"] = start_page
