@@ -303,10 +303,13 @@ class BrowserManager:
             return
 
         # --- Strategy 2: URL parameter ---
+        # BSC uses 'p=N' (not 'page=N') as the pagination query param.
+        # Match it only when preceded by '?' or '&' so we don't
+        # accidentally clobber a param like 'sport=' or 'setName[]='.
         current_url = page.url
-        if "page=" in current_url:
-            import re as _re
-            new_url = _re.sub(r'page=\d+', f'page={target}', current_url)
+        url_match = re.search(r'(?<=[?&])p=\d+', current_url)
+        if url_match:
+            new_url = current_url[:url_match.start()] + f"p={target}" + current_url[url_match.end():]
             page.goto(new_url)
             page.wait_for_selector(row_selector, timeout=15000)
             page.wait_for_timeout(300)
