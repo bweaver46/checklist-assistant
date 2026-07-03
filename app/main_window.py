@@ -109,25 +109,35 @@ class MainWindow(QMainWindow):
     def _prompt_combo(
         self, title: str, label: str, items: list[str], default: str = ""
     ) -> tuple[str, bool]:
-        current = items.index(default) if default in items else 0
-        value, ok = QInputDialog.getItem(self, title, label, items, current, False)
-        return value, ok
+        dialog = QInputDialog(self)
+        dialog.setWindowTitle(title)
+        dialog.setLabelText(label)
+        dialog.setInputMode(QInputDialog.InputMode.ComboBoxInput)
+        dialog.setComboBoxItems(items)
+        if default in items:
+            dialog.setComboBoxCurrentIndex(items.index(default))
+        dialog.setFixedWidth(PROMPT_DIALOG_WIDTH)
+        for child in dialog.findChildren(QLabel):
+            child.setWordWrap(True)
+        ok = dialog.exec() == QInputDialog.DialogCode.Accepted
+        return dialog.textValue(), ok
 
     def _prompt_fetch_team(self, last_fetch_team: bool = False) -> bool:
         default_button = QMessageBox.Yes if last_fetch_team else QMessageBox.No
-        answer = QMessageBox.question(
-            self,
-            "Extract Checklist",
+        box = QMessageBox(self)
+        box.setWindowTitle("Extract Checklist")
+        box.setText(
             "Fetch Team per card from BuySportsCards?\n\n"
             "This is MUCH slower - one extra page visit per card "
             "instead of one per ~50 cards. Worth it for a search that "
             "spans multiple teams (a full set). Not worth it if this "
             "search is all one team/player - choose No and just type "
-            "the team once instead.",
-            QMessageBox.Yes | QMessageBox.No,
-            default_button,
+            "the team once instead."
         )
-        return answer == QMessageBox.Yes
+        box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        box.setDefaultButton(default_button)
+        box.setFixedWidth(PROMPT_DIALOG_WIDTH)
+        return box.exec() == QMessageBox.Yes
 
     # ------------------------------------------------------------------
     # "Use same settings?" gate
@@ -151,13 +161,13 @@ class MainWindow(QMainWindow):
         if section:
             lines.append(f"Section: {section}")
 
-        answer = QMessageBox.question(
-            self,
-            "Extract Checklist",
-            f"Use the same settings as last time?\n\n" + "\n".join(lines),
-            QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
-            QMessageBox.Yes,
-        )
+        box = QMessageBox(self)
+        box.setWindowTitle("Extract Checklist")
+        box.setText(f"Use the same settings as last time?\n\n" + "\n".join(lines))
+        box.setStandardButtons(QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
+        box.setDefaultButton(QMessageBox.Yes)
+        box.setFixedWidth(PROMPT_DIALOG_WIDTH)
+        answer = box.exec()
 
         if answer == QMessageBox.Cancel:
             return None
@@ -364,16 +374,17 @@ class MainWindow(QMainWindow):
         if count == 0:
             self.statusBar().showMessage("No accumulated data to clear.")
             return
-        answer = QMessageBox.question(
-            self,
-            "Clear Accumulated Data",
+        box = QMessageBox(self)
+        box.setWindowTitle("Clear Accumulated Data")
+        box.setText(
             f"Clear all {count:,} accumulated rows?\n\n"
             "This removes the data from all previous page-range runs. "
-            "The next extraction will start fresh.",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No,
+            "The next extraction will start fresh."
         )
-        if answer == QMessageBox.Yes:
+        box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        box.setDefaultButton(QMessageBox.No)
+        box.setFixedWidth(PROMPT_DIALOG_WIDTH)
+        if box.exec() == QMessageBox.Yes:
             clear_accumulated()
             clear_team_cache()
             self.statusBar().showMessage(f"Cleared {count:,} accumulated rows and team cache.")
@@ -403,7 +414,9 @@ class MainWindow(QMainWindow):
             elif result == "ask":
                 context = self._prompt_for_context(defaults=last)
             else:
-                context = result
+                # "Yes" reuses all settings but ALWAYS asks page range -
+                # start/end page change every run by definition.
+                context = self._prompt_page_range(result, result)
         else:
             context = self._prompt_for_context()
 
