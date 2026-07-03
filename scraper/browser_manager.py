@@ -239,7 +239,7 @@ class BrowserManager:
         highest = 0
         for i in range(count):
             button = buttons.nth(i)
-            text = button.inner_text().strip()
+            text = button.inner_text().strip().replace(",", "")  # "1,000" -> "1000"
             if text.isdigit():
                 num = int(text)
                 highest = max(highest, num)
@@ -274,7 +274,7 @@ class BrowserManager:
         count = buttons.count()
         for i in range(count):
             button = buttons.nth(i)
-            if button.inner_text().strip() == str(next_page):
+            if button.inner_text().strip().replace(",", "") == str(next_page):
                 button.click()
                 page.wait_for_timeout(500)
                 page.wait_for_selector(row_selector)
@@ -343,7 +343,7 @@ class BrowserManager:
             count = buttons.count()
             for i in range(count):
                 button = buttons.nth(i)
-                if button.inner_text().strip() == str(target):
+                if button.inner_text().strip().replace(",", "") == str(target):
                     button.click()
                     page.wait_for_timeout(500)
                     page.wait_for_selector(row_selector)
