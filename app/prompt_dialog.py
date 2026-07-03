@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QComboBox, QPushButton, QSizePolicy,
+    QComboBox, QPushButton,
 )
 from PySide6.QtCore import Qt
 
@@ -22,81 +22,15 @@ class PromptDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setFixedWidth(DIALOG_WIDTH)
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
 
         self._layout = QVBoxLayout(self)
         self._layout.setSpacing(10)
         self._layout.setContentsMargins(16, 16, 16, 16)
 
-        self._label = QLabel(label)
-        self._label.setWordWrap(True)
-        self._label.setFixedWidth(DIALOG_WIDTH - 32)
-        self._layout.addWidget(self._label)
-
-        self._input: QLineEdit | None = None
-        self._combo: QComboBox | None = None
-        self.result_text: str = ""
-        self.accepted_flag: bool = False
-
-    # ------------------------------------------------------------------
-    # Factory helpers
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def text(parent, title: str, label: str, default: str = "") -> tuple[str, bool]:
-        d = PromptDialog(parent, title, label)
-        d._input = QLineEdit(default)
-        d._layout.addWidget(d._input)
-        d._add_ok_cancel()
-        if d.exec() == QDialog.Accepted:
-            return d._input.text(), True
-        return default, False
-
-    @staticmethod
-    def combo(parent, title: str, label: str,
-              items: list[str], default: str = "") -> tuple[str, bool]:
-        d = PromptDialog(parent, title, label)
-        d._combo = QComboBox()
-        d._combo.addItems(items)
-        if default in items:
-            d._combo.setCurrentIndex(items.index(default))
-        d._layout.addWidget(d._combo)
-        d._add_ok_cancel()
-        if d.exec() == QDialog.Accepted:
-            return d._combo.currentText(), True
-        return default, False
-
-    @staticmethod
-    def question(parent, title: str, label: str,
-                 buttons: list[str], default: str) -> str:
-        """Returns the label of whichever button was clicked."""
-        d = PromptDialog(parent, title, label)
-        btn_row = QHBoxLayout()
-        btn_row.addStretch()
-        result_holder: list[str] = [default]
-
-        for name in buttons:
-            btn = QPushButton(name)
-            btn.setDefault(name == default)
-            btn.setAutoDefault(name == default)
-            captured = name
-
-            def make_handler(val):
-                def handler():
-                    result_holder[0] = val
-                    d.accept()
-                return handler
-
-            btn.clicked.connect(make_handler(captured))
-            btn_row.addWidget(btn)
-
-        d._layout.addLayout(btn_row)
-        d.exec()
-        return result_holder[0]
-
-    # ------------------------------------------------------------------
-    # Internal
-    # ------------------------------------------------------------------
+        lbl = QLabel(label)
+        lbl.setWordWrap(True)
+        lbl.setMaximumWidth(DIALOG_WIDTH - 32)
+        self._layout.addWidget(lbl)
 
     def _add_ok_cancel(self) -> None:
         row = QHBoxLayout()
@@ -109,3 +43,57 @@ class PromptDialog(QDialog):
         row.addWidget(ok)
         row.addWidget(cancel)
         self._layout.addLayout(row)
+
+    # ------------------------------------------------------------------
+    # Factory helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def text(parent, title: str, label: str, default: str = "") -> tuple[str, bool]:
+        d = PromptDialog(parent, title, label)
+        field = QLineEdit(default)
+        d._layout.addWidget(field)
+        d._add_ok_cancel()
+        ok = d.exec()
+        # PySide6 exec() returns int; 1 == Accepted across all versions
+        return field.text(), bool(ok)
+
+    @staticmethod
+    def combo(parent, title: str, label: str,
+              items: list[str], default: str = "") -> tuple[str, bool]:
+        d = PromptDialog(parent, title, label)
+        box = QComboBox()
+        box.addItems(items)
+        if default in items:
+            box.setCurrentIndex(items.index(default))
+        d._layout.addWidget(box)
+        d._add_ok_cancel()
+        ok = d.exec()
+        return box.currentText(), bool(ok)
+
+    @staticmethod
+    def question(parent, title: str, label: str,
+                 buttons: list[str], default: str) -> str:
+        """Returns the label of whichever button was clicked."""
+        d = PromptDialog(parent, title, label)
+        result_holder: list[str] = [default]
+
+        row = QHBoxLayout()
+        row.addStretch()
+        for name in buttons:
+            btn = QPushButton(name)
+            btn.setDefault(name == default)
+            btn.setAutoDefault(name == default)
+
+            def make_handler(val: str):
+                def handler():
+                    result_holder[0] = val
+                    d.accept()
+                return handler
+
+            btn.clicked.connect(make_handler(name))
+            row.addWidget(btn)
+
+        d._layout.addLayout(row)
+        d.exec()
+        return result_holder[0]
