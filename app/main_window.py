@@ -17,11 +17,9 @@ from PySide6.QtWidgets import (
     QPushButton,
     QToolBar,
     QStatusBar,
-    QInputDialog,
-    QLabel,
-    QMessageBox,
     QApplication,
 )
+from app.prompt_dialog import PromptDialog
 
 from scraper.browser_manager import BrowserManager
 from app.extraction_worker import ExtractionWorker
@@ -31,7 +29,6 @@ from settings.accumulator import clear_accumulated, accumulated_count
 from settings.team_cache import clear_team_cache
 
 DEFAULT_TYPE = "Sports"
-PROMPT_DIALOG_WIDTH = 420
 CHECKLIST_TYPES = ["Set", "Player", "Team"]
 
 
@@ -96,48 +93,26 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def _prompt_text(self, title: str, label: str, default: str = "") -> tuple[str, bool]:
-        dialog = QInputDialog(self)
-        dialog.setWindowTitle(title)
-        dialog.setLabelText(label)
-        dialog.setTextValue(default)
-        dialog.setFixedWidth(PROMPT_DIALOG_WIDTH)
-        for child in dialog.findChildren(QLabel):
-            child.setWordWrap(True)
-        ok = dialog.exec() == QInputDialog.Accepted
-        return dialog.textValue(), ok
+        return PromptDialog.text(self, title, label, default)
 
     def _prompt_combo(
         self, title: str, label: str, items: list[str], default: str = ""
     ) -> tuple[str, bool]:
-        dialog = QInputDialog(self)
-        dialog.setWindowTitle(title)
-        dialog.setLabelText(label)
-        dialog.setInputMode(QInputDialog.InputMode.ComboBoxInput)
-        dialog.setComboBoxItems(items)
-        if default in items:
-            dialog.setComboBoxCurrentIndex(items.index(default))
-        dialog.setFixedWidth(PROMPT_DIALOG_WIDTH)
-        for child in dialog.findChildren(QLabel):
-            child.setWordWrap(True)
-        ok = dialog.exec() == QInputDialog.DialogCode.Accepted
-        return dialog.textValue(), ok
+        return PromptDialog.combo(self, title, label, items, default)
 
     def _prompt_fetch_team(self, last_fetch_team: bool = False) -> bool:
-        default_button = QMessageBox.Yes if last_fetch_team else QMessageBox.No
-        box = QMessageBox(self)
-        box.setWindowTitle("Extract Checklist")
-        box.setText(
+        default = "Yes" if last_fetch_team else "No"
+        answer = PromptDialog.question(
+            self, "Extract Checklist",
             "Fetch Team per card from BuySportsCards?\n\n"
             "This is MUCH slower - one extra page visit per card "
             "instead of one per ~50 cards. Worth it for a search that "
             "spans multiple teams (a full set). Not worth it if this "
             "search is all one team/player - choose No and just type "
-            "the team once instead."
+            "the team once instead.",
+            ["Yes", "No"], default,
         )
-        box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        box.setDefaultButton(default_button)
-        box.setFixedWidth(PROMPT_DIALOG_WIDTH)
-        return box.exec() == QMessageBox.Yes
+        return answer == "Yes"
 
     # ------------------------------------------------------------------
     # "Use same settings?" gate
@@ -161,17 +136,14 @@ class MainWindow(QMainWindow):
         if section:
             lines.append(f"Section: {section}")
 
-        box = QMessageBox(self)
-        box.setWindowTitle("Extract Checklist")
-        box.setText(f"Use the same settings as last time?\n\n" + "\n".join(lines))
-        box.setStandardButtons(QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
-        box.setDefaultButton(QMessageBox.Yes)
-        box.setFixedWidth(PROMPT_DIALOG_WIDTH)
-        answer = box.exec()
-
-        if answer == QMessageBox.Cancel:
+        answer = PromptDialog.question(
+            self, "Extract Checklist",
+            "Use the same settings as last time?\n\n" + "\n".join(lines),
+            ["Yes", "No", "Cancel"], "Yes",
+        )
+        if answer == "Cancel":
             return None
-        if answer == QMessageBox.Yes:
+        if answer == "Yes":
             return last
         return "ask"  # type: ignore[return-value]
 
@@ -374,17 +346,14 @@ class MainWindow(QMainWindow):
         if count == 0:
             self.statusBar().showMessage("No accumulated data to clear.")
             return
-        box = QMessageBox(self)
-        box.setWindowTitle("Clear Accumulated Data")
-        box.setText(
+        answer = PromptDialog.question(
+            self, "Clear Accumulated Data",
             f"Clear all {count:,} accumulated rows?\n\n"
             "This removes the data from all previous page-range runs. "
-            "The next extraction will start fresh."
+            "The next extraction will start fresh.",
+            ["Yes", "No"], "No",
         )
-        box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        box.setDefaultButton(QMessageBox.No)
-        box.setFixedWidth(PROMPT_DIALOG_WIDTH)
-        if box.exec() == QMessageBox.Yes:
+        if answer == "Yes":
             clear_accumulated()
             clear_team_cache()
             self.statusBar().showMessage(f"Cleared {count:,} accumulated rows and team cache.")
