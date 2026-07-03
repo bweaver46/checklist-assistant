@@ -18,7 +18,6 @@ callback).
 
 from __future__ import annotations
 
-import os
 import time
 
 from PySide6.QtWidgets import QApplication
@@ -31,6 +30,7 @@ from exporter.cleanup import apply_cleanup
 from exporter.final_export import write_final_csv, sort_rows_by_brand
 from settings.accumulator import load_accumulated, save_accumulated
 from settings.team_cache import load_team_cache, save_team_cache
+from settings.output_naming import raw_export_path, final_export_path, DEFAULT_NAME
 
 
 class ExtractionWorker:
@@ -142,7 +142,16 @@ class ExtractionWorker:
             )
             QApplication.processEvents()
 
-            raw_path = os.path.abspath("raw_export.csv")
+            # output_name was already resolved to a unique, sanitized
+            # name when the user was prompted (see main_window._prompt_for_context).
+            # Every page-range chunk of the SAME set reuses this exact
+            # name (persisted in the context/last_run), so chunks keep
+            # rebuilding the same pair of files as intended. Starting a
+            # genuinely new set always goes through that prompt again
+            # and gets a freshly-resolved, non-colliding name.
+            output_name = self._context.get("output_name") or DEFAULT_NAME
+
+            raw_path = raw_export_path(output_name)
             write_raw_csv(all_records, raw_path)
 
             occurrences = convert_all(all_records, self._context)
@@ -150,7 +159,7 @@ class ExtractionWorker:
             checklist_rows = apply_cleanup(checklist_rows)
             checklist_rows = sort_rows_by_brand(checklist_rows)
 
-            final_path = os.path.abspath("checklist_export.csv")
+            final_path = final_export_path(output_name)
             write_final_csv(checklist_rows, final_path)
 
             self._on_finished(

@@ -27,6 +27,7 @@ from settings.window_layout import MAIN_WINDOW_POSITION
 from settings.last_run import load_last_run, save_last_run
 from settings.accumulator import clear_accumulated, accumulated_count
 from settings.team_cache import clear_team_cache
+from settings.output_naming import resolve_unique_output_name
 
 DEFAULT_TYPE = "Sports"
 CHECKLIST_TYPES = ["Set", "Player", "Team"]
@@ -125,8 +126,11 @@ class MainWindow(QMainWindow):
         primary_player = last.get("primary_player", "")
         section = last.get("section", "")
         fetch_team = last.get("fetch_team", False)
+        output_name = last.get("output_name", "")
 
         lines = [f"Type: {checklist_type}", f"Sport: {sport}"]
+        if output_name:
+            lines.insert(0, f"Export name: {output_name}")
         if primary_player:
             lines.append(f"Player: {primary_player}")
         if team:
@@ -154,6 +158,21 @@ class MainWindow(QMainWindow):
     def _prompt_for_context(self, defaults: dict | None = None) -> dict | None:
         d = defaults or {}
 
+        output_name_raw, ok = self._prompt_text(
+            "Extract Checklist",
+            "Name this export (e.g. '2026 Topps Chrome Baseball').\n\n"
+            "This names the two output files. A new file pair is always "
+            "created for this name, so a previous set's export is never "
+            "overwritten. Leave blank to use a generic name.\n\n"
+            "(If you're continuing THIS SAME set across multiple "
+            "page-range runs, answer 'Yes' at the reuse-settings prompt "
+            "instead of getting this question again.)",
+            default="",
+        )
+        if not ok:
+            return None
+        output_name = resolve_unique_output_name(output_name_raw)
+
         checklist_type, ok = self._prompt_combo(
             "Extract Checklist",
             "What type of checklist are you extracting?",
@@ -179,6 +198,7 @@ class MainWindow(QMainWindow):
         if context is None:
             return None
 
+        context["output_name"] = output_name
         return self._prompt_page_range(context, d)
 
     def _prompt_page_range(self, context: dict, d: dict) -> dict | None:
