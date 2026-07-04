@@ -147,6 +147,9 @@ class RawOccurrence:
     description: str = ""         # from the Add page; used to build lettered variant parallel name
 
 
+UNLICENSED_PATTERN = re.compile(r"\(unlicensed\)", re.IGNORECASE)
+
+
 def parse_set(set_text: str) -> tuple[str, str, str]:
     """'2026 Panini Prizm' -> ('2026', 'Panini', 'Prizm').
     '2026 Bowman' -> ('2026', 'Bowman', '') - brand is just the first
@@ -154,9 +157,30 @@ def parse_set(set_text: str) -> tuple[str, str, str]:
     remains) - UNLESS a known exception applies (see
     settings/brand_set_exceptions.csv), e.g. "Finest" -> brand "Topps",
     or "Topps Now" -> brand "Topps", set "Topps Now" (deliberately
-    repeating, since that IS the correct full product name)."""
+    repeating, since that IS the correct full product name).
+
+    Hard-coded rule (per Brandon, 2026-07-04, NOT in the CSV exceptions
+    file on purpose): whenever the literal text "(unlicensed)" appears
+    anywhere in set_text, brand is ALWAYS "Unlicensed" and the rest of
+    the text (with the "(unlicensed)" marker removed, year still
+    extracted normally if one's present) becomes the set - regardless
+    of the normal first-word-is-brand rule or any exceptions entry.
+    This can't live in the CSV because the surrounding wording varies
+    per product ("The Press Box Collector's Choices of the 1980's
+    (unlicensed)" -> brand "Unlicensed", set "The Press Box
+    Collector's Choices of the 1980's") - only the word "unlicensed"
+    itself is the reliable signal, not any specific product name."""
     if not set_text:
         return "", "", ""
+
+    if UNLICENSED_PATTERN.search(set_text):
+        remainder = UNLICENSED_PATTERN.sub("", set_text)
+        remainder = WHITESPACE_PATTERN.sub(" ", remainder).strip()
+        year_match = SET_YEAR_PATTERN.match(remainder)
+        if year_match:
+            return year_match.group(1), "Unlicensed", year_match.group(2).strip()
+        return "", "Unlicensed", remainder
+
     match = SET_YEAR_PATTERN.match(set_text)
     if not match:
         words = set_text.strip().split()
