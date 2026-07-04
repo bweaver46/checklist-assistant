@@ -434,6 +434,61 @@ class BrowserManager:
 
         return all_records
 
+    # ------------------------------------------------------------------
+    # Multi-source support (Beckett, TCDB) - added 2026-07-04
+    #
+    # Unlike BSC, these sites need no login and no per-row DOM
+    # interaction (Team fetching, pagination clicking). The app just
+    # needs to: navigate to wherever Brandon already is, optionally
+    # trigger one UI action (Beckett's "Full Checklist" tab), and read
+    # back the resulting HTML for the appropriate parser
+    # (parsers/beckett_parser.py, parsers/tcdb_parser.py) to handle.
+    #
+    # NOT YET CONFIRMED against the live sites - the click selector for
+    # Beckett's "Full Checklist" tab is built from the real HTML Brandon
+    # provided during development, but hasn't been run against a live
+    # browser session. Treat the first real run as the actual test and
+    # report back exactly what happens (or the DOM around it) if it
+    # doesn't click the right thing - same as any other selector in
+    # this file.
+    # ------------------------------------------------------------------
+
+    def navigate_to_url(self, url: str) -> None:
+        """Navigate the already-launched browser to an arbitrary URL.
+        Unlike launch(), this works after the browser is already open -
+        use this to move between BSC/Beckett/TCDB within one session."""
+        page = self._require_page()
+        page.goto(url)
+
+    def get_page_html(self, selector: str | None = None) -> str:
+        """Return the current page's HTML. If selector is given,
+        return just that element's outerHTML instead of the whole
+        page (faster to parse, avoids irrelevant page chrome)."""
+        page = self._require_page()
+        if selector:
+            return page.locator(selector).first.evaluate("el => el.outerHTML")
+        return page.content()
+
+    def click_beckett_full_checklist(self) -> str:
+        """Click Beckett's 'Full Checklist' tab and return that tab
+        panel's HTML. Finds the tab panel by following the tab link's
+        own href (e.g. '#advgb-tabs-tab4') rather than hardcoding a tab
+        number, since that number isn't guaranteed to be the same
+        across different Beckett articles."""
+        page = self._require_page()
+        tab_link = page.locator("a", has=page.locator("strong", has_text="Full Checklist")).first
+        href = tab_link.get_attribute("href") or ""
+        panel_id = href.lstrip("#")
+        tab_link.click()
+        if panel_id:
+            panel_selector = f"#{panel_id}, div[aria-labelledby='{panel_id}']"
+            return page.locator(panel_selector).first.evaluate("el => el.outerHTML")
+        # Fallback if the href-based lookup ever fails on a differently
+        # structured page - report the whole page rather than crash, so
+        # the parser at least has something to work with and Brandon can
+        # tell us what actually happened.
+        return page.content()
+
     def close(self) -> None:
         """Close the browser and stop Playwright cleanly."""
         if self._browser is not None:
