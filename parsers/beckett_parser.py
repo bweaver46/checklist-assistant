@@ -59,6 +59,28 @@ different Insert earlier on the page - they're marking which existing
 cards ALSO have that variation, not introducing new distinct cards.
 The parser has no way to distinguish this from a genuinely new card
 using only this page's structure, so both show up as separate rows.
+
+Parallels (confirmed 2026-07-04 against the 2025 Donruss Baseball
+page - NOT present on the Bowman flagship page, format varies by
+product): some sections include a blanket parallel list for every
+card in that section, e.g. under "Base Set Checklist":
+
+    <p>200 cards<br>Parallels</p>   <- still just the caption, skipped
+    <ul class="wp-block-list">
+        <li>Green Laser</li>                    <- no serial
+        <li>Orange Laser /299</li>              <- numbered serial
+        <li>Artist Proof Black 1/1</li>         <- one-of-one
+    </ul>
+    <p>1 Luisangel Acuna, New York Mets<br>...</p>   <- card lines
+
+Per Brandon: when a <ul> like this appears, EVERY card row in that
+section gets the full parallel list attached identically (this is a
+blanket "these parallels exist across the whole set" declaration, not
+per-card data). If only certain cards have a parallel, Beckett lists
+those as their own separate checklist instead (already handled by the
+existing per-checklist Insert logic - no special case needed for
+that). The list resets at the next heading; it is scoped to whichever
+section (h2 or h3) it most immediately follows.
 """
 
 from __future__ import annotations
@@ -67,10 +89,35 @@ import re
 
 from bs4 import BeautifulSoup, Tag
 
+from exporter.convert import split_trailing_slash_serial
+
 CAPTION_LINE = re.compile(r"^\d+\s+cards?\b", re.IGNORECASE)
 RC_SUFFIX = re.compile(r"\s*\(RC\)\s*$|\s+RC\s*$")
 CARD_NUM_TOKEN = re.compile(r"^(?:\d+|[A-Z0-9]+-[A-Z0-9\-]+)$")
 CHECKLIST_SUFFIX = re.compile(r"\s*Checklist\s*$", re.IGNORECASE)
+ONE_OF_ONE_SUFFIX = re.compile(r"^(.*?)\s+1/1\s*$")
+
+
+def _parse_parallel_li(text: str) -> tuple[str, str]:
+    """'Orange Laser /299' -> ('Orange Laser', '299').
+    'Artist Proof Black 1/1' -> ('Artist Proof Black', '1/1') - special
+    cased since split_trailing_slash_serial would otherwise misread
+    '1/1' as name '1' + serial '1'.
+    'Green Laser' -> ('Green Laser', '') - no serial."""
+    text = text.strip()
+    one_of_one = ONE_OF_ONE_SUFFIX.match(text)
+    if one_of_one:
+        return one_of_one.group(1).strip(), "1/1"
+    name, serial = split_trailing_slash_serial(text)
+    return name.strip(), serial
+
+
+def _parse_parallel_list(ul_tag: Tag) -> list[tuple[str, str]]:
+    return [
+        _parse_parallel_li(li.get_text())
+        for li in ul_tag.find_all("li")
+        if li.get_text(strip=True)
+    ]
 
 
 def _clean_lines(p_tag: Tag) -> list[str]:
@@ -134,12 +181,14 @@ def _build_attributes(category: str, is_rc: bool) -> str:
 def parse_beckett_checklist(container_html: str) -> list[dict]:
     """Parse the Full Checklist tab's container HTML into a list of
     raw row dicts, each with keys: insert, card_number, player, team,
-    attributes."""
+    attributes, parallels (list of (parallel, serial) tuples, [] when
+    the section has no blanket parallel list)."""
     soup = BeautifulSoup(container_html, "html.parser")
 
     rows: list[dict] = []
     current_category = ""
     current_insert = ""
+    current_parallels: list[tuple[str, str]] = []
     caption_seen = False
     declared_count: int | None = None
     buffer: list[str] = []
@@ -167,6 +216,7 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
                 "player": " / ".join(names),
                 "team": " / ".join(teams),
                 "attributes": _build_attributes(current_category, rc_any),
+                "parallels": list(current_parallels),
             })
         else:
             for line in buffer:
@@ -177,23 +227,28 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
                     "player": name,
                     "team": team,
                     "attributes": _build_attributes(current_category, is_rc),
+                    "parallels": list(current_parallels),
                 })
         buffer = []
 
-    for el in soup.find_all(["h2", "h3", "h4", "p"]):
+    for el in soup.find_all(["h2", "h3", "h4", "p", "ul"]):
         if el.name == "h2":
             flush()
             current_category = el.get_text(strip=True)
             current_insert = ""
+            current_parallels = []
             caption_seen = False
             declared_count = None
         elif el.name == "h3":
             flush()
             current_insert = CHECKLIST_SUFFIX.sub("", el.get_text(strip=True)).strip()
+            current_parallels = []
             caption_seen = False
             declared_count = None
         elif el.name == "h4":
             continue
+        elif el.name == "ul":
+            current_parallels = _parse_parallel_list(el)
         elif el.name == "p":
             if not caption_seen:
                 declared_count = _extract_count(el)
