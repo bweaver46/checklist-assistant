@@ -73,14 +73,16 @@ card in that section, e.g. under "Base Set Checklist":
     </ul>
     <p>1 Luisangel Acuna, New York Mets<br>...</p>   <- card lines
 
-Per Brandon: when a <ul> like this appears, EVERY card row in that
-section gets the full parallel list attached identically (this is a
-blanket "these parallels exist across the whole set" declaration, not
-per-card data). If only certain cards have a parallel, Beckett lists
-those as their own separate checklist instead (already handled by the
-existing per-checklist Insert logic - no special case needed for
-that). The list resets at the next heading; it is scoped to whichever
-section (h2 or h3) it most immediately follows.
+Subsection labels (confirmed 2026-07-04 against the 2025 Donruss
+Baseball page): most <h3> headings end in the literal word
+"Checklist" and define a new Insert ("Anime Checklist" -> Insert
+"Anime"). Some don't - e.g. "Rated Prospects", which continues the
+Base Set's own card numbering (100 -> 101) rather than starting a new
+checklist. Per Brandon: an <h3> WITHOUT the "Checklist" suffix is a
+SUBSECTION LABEL, not a new Insert - it goes into attributes instead,
+and Insert is left unchanged (in this case, still blank, since it's
+still part of Base Set). It still gets its own caption/parallel-list
+scope like any other heading; only where its name is written differs.
 """
 
 from __future__ import annotations
@@ -169,10 +171,12 @@ def _parse_line(line: str) -> tuple[str, str, str, bool]:
     return card_number, name, team, is_rc
 
 
-def _build_attributes(category: str, is_rc: bool) -> str:
+def _build_attributes(category: str, is_rc: bool, subsection: str = "") -> str:
     tags = []
     if is_rc:
         tags.append("RC")
+    if subsection:
+        tags.append(subsection)
     if category == "Autographs":
         tags.append("Autograph")
     return ", ".join(tags)
@@ -188,6 +192,7 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
     rows: list[dict] = []
     current_category = ""
     current_insert = ""
+    current_subsection = ""
     current_parallels: list[tuple[str, str]] = []
     caption_seen = False
     declared_count: int | None = None
@@ -215,7 +220,7 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
                 "card_number": card_number,
                 "player": " / ".join(names),
                 "team": " / ".join(teams),
-                "attributes": _build_attributes(current_category, rc_any),
+                "attributes": _build_attributes(current_category, rc_any, current_subsection),
                 "parallels": list(current_parallels),
             })
         else:
@@ -226,7 +231,7 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
                     "card_number": num,
                     "player": name,
                     "team": team,
-                    "attributes": _build_attributes(current_category, is_rc),
+                    "attributes": _build_attributes(current_category, is_rc, current_subsection),
                     "parallels": list(current_parallels),
                 })
         buffer = []
@@ -236,12 +241,22 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
             flush()
             current_category = el.get_text(strip=True)
             current_insert = ""
+            current_subsection = ""
             current_parallels = []
             caption_seen = False
             declared_count = None
         elif el.name == "h3":
             flush()
-            current_insert = CHECKLIST_SUFFIX.sub("", el.get_text(strip=True)).strip()
+            text = el.get_text(strip=True)
+            if CHECKLIST_SUFFIX.search(text):
+                current_insert = CHECKLIST_SUFFIX.sub("", text).strip()
+                current_subsection = ""
+            else:
+                # Not a new checklist/Insert - a subsection label (e.g.
+                # "Rated Prospects") within whatever Insert is already
+                # in effect. Insert stays unchanged; the label goes
+                # into attributes instead.
+                current_subsection = text
             current_parallels = []
             caption_seen = False
             declared_count = None
