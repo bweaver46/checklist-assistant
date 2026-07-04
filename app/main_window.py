@@ -22,12 +22,18 @@ from PySide6.QtWidgets import (
 from app.prompt_dialog import PromptDialog
 
 from scraper.browser_manager import BrowserManager
+from scraper.site_detect import detect_source, BSC, BECKETT, TCDB
+from scraper.tcdb_pagination import tcdb_page_url
 from app.extraction_worker import ExtractionWorker
 from settings.window_layout import MAIN_WINDOW_POSITION
 from settings.last_run import load_last_run, save_last_run
 from settings.accumulator import clear_accumulated, accumulated_count
 from settings.team_cache import clear_team_cache
-from settings.output_naming import resolve_unique_output_name
+from settings.output_naming import resolve_unique_output_name, final_export_path
+from parsers.beckett_parser import parse_beckett_checklist
+from parsers.tcdb_parser import parse_tcdb_checklist
+from exporter.external_source_mapper import build_checklist_rows as build_external_checklist_rows
+from exporter.final_export import write_final_csv, sort_rows_by_brand
 
 DEFAULT_TYPE = "Sports"
 CHECKLIST_TYPES = ["Set", "Player", "Team"]
@@ -420,6 +426,22 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def on_extract_checklist(self) -> None:
+        source = detect_source(self.browser_manager.current_url())
+
+        if source is None:
+            self.statusBar().showMessage(
+                "Launch the browser and navigate to a BuySportsCards, "
+                "Beckett, or TCDB page first."
+            )
+            return
+        if source == BECKETT:
+            self._extract_beckett()
+            return
+        if source == TCDB:
+            self._extract_tcdb()
+            return
+        # source == BSC - existing flow, unchanged.
+
         last = load_last_run()
 
         if last is not None:
@@ -458,3 +480,167 @@ class MainWindow(QMainWindow):
             on_resumed=self._on_worker_resumed,
         )
         self._worker.run()
+
+    # ------------------------------------------------------------------
+    # Beckett extraction (no login, single page - "Full Checklist" tab)
+    # ------------------------------------------------------------------
+
+    def _prompt_product_and_sport(self, title: str) -> tuple[str, str] | None:
+        """Shared by Beckett/TCDB - neither site gives a clean brand/
+        set string separate from the sport the way BSC's own Set
+        column does, so Brandon types both once per extraction. These
+        get run through the exact same parse_set() logic BSC's rows
+        use (year/brand/set split, brand_set_exceptions.csv included)."""
+        product, ok = self._prompt_text(
+            title,
+            "Product (e.g. '2025 Bowman', '1972 Topps') - do not "
+            "include the sport, that's asked separately:",
+        )
+        if not ok or not product.strip():
+            return None
+
+        sport, ok = self._prompt_text(title, "Sport:")
+        if not ok:
+            return None
+
+        return product.strip(), sport.strip()
+
+    def _extract_beckett(self) -> None:
+        title = "Extract Checklist (Beckett)"
+        answer = self._prompt_product_and_sport(title)
+        if answer is None:
+            self.statusBar().showMessage("Extraction cancelled.")
+            return
+        product, sport = answer
+
+        output_name_raw, ok = self._prompt_text(
+            title, "Name this export (e.g. '2025 Bowman Baseball'):"
+        )
+        if not ok:
+            self.statusBar().showMessage("Extraction cancelled.")
+            return
+        output_name = resolve_unique_output_name(output_name_raw)
+
+        self.extract_button.setEnabled(False)
+        try:
+            self.statusBar().showMessage("Clicking Full Checklist tab…")
+            QApplication.processEvents()
+            try:
+                html = self.browser_manager.click_beckett_full_checklist()
+                rows = parse_beckett_checklist(html)
+            except Exception as exc:  # noqa: BLE001
+                self.statusBar().showMessage(f"Error: {exc}")
+                return
+
+            if not rows:
+                self.statusBar().showMessage(
+                    "No cards found on this page - check you're on a "
+                    "Beckett checklist article and try again."
+                )
+                return
+
+            context = {"product": product, "sport": sport}
+            checklist_rows = build_external_checklist_rows(rows, context)
+            checklist_rows = sort_rows_by_brand(checklist_rows)
+
+            final_path = final_export_path(output_name)
+            write_final_csv(checklist_rows, final_path)
+
+            self.statusBar().showMessage(
+                f"Done: {len(checklist_rows):,} cards → {final_path}"
+            )
+        finally:
+            self.extract_button.setEnabled(True)
+
+    # ------------------------------------------------------------------
+    # TCDB extraction (no login, paginated via ?PageIndex=N)
+    # ------------------------------------------------------------------
+
+    def _extract_tcdb(self) -> None:
+        title = "Extract Checklist (TCDB)"
+        answer = self._prompt_product_and_sport(title)
+        if answer is None:
+            self.statusBar().showMessage("Extraction cancelled.")
+            return
+        product, sport = answer
+
+        output_name_raw, ok = self._prompt_text(
+            title, "Name this export (e.g. '1972 Topps Baseball'):"
+        )
+        if not ok:
+            self.statusBar().showMessage("Extraction cancelled.")
+            return
+        output_name = resolve_unique_output_name(output_name_raw)
+
+        start_str, ok = self._prompt_text(
+            title, "Start page (leave blank for page 1):"
+        )
+        if not ok:
+            self.statusBar().showMessage("Extraction cancelled.")
+            return
+        try:
+            start_page = max(1, int(start_str.strip())) if start_str.strip() else 1
+        except ValueError:
+            start_page = 1
+
+        end_str, ok = self._prompt_text(
+            title,
+            "End page (leave blank to stop as soon as a page comes back empty):",
+        )
+        if not ok:
+            self.statusBar().showMessage("Extraction cancelled.")
+            return
+        try:
+            end_page = max(0, int(end_str.strip())) if end_str.strip() else 0
+        except ValueError:
+            end_page = 0
+
+        base_url = self.browser_manager.current_url()
+        all_rows: list[dict] = []
+        page_num = start_page
+
+        self.extract_button.setEnabled(False)
+        try:
+            while True:
+                url = tcdb_page_url(base_url, page_num)
+                self.statusBar().showMessage(f"Reading page {page_num}…")
+                QApplication.processEvents()
+                try:
+                    self.browser_manager.navigate_to_url(url)
+                    html = self.browser_manager.get_page_html()
+                    page_rows = parse_tcdb_checklist(html)
+                except Exception as exc:  # noqa: BLE001
+                    self.statusBar().showMessage(f"Error on page {page_num}: {exc}")
+                    return
+
+                if not page_rows:
+                    break
+
+                all_rows.extend(page_rows)
+                self.statusBar().showMessage(
+                    f"Page {page_num}: {len(page_rows)} rows ({len(all_rows):,} total)"
+                )
+                QApplication.processEvents()
+
+                if end_page and page_num >= end_page:
+                    break
+                page_num += 1
+
+            if not all_rows:
+                self.statusBar().showMessage(
+                    "No cards found - check you're on a TCDB checklist page and try again."
+                )
+                return
+
+            context = {"product": product, "sport": sport}
+            checklist_rows = build_external_checklist_rows(all_rows, context)
+            checklist_rows = sort_rows_by_brand(checklist_rows)
+
+            final_path = final_export_path(output_name)
+            write_final_csv(checklist_rows, final_path)
+
+            self.statusBar().showMessage(
+                f"Done: {len(checklist_rows):,} cards → {final_path}"
+            )
+        finally:
+            self.extract_button.setEnabled(True)
