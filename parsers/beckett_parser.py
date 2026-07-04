@@ -236,7 +236,25 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
                 })
         buffer = []
 
+    prev_was_ul = False
     for el in soup.find_all(["h2", "h3", "h4", "p", "ul"]):
+        is_ul = el.name == "ul"
+
+        if el.name in ("h2", "h3") and prev_was_ul:
+            # A heading immediately following a <ul> with nothing in
+            # between is a LABEL naming that list (e.g. "Clearly Rated
+            # Prospects" naming a preceding Black/Techno/Platinum
+            # list), not the start of new content. Prepend it onto
+            # every parallel already captured; leave everything else
+            # (category/insert/subsection/caption state) untouched -
+            # this is NOT a section boundary.
+            label = el.get_text(strip=True)
+            current_parallels = [
+                (f"{label} {name}".strip(), serial) for name, serial in current_parallels
+            ]
+            prev_was_ul = is_ul
+            continue
+
         if el.name == "h2":
             flush()
             current_category = el.get_text(strip=True)
@@ -261,17 +279,17 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
             caption_seen = False
             declared_count = None
         elif el.name == "h4":
-            continue
+            pass
         elif el.name == "ul":
             current_parallels = _parse_parallel_list(el)
         elif el.name == "p":
             if not caption_seen:
                 declared_count = _extract_count(el)
                 caption_seen = True
-                continue
-            if _is_commentary(el):
-                continue
-            buffer.extend(_clean_lines(el))
+            elif not _is_commentary(el):
+                buffer.extend(_clean_lines(el))
+
+        prev_was_ul = is_ul
 
     flush()
     return rows
