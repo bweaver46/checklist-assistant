@@ -173,6 +173,23 @@ class MainWindow(QMainWindow):
             return None
         output_name = resolve_unique_output_name(output_name_raw)
 
+        prior = accumulated_count()
+        if prior:
+            answer = PromptDialog.question(
+                self, "Extract Checklist",
+                f"{prior:,} rows are already accumulated from a previous "
+                "set.\n\n"
+                f"If you continue, those rows will be combined into this "
+                f"new export ('{output_name}') unless you clear them "
+                "first.",
+                ["Clear and Continue", "Keep and Continue", "Cancel"],
+                "Clear and Continue",
+            )
+            if answer == "Cancel":
+                return None
+            if answer == "Clear and Continue":
+                clear_accumulated()
+
         checklist_type, ok = self._prompt_combo(
             "Extract Checklist",
             "What type of checklist are you extracting?",
