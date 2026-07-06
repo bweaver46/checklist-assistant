@@ -89,7 +89,14 @@ def load_brand_set_exceptions() -> list[tuple[list[str], str, str]]:
 
     exceptions = []
     if BRAND_SET_EXCEPTIONS_PATH.exists():
-        with open(BRAND_SET_EXCEPTIONS_PATH, newline="", encoding="utf-8") as f:
+        # utf-8-sig (not plain utf-8): Excel/Numbers often save CSV
+        # with a leading BOM character, which otherwise silently
+        # attaches itself to the first column name ("pattern" becomes
+        # "\ufeffpattern"), making every row.get("pattern") return
+        # None and the WHOLE file fail to load with no error. Safe
+        # either way - utf-8-sig strips a BOM if present and behaves
+        # identically to utf-8 when there isn't one.
+        with open(BRAND_SET_EXCEPTIONS_PATH, newline="", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 pattern = (row.get("pattern") or "").strip()
