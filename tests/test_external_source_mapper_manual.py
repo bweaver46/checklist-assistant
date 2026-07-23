@@ -40,7 +40,7 @@ def run():
     sorted_rows = sort_rows_by_brand(beckett_checklist_rows)
     write_final_csv(sorted_rows, out_path)
     csv_text = Path(out_path).read_text(encoding="utf-8")
-    check("beckett CSV has header", csv_text.startswith("type,sub_type,year,brand,set,insert,attributes,card_number,player,team,base,base_serial,parallel_1,serial_1"))
+    check("beckett CSV has header", csv_text.startswith("Sport,Year,Brand,Set name,Insert / subset,Card number,Player / card name,Team,Attributes,Base,Serial,parallel_1,serial_1"))
     check("beckett CSV has Mike Trout row", "Mike Trout" in csv_text)
 
     # --- TCDB end-to-end ---
