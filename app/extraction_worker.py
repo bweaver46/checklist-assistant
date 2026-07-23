@@ -30,6 +30,7 @@ from exporter.cleanup import apply_cleanup
 from exporter.final_export import write_final_csv, sort_rows_by_brand
 from settings.accumulator import load_accumulated, save_accumulated
 from settings.team_cache import load_team_cache, save_team_cache
+from settings.year_team_cache import load_year_team_cache, save_year_team_cache
 from settings.output_naming import raw_export_path, final_export_path, DEFAULT_NAME
 
 
@@ -83,8 +84,13 @@ class ExtractionWorker:
             fetch_team = self._context.get("fetch_team", False)
             start_page = self._context.get("start_page", 1)
             end_page = self._context.get("end_page", 0)
+            # Player mode uses year-bucket sampling instead of the
+            # Set-mode name-keyed cache - see BrowserManager.read_all_rows
+            # and settings/year_team_cache.py for why (a name-keyed cache
+            # is useless when every row shares the same player name).
+            sample_team_by_year = fetch_team and self._context.get("checklist_type") == "Player"
 
-            if fetch_team:
+            if fetch_team and not sample_team_by_year:
                 # Merge the disk cache into whatever is already in memory.
                 # The BrowserManager instance lives for the whole app session,
                 # so its _team_cache already contains everything from prior
@@ -99,6 +105,15 @@ class ExtractionWorker:
                     self._on_progress(
                         f"Loaded {cached_count:,} cached team lookups — scraping…"
                     )
+            elif sample_team_by_year:
+                disk_cache = load_year_team_cache()
+                merged = {**disk_cache, **self._browser_manager._year_team_cache}
+                self._browser_manager._year_team_cache = merged
+                resolved_count = sum(1 for v in merged.values() if isinstance(v, str))
+                if resolved_count:
+                    self._on_progress(
+                        f"Loaded {resolved_count:,} resolved year/team lookups — scraping…"
+                    )
 
             page_desc = (
                 f"pages {start_page}–{end_page}" if end_page
@@ -112,10 +127,13 @@ class ExtractionWorker:
                 start_page=start_page,
                 end_page=end_page,
                 on_status=self._on_progress,
+                sample_team_by_year=sample_team_by_year,
             )
 
-            if fetch_team:
+            if fetch_team and not sample_team_by_year:
                 save_team_cache(self._browser_manager._team_cache)
+            elif sample_team_by_year:
+                save_year_team_cache(self._browser_manager._year_team_cache)
 
             prior_records = load_accumulated()
             all_records = prior_records + new_records

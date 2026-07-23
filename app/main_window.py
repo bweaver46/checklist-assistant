@@ -29,6 +29,7 @@ from settings.window_layout import MAIN_WINDOW_POSITION
 from settings.last_run import load_last_run, save_last_run
 from settings.accumulator import clear_accumulated, accumulated_count
 from settings.team_cache import clear_team_cache
+from settings.year_team_cache import clear_year_team_cache
 from settings.output_naming import resolve_unique_output_name, final_export_path
 from parsers.beckett_parser import parse_beckett_checklist
 from parsers.tcdb_parser import parse_tcdb_checklist
@@ -112,11 +113,14 @@ class MainWindow(QMainWindow):
         answer = PromptDialog.question(
             self, "Extract Checklist",
             "Fetch Team per card from BuySportsCards?\n\n"
-            "This is MUCH slower - one extra page visit per card "
-            "instead of one per ~50 cards. Worth it for a search that "
-            "spans multiple teams (a full set). Not worth it if this "
-            "search is all one team/player - choose No and just type "
-            "the team once instead.",
+            "For a Set search this is MUCH slower - one extra page "
+            "visit per card instead of one per ~50 cards. For a Player "
+            "search it's cheap even across a whole career: a few cards "
+            "per year get checked, and the rest reuse that year's team "
+            "unless the samples disagree (a mid-season trade), in which "
+            "case just that year gets checked card-by-card. Choose No "
+            "only if this player/team never changed and you'd rather "
+            "just type the team once.",
             ["Yes", "No"], default,
         )
         return answer == "Yes"
@@ -319,13 +323,17 @@ class MainWindow(QMainWindow):
         if not ok:
             primary_player = ""
 
-        team, ok = self._prompt_text(
-            "Extract Checklist",
-            "Team (optional, leave blank if not applicable):",
-            default=d.get("team", ""),
-        )
-        if not ok:
-            team = ""
+        fetch_team = self._prompt_fetch_team(last_fetch_team=d.get("fetch_team", False))
+
+        team = ""
+        if not fetch_team:
+            team, ok = self._prompt_text(
+                "Extract Checklist",
+                "Team (optional, leave blank if not applicable):",
+                default=d.get("team", ""),
+            )
+            if not ok:
+                team = ""
 
         return {
             "checklist_type": "Player",
@@ -334,7 +342,7 @@ class MainWindow(QMainWindow):
             "primary_player": primary_player.strip(),
             "team": team.strip(),
             "section": "",
-            "fetch_team": False,
+            "fetch_team": fetch_team,
         }
 
     def _prompt_team_context(self, sport: str, d: dict) -> dict | None:
@@ -409,6 +417,7 @@ class MainWindow(QMainWindow):
         if answer == "Yes":
             clear_accumulated()
             clear_team_cache()
+            clear_year_team_cache()
             self.statusBar().showMessage(f"Cleared {count:,} accumulated rows and team cache.")
 
     def _on_worker_error(self, message: str) -> None:

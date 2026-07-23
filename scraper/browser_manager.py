@@ -29,7 +29,10 @@ from settings.selectors import (
     TEAM_DETAIL_LABEL_SELECTOR, DESCRIPTION_DETAIL_LABEL_SELECTOR,
 )
 from settings.window_layout import BROWSER_WINDOW_POSITION, BROWSER_WINDOW_SIZE
-from settings.extraction_limits import MAX_PAGES
+from settings.extraction_limits import MAX_PAGES, TEAM_SAMPLE_SIZE_PER_YEAR
+from settings.year_team_cache import MIXED
+
+YEAR_PREFIX_PATTERN = re.compile(r'^\s*(\d{4})')
 
 
 class BrowserManager:
@@ -46,7 +49,16 @@ class BrowserManager:
         # name, not once per row. Caches a failed lookup (empty string)
         # too, so one bad/slow row doesn't get retried 20 times across
         # all its parallels.
+        # Used for Set-mode team fetching (many distinct players).
         self._team_cache: dict[str, str] = {}
+        # Used for Player-mode team fetching (one player, potentially
+        # thousands of rows across many years). Keyed "name|year" ->
+        # see settings/year_team_cache.py for the value states
+        # (sampling list / resolved team / MIXED sentinel). Name-keyed
+        # caching doesn't work here since every row shares the same
+        # player name - caching by name alone would apply one team to
+        # a whole career, which is wrong for anyone who changed teams.
+        self._year_team_cache: dict[str, list | str] = {}
 
     @property
     def is_launched(self) -> bool:
@@ -113,6 +125,7 @@ class BrowserManager:
         selector: str = ROW_SELECTOR,
         fetch_team: bool = False,
         pause_callback: callable = None,
+        sample_team_by_year: bool = False,
     ) -> list[CardRecord]:
         """Read every row currently displayed on the page.
 
@@ -129,7 +142,30 @@ class BrowserManager:
         Team lookups are cached per distinct Name text for the whole
         extraction run (see self._team_cache) - most rows in a set are
         parallels of the same player, so this avoids re-clicking "Add"
-        for every single parallel of a player already looked up.
+        for every single parallel of a player already looked up. This
+        is the Set-mode strategy (many distinct players).
+
+        sample_team_by_year switches to the Player-mode strategy
+        instead (one player, potentially tens of thousands of rows): a
+        name-keyed cache is useless here since every row shares the
+        same player name. Instead, the first TEAM_SAMPLE_SIZE_PER_YEAR
+        non-lettered rows encountered for each distinct year get
+        fetched and compared. If they all agree, that year is
+        "resolved" - every remaining row for that year reuses the
+        sampled team with no further fetches. If they disagree (a
+        mid-season trade), that year is marked MIXED and every
+        remaining row for it gets fetched individually, since we can't
+        tell which side of the trade any given row falls on without
+        checking. This turns a potential 50,000-row player pull into
+        roughly (distinct years x sample size) fetches in the common
+        case, only paying the full per-row cost for years that
+        actually had a trade. See settings/year_team_cache.py for the
+        cache's on-disk format. Note this samples the FIRST rows
+        encountered per year (page order), not a true random sample
+        across the whole year - trades scatter different products
+        across a year in a fairly mixed order already, so this is a
+        reasonable approximation without restructuring extraction into
+        a two-pass (collect-then-fetch) process.
 
         pause_callback, if provided, is called after every team fetch so
         the extraction can be paused mid-page without waiting for a full
@@ -154,7 +190,9 @@ class BrowserManager:
 
             needs_fetch = is_letter_variant or fetch_team
             if needs_fetch:
-                if not is_letter_variant and record.name in self._team_cache:
+                if sample_team_by_year and not is_letter_variant:
+                    self._resolve_team_by_year_sample(record, row, pause_callback)
+                elif not is_letter_variant and record.name in self._team_cache:
                     # Non-lettered cache hit - skip the page visit.
                     record.team = self._team_cache[record.name]
                 else:
@@ -172,6 +210,51 @@ class BrowserManager:
             records.append(record)
 
         return records
+
+    def _year_bucket(self, set_text: str) -> str:
+        """Leading 4-digit year from a raw Set string, or 'unknown' if
+        none is found. Same rule Phase 5 (exporter/convert.py) applies
+        later for the real Year column - this is just an earlier, rough
+        version of it used only to group rows for team sampling."""
+        match = YEAR_PREFIX_PATTERN.match(set_text or "")
+        return match.group(1) if match else "unknown"
+
+    def _resolve_team_by_year_sample(
+        self, record: CardRecord, row: Locator, pause_callback: callable = None
+    ) -> None:
+        """Player-mode team resolution for one non-lettered row - see
+        read_all_rows' sample_team_by_year docstring for the full
+        strategy. Mutates record.team in place."""
+        year = self._year_bucket(record.set)
+        key = f"{record.name}|{year}"
+        state = self._year_team_cache.get(key)
+
+        if isinstance(state, str) and state != MIXED:
+            # Resolved: every sample for this player/year agreed.
+            record.team = state
+            return
+
+        # Either MIXED (must fetch every row) or still sampling
+        # (state is a list, or None on first sight of this key) -
+        # either way this row needs a real fetch.
+        team, description = self.fetch_card_details_for_row(row)
+        record.team = team
+        record.description = description
+        if pause_callback:
+            pause_callback()
+
+        if state == MIXED:
+            return  # already confirmed mixed - don't touch the cache further
+
+        samples = list(state) if isinstance(state, list) else []
+        samples.append(team)
+        if len(samples) >= TEAM_SAMPLE_SIZE_PER_YEAR:
+            if len(set(samples)) == 1:
+                self._year_team_cache[key] = samples[0]
+            else:
+                self._year_team_cache[key] = MIXED
+        else:
+            self._year_team_cache[key] = samples
 
     def fetch_card_details_for_row(self, row: Locator) -> tuple[str, str]:
         """Click this row's "Add" control, read Team and Description off
@@ -379,6 +462,7 @@ class BrowserManager:
         start_page: int = 1,
         end_page: int = 0,
         on_status: callable = None,
+        sample_team_by_year: bool = False,
     ) -> list[CardRecord]:
         """Read every row across a range of pages.
 
@@ -390,12 +474,17 @@ class BrowserManager:
         max_pages: hard safety cap on total pages visited regardless of
             end_page, so a bug can't spin forever.
         fetch_team: see read_all_rows docstring.
+        sample_team_by_year: see read_all_rows docstring - Player-mode
+            team-fetching strategy, mutually exclusive in practice with
+            the Set-mode name-keyed cache (only one strategy is used
+            per run, chosen by the caller based on checklist type).
         pause_callback: called between every team fetch and every page
             turn so the run can be paused mid-scrape.
         """
-        # Team cache is loaded from disk by the caller (ExtractionWorker)
-        # before this method is invoked, so it already contains any
-        # lookups from previous runs. Do NOT reset it here.
+        # Team cache(s) are loaded from disk by the caller
+        # (ExtractionWorker) before this method is invoked, so they
+        # already contain any lookups from previous runs. Do NOT reset
+        # either cache here.
 
         if start_page > 1:
             if on_status:
@@ -413,6 +502,7 @@ class BrowserManager:
             page_records = self.read_all_rows(
                 fetch_team=fetch_team,
                 pause_callback=pause_callback,
+                sample_team_by_year=sample_team_by_year,
             )
             all_records.extend(page_records)
             pages_visited += 1
