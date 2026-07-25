@@ -257,7 +257,23 @@ def normalize_team_separators(team: str) -> str:
 def split_primary_player(name_text: str, primary_player: str) -> tuple[str, str]:
     """If primary_player is found inside name_text, return
     (primary_player, leftover_text_with_it_removed). If primary_player
-    is blank or not found, return (name_text, "") unchanged."""
+    is blank or not found, return (name_text, "") unchanged.
+
+    primary_player is normalized (stripped, internal whitespace
+    collapsed) before searching. This matters because BSC's raw Name
+    field often has NO space before the leftover text at all - e.g.
+    "Michael Jordan1985 NBA ROY 1995" - so any stray leading/trailing
+    or doubled whitespace on the typed-in primary_player (easy to
+    introduce via voice-to-text, or a stale value carried over from
+    "reuse settings") breaks the exact substring match completely and
+    dumps the ENTIRE raw name through unsplit, which is worse than
+    useless. Confirmed 2026-07-24 (Brandon) against exactly this
+    pattern - a trailing space on "Michael Jordan " failed to match
+    "Michael Jordan1985..." even though the name is clearly present.
+    """
+    if not primary_player:
+        return name_text, ""
+    primary_player = WHITESPACE_PATTERN.sub(" ", primary_player).strip()
     if not primary_player:
         return name_text, ""
 

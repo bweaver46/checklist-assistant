@@ -178,7 +178,7 @@ class ExtractionWorker:
             checklist_rows = sort_rows_by_brand(checklist_rows)
 
             final_path = final_export_path(output_name)
-            write_final_csv(checklist_rows, final_path)
+            write_final_csv(checklist_rows, final_path, checklist_type=self._context.get("checklist_type", "Set"))
 
             self._on_finished(
                 len(new_records), len(all_records), len(checklist_rows), final_path

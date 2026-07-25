@@ -158,6 +158,20 @@ class MainWindow(QMainWindow):
         if answer == "Cancel":
             return None
         if answer == "Yes":
+            if checklist_type == "Player":
+                # Team is the one thing worth re-asking even on reuse -
+                # Brandon runs the same player across different team
+                # eras/chunks, so silently carrying over last time's
+                # team would be wrong more often than it'd help.
+                # Pre-filled with the last value so an unchanged team
+                # is just hitting OK.
+                new_team, ok = self._prompt_text(
+                    "Extract Checklist",
+                    "Team (optional, leave blank if not applicable):",
+                    default=team,
+                )
+                if ok:
+                    last = {**last, "team": new_team.strip()}
             return last
         return "ask"  # type: ignore[return-value]
 
@@ -323,17 +337,17 @@ class MainWindow(QMainWindow):
         if not ok:
             primary_player = ""
 
-        fetch_team = self._prompt_fetch_team(last_fetch_team=d.get("fetch_team", False))
-
-        team = ""
-        if not fetch_team:
-            team, ok = self._prompt_text(
-                "Extract Checklist",
-                "Team (optional, leave blank if not applicable):",
-                default=d.get("team", ""),
-            )
-            if not ok:
-                team = ""
+        # Team is always manual for Player mode (fetch_team/year-checkin
+        # is no longer offered here per Brandon 2026-07-24 - he has a
+        # simpler manual approach; the underlying scraping logic is
+        # still in browser_manager.py, just unused by this flow).
+        team, ok = self._prompt_text(
+            "Extract Checklist",
+            "Team (optional, leave blank if not applicable):",
+            default=d.get("team", ""),
+        )
+        if not ok:
+            team = ""
 
         return {
             "checklist_type": "Player",
@@ -342,7 +356,7 @@ class MainWindow(QMainWindow):
             "primary_player": primary_player.strip(),
             "team": team.strip(),
             "section": "",
-            "fetch_team": fetch_team,
+            "fetch_team": False,
         }
 
     def _prompt_team_context(self, sport: str, d: dict) -> dict | None:

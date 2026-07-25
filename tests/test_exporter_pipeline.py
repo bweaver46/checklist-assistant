@@ -126,6 +126,27 @@ def test_split_primary_player_not_found_leaves_unchanged():
     assert leftover == ""
 
 
+def test_split_primary_player_handles_trailing_space_on_primary_player():
+    # Bug found by Brandon 2026-07-24: a trailing space on the typed-in
+    # primary_player used to break the match completely against BSC's
+    # raw Name field, which often has NO space before the leftover
+    # text (e.g. "Jordan1985..."), dumping the whole raw name through
+    # unsplit instead of extracting the player.
+    name, leftover = split_primary_player(
+        "Michael Jordan1985 NBA ROY 1995", "Michael Jordan "
+    )
+    assert name == "Michael Jordan"
+    assert leftover == "1985 NBA ROY 1995"
+
+
+def test_split_primary_player_handles_leading_and_doubled_internal_space():
+    name, leftover = split_primary_player(
+        "Michael Jordan1986-87 3000 Points 1995", "  Michael  Jordan"
+    )
+    assert name == "Michael Jordan"
+    assert leftover == "1986-87 3000 Points 1995"
+
+
 # --- longest_common_word_prefix / strip_common_prefix ---
 
 def test_longest_common_word_prefix():
@@ -471,6 +492,8 @@ if __name__ == "__main__":
     test_extract_card_number_prefix()
     test_split_primary_player_extracts_name_and_leftover()
     test_split_primary_player_not_found_leaves_unchanged()
+    test_split_primary_player_handles_trailing_space_on_primary_player()
+    test_split_primary_player_handles_leading_and_doubled_internal_space()
     test_longest_common_word_prefix()
     test_strip_common_prefix()
     test_anime_insert_family_full_integration()
