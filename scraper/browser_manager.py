@@ -59,6 +59,24 @@ class BrowserManager:
         # player name - caching by name alone would apply one team to
         # a whole career, which is wrong for anyone who changed teams.
         self._year_team_cache: dict[str, list | str] = {}
+        # Runtime-only (never persisted to disk, unlike _year_team_cache
+        # above): records that were assigned an ASSUMED team since the
+        # last real check for their "name|year" key, so that if a later
+        # recheck disagrees (see _resolve_team_by_year_checkin), we can
+        # go back and fetch each of them for real instead of leaving
+        # them on a possibly-wrong assumption. Cleared whenever a key
+        # gets a fresh confirmed check (whether the assumption held or
+        # broke). Each entry is (CardRecord, page_number_it_was_read_on).
+        self._pending_records_by_year: dict[str, list[tuple]] = {}
+        # Populated by read_all_rows whenever a key transitions to MIXED
+        # during that call; drained by extract_all_pages right after,
+        # once it's safely between pages (not mid-row-loop) so it can
+        # navigate around to fix the pending records. Reset at the top
+        # of every read_all_rows call.
+        self._newly_mixed_this_call: dict[str, list[tuple]] = {}
+        # Set by extract_all_pages before each read_all_rows call so
+        # pending records know which page they were read on.
+        self._current_page_number: int = 1
 
     @property
     def is_launched(self) -> bool:
@@ -163,16 +181,28 @@ class BrowserManager:
         upfront sample, it catches a trade no matter where in the year
         it happened, not just one visible in the first few cards. See
         settings/year_team_cache.py for the cache's on-disk format.
-        Note: rows already scraped before a trade is discovered keep
-        whatever team was assumed at the time - this does not go back
-        and correct earlier rows in the same year once a trade is
-        found, only rows from that point forward.
+
+        When a recheck disagrees with the assumption, every row that
+        was assigned the (now known wrong) assumed team since the last
+        real check gets corrected retroactively - see
+        extract_all_pages, which drives this once the current page is
+        fully read (navigating around mid-row-loop here would break
+        this method's own row indexing). This does mean a confirmed
+        trade costs roughly one extra fetch per previously-assumed row
+        in that window (up to TEAM_RECHECK_INTERVAL - 1 of them) - a
+        real cost, but paid only for years that actually had a trade,
+        same as the rest of this strategy. Rows from a PRIOR app
+        session (before a restart) can't be corrected this way, since
+        their CardRecord objects are gone by the time the app restarts
+        - only self._year_team_cache's {team, count_since_check} state
+        persists to disk, not the pending-records list itself.
 
         pause_callback, if provided, is called after every team fetch so
         the extraction can be paused mid-page without waiting for a full
         page turn to finish.
         """
         page = self._require_page()
+        self._newly_mixed_this_call = {}
         records: list[CardRecord] = []
         rows = page.locator(selector)
         count = rows.count()
@@ -225,7 +255,18 @@ class BrowserManager:
     ) -> None:
         """Player-mode team resolution for one non-lettered row - see
         read_all_rows' sample_team_by_year docstring for the full
-        strategy. Mutates record.team in place."""
+        strategy. Mutates record.team in place.
+
+        Records assigned an ASSUMED (not directly fetched) team are
+        tracked in self._pending_records_by_year so that if a later
+        recheck disagrees, extract_all_pages can go back and fetch each
+        of them for real - see _correct_pending_records. This method
+        itself never navigates anywhere other than the current row's
+        Add page (mid-page-loop navigation would break the row-index
+        loop in read_all_rows) - it only flags the correction via
+        self._newly_mixed_this_call for extract_all_pages to act on
+        once it's safely between pages.
+        """
         year = self._year_bucket(record.set)
         key = f"{record.name}|{year}"
         state = self._year_team_cache.get(key)
@@ -242,13 +283,14 @@ class BrowserManager:
 
         if state is None:
             # First row seen for this player/year - establish the
-            # assumption.
+            # assumption. This row itself is a real fetch, not pending.
             team, description = self.fetch_card_details_for_row(row)
             record.team = team
             record.description = description
             if pause_callback:
                 pause_callback()
             self._year_team_cache[key] = {"team": team, "count_since_check": 0}
+            self._pending_records_by_year[key] = []
             return
 
         # state is {"team": ..., "count_since_check": ...} - still
@@ -257,6 +299,7 @@ class BrowserManager:
         count_since_check = state["count_since_check"] + 1
         if count_since_check < TEAM_RECHECK_INTERVAL:
             record.team = state["team"]
+            self._pending_records_by_year.setdefault(key, []).append((record, self._current_page_number))
             self._year_team_cache[key] = {"team": state["team"], "count_since_check": count_since_check}
             return
 
@@ -268,9 +311,74 @@ class BrowserManager:
             pause_callback()
 
         if team == state["team"]:
+            # Assumption held - every pending row in between was right
+            # all along, nothing to correct.
             self._year_team_cache[key] = {"team": team, "count_since_check": 0}
+            self._pending_records_by_year[key] = []
         else:
+            # Assumption broke - a trade happened somewhere in this
+            # window. Flag the pending rows for a real recheck rather
+            # than leaving them on the old (possibly wrong) team.
+            pending = self._pending_records_by_year.get(key, [])
+            if pending:
+                self._newly_mixed_this_call[key] = pending
+            self._pending_records_by_year[key] = []
             self._year_team_cache[key] = MIXED
+
+    def _find_row_by_card_number(self, card_number: str, selector: str = ROW_SELECTOR) -> Locator | None:
+        """Search the currently-displayed page for a row whose Card #
+        matches, for relocating a specific card after navigating back
+        to an earlier page. Returns the first match, or None. Matching
+        on card_number alone is safe for team-correction purposes even
+        if multiple rows share it (different parallels of the same
+        card) - every parallel of the same physical card has the same
+        Team, so any matching row gives the right answer."""
+        page = self._require_page()
+        rows = page.locator(selector)
+        count = rows.count()
+        target = card_number.lstrip("#").strip()
+        for i in range(count):
+            row = rows.nth(i)
+            cell = row.locator(FIELD_SELECTORS["card_number"])
+            text = cell.inner_text().strip().lstrip("#").strip() if cell.count() else ""
+            if text == target:
+                return row
+        return None
+
+    def _correct_pending_records(
+        self, pending: list[tuple], resume_page: int, pause_callback: callable = None, on_status: callable = None,
+    ) -> None:
+        """Go back and fetch the REAL team for each (record, page_number)
+        in `pending`, mutating each record.team in place, then navigate
+        back to resume_page so forward extraction can continue exactly
+        where it left off. Called by extract_all_pages right after a
+        read_all_rows call reports a fresh MIXED transition via
+        self._newly_mixed_this_call - never mid-row-loop.
+
+        Best-effort: if a pending card can't be relocated on its
+        original page (rare - would need the page's row order/contents
+        to have changed since it was first read), that record is left
+        on its old assumed team rather than raising, since one
+        unfindable row shouldn't abort the whole correction pass.
+        """
+        by_page: dict[int, list] = {}
+        for record, page_number in pending:
+            by_page.setdefault(page_number, []).append(record)
+
+        for page_number in sorted(by_page.keys()):
+            if on_status:
+                on_status(f"Trade detected — rechecking {len(by_page[page_number])} card(s) on page {page_number}…")
+            self.navigate_to_page(page_number)
+            for record in by_page[page_number]:
+                found_row = self._find_row_by_card_number(record.card_number)
+                if found_row is None:
+                    continue
+                team, _description = self.fetch_card_details_for_row(found_row)
+                record.team = team
+                if pause_callback:
+                    pause_callback()
+
+        self.navigate_to_page(resume_page)
 
     def fetch_card_details_for_row(self, row: Locator) -> tuple[str, str]:
         """Click this row's "Add" control, read Team and Description off
@@ -494,6 +602,13 @@ class BrowserManager:
             team-fetching strategy, mutually exclusive in practice with
             the Set-mode name-keyed cache (only one strategy is used
             per run, chosen by the caller based on checklist type).
+            When a recheck discovers a trade mid-year, this method
+            (not read_all_rows itself) drives the retroactive
+            correction pass right after that page finishes reading -
+            navigating back to fix the pending rows requires being
+            between pages, not mid-row-loop. See
+            _correct_pending_records and the newly_mixed_this_call
+            comment on __init__.
         pause_callback: called between every team fetch and every page
             turn so the run can be paused mid-scrape.
         """
@@ -515,6 +630,7 @@ class BrowserManager:
             if on_status:
                 on_status(f"Reading page {current_page}… ({len(all_records):,} rows so far)")
 
+            self._current_page_number = current_page
             page_records = self.read_all_rows(
                 fetch_team=fetch_team,
                 pause_callback=pause_callback,
@@ -522,6 +638,19 @@ class BrowserManager:
             )
             all_records.extend(page_records)
             pages_visited += 1
+
+            if sample_team_by_year and self._newly_mixed_this_call:
+                # Safe to navigate around here - this page's row loop
+                # has fully finished and click_next() hasn't happened
+                # yet, so navigating back to earlier pages to correct
+                # pending records and then back to current_page leaves
+                # forward pagination exactly where it would otherwise be.
+                for pending in self._newly_mixed_this_call.values():
+                    self._correct_pending_records(
+                        pending, resume_page=current_page,
+                        pause_callback=pause_callback, on_status=on_status,
+                    )
+                self._newly_mixed_this_call = {}
 
             if on_status:
                 on_status(f"Page {current_page}: {len(page_records)} rows — {len(all_records):,} total")
