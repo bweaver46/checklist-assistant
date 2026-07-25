@@ -10,14 +10,17 @@ raise the number.
 # real BuySportsCards search while still acting as a genuine safety net.
 MAX_PAGES = 2000
 
-# Player-mode team fetching (added 2026-07-22): rather than fetching
-# every single row's team (a player's checklist can span tens of
-# thousands of rows across a long career) or caching one team for their
-# whole career (wrong for anyone who changed teams), sample this many
-# rows per distinct year first. If they all agree, that year's whole
-# checklist uses the sampled team with no further fetches. If they
-# disagree (a mid-season trade), every remaining row in that year gets
-# fetched individually instead of guessing which side of the trade it
-# falls on. See scraper/browser_manager.py's sample_team_by_year logic.
-TEAM_SAMPLE_SIZE_PER_YEAR = 3
+# Player-mode team fetching (added 2026-07-22, redesigned 2026-07-24 per
+# Brandon): rather than fetching every single row's team (a player's
+# checklist can span tens of thousands of rows across a long career) or
+# caching one team for their whole career (wrong for anyone who changed
+# teams), fetch the FIRST card of each distinct year and assume that
+# team for the rest of the year. Recheck every TEAM_RECHECK_INTERVAL
+# cards - if the recheck still matches, keep assuming and extend the
+# interval; if it doesn't, a trade happened, so every remaining card in
+# that year gets fetched individually instead of guessing. This catches
+# trades that happen anywhere in the year, not just ones visible in the
+# first few cards. See scraper/browser_manager.py's sample_team_by_year
+# logic.
+TEAM_RECHECK_INTERVAL = 50
 

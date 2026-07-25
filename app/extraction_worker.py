@@ -109,10 +109,10 @@ class ExtractionWorker:
                 disk_cache = load_year_team_cache()
                 merged = {**disk_cache, **self._browser_manager._year_team_cache}
                 self._browser_manager._year_team_cache = merged
-                resolved_count = sum(1 for v in merged.values() if isinstance(v, str))
-                if resolved_count:
+                cached_years = len(merged)
+                if cached_years:
                     self._on_progress(
-                        f"Loaded {resolved_count:,} resolved year/team lookups — scraping…"
+                        f"Loaded {cached_years:,} cached player/year team lookups — scraping…"
                     )
 
             page_desc = (

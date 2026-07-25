@@ -122,57 +122,74 @@ def _read_year_row(row):
     return CardRecord(name=row.player_name, card_number=row.card_number, set=f"{row.year} Some Product")
 
 
-def test_year_sampling_resolves_after_matching_samples():
-    # 3 rows from the same year, all the same team -> resolves after
-    # exactly 3 fetches; a 4th row of the same year reuses the cached
-    # team with no further fetch.
-    bm = BrowserManager()
-    fake_rows = [FakeYearRow("Shohei Ohtani", "2023") for _ in range(4)]
-    bm._page = FakePage(fake_rows)
-    bm.read_row = _read_year_row
+def test_year_checkin_fetches_first_row_then_assumes_until_recheck_interval():
+    # With the recheck interval patched to 3: row 1 fetches (establishes
+    # the assumption), rows 2-3 reuse it with no fetch, row 4 is the
+    # recheck (fetches again). All agree, so only rows 1 and 4 fetch.
+    import scraper.browser_manager as browser_manager_module
+    original_interval = browser_manager_module.TEAM_RECHECK_INTERVAL
+    browser_manager_module.TEAM_RECHECK_INTERVAL = 3
+    try:
+        bm = BrowserManager()
+        fake_rows = [FakeYearRow("Shohei Ohtani", "2023") for _ in range(6)]
+        bm._page = FakePage(fake_rows)
+        bm.read_row = _read_year_row
 
-    call_log = []
-    bm.fetch_card_details_for_row = lambda row: (call_log.append(1) or "Los Angeles Angels", "")
+        call_log = []
+        bm.fetch_card_details_for_row = lambda row: (call_log.append(1) or "Los Angeles Angels", "")
 
-    records = bm.read_all_rows(fetch_team=True, sample_team_by_year=True)
+        records = bm.read_all_rows(fetch_team=True, sample_team_by_year=True)
 
-    assert len(call_log) == 3, f"expected exactly 3 fetches, got {len(call_log)}"
-    assert all(r.team == "Los Angeles Angels" for r in records)
-
-
-def test_year_sampling_falls_back_to_full_fetch_on_disagreement():
-    # 3 samples where the 3rd disagrees (a mid-season trade) -> MIXED,
-    # so a 4th and 5th row of that same year both still get fetched
-    # individually instead of reusing anything.
-    bm = BrowserManager()
-    fake_rows = [FakeYearRow("Shohei Ohtani", "2024") for _ in range(5)]
-    bm._page = FakePage(fake_rows)
-    bm.read_row = _read_year_row
-
-    teams = ["Los Angeles Angels", "Los Angeles Angels", "Los Angeles Dodgers",
-             "Los Angeles Dodgers", "Los Angeles Dodgers"]
-    call_log = []
-
-    def fake_fetch(row):
-        call_log.append(1)
-        return teams[len(call_log) - 1]
-
-    bm.fetch_card_details_for_row = lambda row: (fake_fetch(row), "")
-
-    records = bm.read_all_rows(fetch_team=True, sample_team_by_year=True)
-
-    # All 5 rows fetched - 3 samples plus 2 more after MIXED was detected.
-    assert len(call_log) == 5, f"expected all 5 rows fetched once MIXED, got {len(call_log)}"
-    assert [r.team for r in records] == teams
+        # Row 1 (initial) + row 4 (recheck) = 2 fetches for 6 rows.
+        assert len(call_log) == 2, f"expected 2 fetches (row 1 + row 4 recheck), got {len(call_log)}"
+        assert all(r.team == "Los Angeles Angels" for r in records)
+    finally:
+        browser_manager_module.TEAM_RECHECK_INTERVAL = original_interval
 
 
-def test_year_sampling_keeps_separate_years_independent():
-    # 3 matching samples for 2023 (resolves), then a fresh 2024 row
-    # must NOT reuse 2023's resolved team - it's a different bucket and
-    # needs its own samples.
+def test_year_checkin_switches_to_full_fetch_after_recheck_disagrees():
+    # Row 1 establishes Angels. Rows 2-3 assumed. Row 4 (recheck) comes
+    # back Dodgers -> disagreement -> MIXED. Rows 5-6 must each be
+    # fetched individually from then on, no more assuming.
+    import scraper.browser_manager as browser_manager_module
+    original_interval = browser_manager_module.TEAM_RECHECK_INTERVAL
+    browser_manager_module.TEAM_RECHECK_INTERVAL = 3
+    try:
+        bm = BrowserManager()
+        fake_rows = [FakeYearRow("Shohei Ohtani", "2024") for _ in range(6)]
+        bm._page = FakePage(fake_rows)
+        bm.read_row = _read_year_row
+
+        teams_by_fetch_order = ["Los Angeles Angels", "Los Angeles Dodgers",
+                                 "Los Angeles Dodgers", "Los Angeles Dodgers"]
+        call_log = []
+
+        def fake_fetch(row):
+            call_log.append(1)
+            return teams_by_fetch_order[len(call_log) - 1]
+
+        bm.fetch_card_details_for_row = lambda row: (fake_fetch(row), "")
+
+        records = bm.read_all_rows(fetch_team=True, sample_team_by_year=True)
+
+        # Row1 fetch, rows2-3 assumed (no fetch), row4 recheck fetch
+        # (disagrees -> MIXED), rows5-6 each fetched individually.
+        # Total fetches: row1, row4, row5, row6 = 4.
+        assert len(call_log) == 4, f"expected 4 fetches, got {len(call_log)}"
+        assert [r.team for r in records] == [
+            "Los Angeles Angels", "Los Angeles Angels", "Los Angeles Angels",
+            "Los Angeles Dodgers", "Los Angeles Dodgers", "Los Angeles Dodgers",
+        ]
+    finally:
+        browser_manager_module.TEAM_RECHECK_INTERVAL = original_interval
+
+
+def test_year_checkin_keeps_separate_years_independent():
+    # A resolved/assumed 2023 must not bleed into a fresh 2024 row -
+    # it's a different bucket and needs its own initial check.
     bm = BrowserManager()
     fake_rows = (
-        [FakeYearRow("Shohei Ohtani", "2023") for _ in range(3)]
+        [FakeYearRow("Shohei Ohtani", "2023") for _ in range(2)]
         + [FakeYearRow("Shohei Ohtani", "2024")]
     )
     bm._page = FakePage(fake_rows)
@@ -188,14 +205,14 @@ def test_year_sampling_keeps_separate_years_independent():
 
     records = bm.read_all_rows(fetch_team=True, sample_team_by_year=True)
 
-    # 3 fetches for 2023 (to resolve it) + 1 fetch for the first-ever
-    # 2024 row (its own bucket, still sampling) = 4 total.
-    assert len(call_log) == 4
-    assert records[0].team == records[1].team == records[2].team == "Los Angeles Angels"
-    assert records[3].team == "Los Angeles Dodgers"
+    # 1 fetch to establish 2023 (2nd row reuses it) + 1 fetch to
+    # establish the brand-new 2024 bucket = 2 total.
+    assert len(call_log) == 2
+    assert records[0].team == records[1].team == "Los Angeles Angels"
+    assert records[2].team == "Los Angeles Dodgers"
 
 
-def test_year_sampling_lettered_variant_rows_are_untouched():
+def test_year_checkin_lettered_variant_rows_are_untouched():
     # Lettered variants (e.g. "1b") always fetch regardless of mode -
     # sample_team_by_year should not interfere with that existing rule.
     bm = BrowserManager()
@@ -217,8 +234,8 @@ if __name__ == "__main__":
     test_team_cache_only_fetches_once_per_distinct_player()
     test_team_cache_does_not_fetch_at_all_when_fetch_team_is_false()
     test_team_cache_persists_across_extraction_runs()
-    test_year_sampling_resolves_after_matching_samples()
-    test_year_sampling_falls_back_to_full_fetch_on_disagreement()
-    test_year_sampling_keeps_separate_years_independent()
-    test_year_sampling_lettered_variant_rows_are_untouched()
+    test_year_checkin_fetches_first_row_then_assumes_until_recheck_interval()
+    test_year_checkin_switches_to_full_fetch_after_recheck_disagrees()
+    test_year_checkin_keeps_separate_years_independent()
+    test_year_checkin_lettered_variant_rows_are_untouched()
     print("All tests passed.")

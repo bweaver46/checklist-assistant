@@ -115,12 +115,12 @@ class MainWindow(QMainWindow):
             "Fetch Team per card from BuySportsCards?\n\n"
             "For a Set search this is MUCH slower - one extra page "
             "visit per card instead of one per ~50 cards. For a Player "
-            "search it's cheap even across a whole career: a few cards "
-            "per year get checked, and the rest reuse that year's team "
-            "unless the samples disagree (a mid-season trade), in which "
-            "case just that year gets checked card-by-card. Choose No "
-            "only if this player/team never changed and you'd rather "
-            "just type the team once.",
+            "search it's cheap even across a whole career: the first "
+            "card of each year gets checked, then it's rechecked every "
+            "50 cards - as long as the team keeps matching, the rest of "
+            "that year is assumed. Only a year with a real trade gets "
+            "checked card-by-card. Choose No only if this player/team "
+            "never changed and you'd rather just type the team once.",
             ["Yes", "No"], default,
         )
         return answer == "Yes"

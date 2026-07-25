@@ -29,7 +29,7 @@ from settings.selectors import (
     TEAM_DETAIL_LABEL_SELECTOR, DESCRIPTION_DETAIL_LABEL_SELECTOR,
 )
 from settings.window_layout import BROWSER_WINDOW_POSITION, BROWSER_WINDOW_SIZE
-from settings.extraction_limits import MAX_PAGES, TEAM_SAMPLE_SIZE_PER_YEAR
+from settings.extraction_limits import MAX_PAGES, TEAM_RECHECK_INTERVAL
 from settings.year_team_cache import MIXED
 
 YEAR_PREFIX_PATTERN = re.compile(r'^\s*(\d{4})')
@@ -148,24 +148,25 @@ class BrowserManager:
         sample_team_by_year switches to the Player-mode strategy
         instead (one player, potentially tens of thousands of rows): a
         name-keyed cache is useless here since every row shares the
-        same player name. Instead, the first TEAM_SAMPLE_SIZE_PER_YEAR
-        non-lettered rows encountered for each distinct year get
-        fetched and compared. If they all agree, that year is
-        "resolved" - every remaining row for that year reuses the
-        sampled team with no further fetches. If they disagree (a
-        mid-season trade), that year is marked MIXED and every
-        remaining row for it gets fetched individually, since we can't
-        tell which side of the trade any given row falls on without
-        checking. This turns a potential 50,000-row player pull into
-        roughly (distinct years x sample size) fetches in the common
-        case, only paying the full per-row cost for years that
-        actually had a trade. See settings/year_team_cache.py for the
-        cache's on-disk format. Note this samples the FIRST rows
-        encountered per year (page order), not a true random sample
-        across the whole year - trades scatter different products
-        across a year in a fairly mixed order already, so this is a
-        reasonable approximation without restructuring extraction into
-        a two-pass (collect-then-fetch) process.
+        same player name. Instead: fetch the team for the FIRST
+        non-lettered row of each distinct year and assume that team for
+        the rest of the year. Every TEAM_RECHECK_INTERVAL non-lettered
+        rows after that, fetch again to confirm the assumption still
+        holds. If the recheck still matches, keep assuming (and reset
+        the counter). If it doesn't, a trade happened that year - every
+        remaining row for that year gets fetched individually from that
+        point on, since we can't tell which side of the trade any given
+        row falls on without checking. This turns a potential
+        50,000-row player pull into roughly (distinct years x a few
+        fetches) in the common case, only paying the full per-row cost
+        for years that actually had a trade - and unlike a single
+        upfront sample, it catches a trade no matter where in the year
+        it happened, not just one visible in the first few cards. See
+        settings/year_team_cache.py for the cache's on-disk format.
+        Note: rows already scraped before a trade is discovered keep
+        whatever team was assumed at the time - this does not go back
+        and correct earlier rows in the same year once a trade is
+        found, only rows from that point forward.
 
         pause_callback, if provided, is called after every team fetch so
         the extraction can be paused mid-page without waiting for a full
@@ -191,7 +192,7 @@ class BrowserManager:
             needs_fetch = is_letter_variant or fetch_team
             if needs_fetch:
                 if sample_team_by_year and not is_letter_variant:
-                    self._resolve_team_by_year_sample(record, row, pause_callback)
+                    self._resolve_team_by_year_checkin(record, row, pause_callback)
                 elif not is_letter_variant and record.name in self._team_cache:
                     # Non-lettered cache hit - skip the page visit.
                     record.team = self._team_cache[record.name]
@@ -219,7 +220,7 @@ class BrowserManager:
         match = YEAR_PREFIX_PATTERN.match(set_text or "")
         return match.group(1) if match else "unknown"
 
-    def _resolve_team_by_year_sample(
+    def _resolve_team_by_year_checkin(
         self, record: CardRecord, row: Locator, pause_callback: callable = None
     ) -> None:
         """Player-mode team resolution for one non-lettered row - see
@@ -229,32 +230,47 @@ class BrowserManager:
         key = f"{record.name}|{year}"
         state = self._year_team_cache.get(key)
 
-        if isinstance(state, str) and state != MIXED:
-            # Resolved: every sample for this player/year agreed.
-            record.team = state
+        if state == MIXED:
+            # Already confirmed mixed this year - every row gets its own
+            # real fetch, no assumption, cache untouched further.
+            team, description = self.fetch_card_details_for_row(row)
+            record.team = team
+            record.description = description
+            if pause_callback:
+                pause_callback()
             return
 
-        # Either MIXED (must fetch every row) or still sampling
-        # (state is a list, or None on first sight of this key) -
-        # either way this row needs a real fetch.
+        if state is None:
+            # First row seen for this player/year - establish the
+            # assumption.
+            team, description = self.fetch_card_details_for_row(row)
+            record.team = team
+            record.description = description
+            if pause_callback:
+                pause_callback()
+            self._year_team_cache[key] = {"team": team, "count_since_check": 0}
+            return
+
+        # state is {"team": ..., "count_since_check": ...} - still
+        # assuming. Bump the counter; only fetch for real once the
+        # recheck interval is hit.
+        count_since_check = state["count_since_check"] + 1
+        if count_since_check < TEAM_RECHECK_INTERVAL:
+            record.team = state["team"]
+            self._year_team_cache[key] = {"team": state["team"], "count_since_check": count_since_check}
+            return
+
+        # Recheck row: fetch for real and compare against the assumption.
         team, description = self.fetch_card_details_for_row(row)
         record.team = team
         record.description = description
         if pause_callback:
             pause_callback()
 
-        if state == MIXED:
-            return  # already confirmed mixed - don't touch the cache further
-
-        samples = list(state) if isinstance(state, list) else []
-        samples.append(team)
-        if len(samples) >= TEAM_SAMPLE_SIZE_PER_YEAR:
-            if len(set(samples)) == 1:
-                self._year_team_cache[key] = samples[0]
-            else:
-                self._year_team_cache[key] = MIXED
+        if team == state["team"]:
+            self._year_team_cache[key] = {"team": team, "count_since_check": 0}
         else:
-            self._year_team_cache[key] = samples
+            self._year_team_cache[key] = MIXED
 
     def fetch_card_details_for_row(self, row: Locator) -> tuple[str, str]:
         """Click this row's "Add" control, read Team and Description off
