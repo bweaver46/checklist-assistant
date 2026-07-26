@@ -99,8 +99,27 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def on_launch_browser(self) -> None:
-        self.statusBar().showMessage("Launching browser...")
-        self.browser_manager.launch()
+        site, ok = self._prompt_combo(
+            "Launch Browser", "Which site?",
+            ["BuySportsCards", "Beckett"], default="BuySportsCards",
+        )
+        if not ok:
+            self.statusBar().showMessage("Launch cancelled.")
+            return
+
+        start_url = (
+            "https://www.beckett.com/news" if site == "Beckett"
+            else "https://www.buysportscards.com"
+        )
+
+        self.statusBar().showMessage(f"Launching browser to {site}...")
+        QApplication.processEvents()
+        if not self.browser_manager.is_launched:
+            self.browser_manager.launch(start_url=start_url)
+        else:
+            # Already launched - just move the existing browser to the
+            # requested site instead of ignoring the choice.
+            self.browser_manager.navigate_to_url(start_url)
         url = self.browser_manager.current_url()
         self.statusBar().showMessage(f"Browser ready at {url}")
 
@@ -551,24 +570,22 @@ class MainWindow(QMainWindow):
     def _extract_beckett(self) -> None:
         title = "Extract Checklist (Beckett)"
 
-        news_url = "https://www.beckett.com/news"
-        self.statusBar().showMessage(f"Opening {news_url}…")
-        QApplication.processEvents()
         if not self.browser_manager.is_launched:
-            self.browser_manager.launch(start_url=news_url)
-        else:
-            self.browser_manager.navigate_to_url(news_url)
-
-        proceed = PromptDialog.question(
-            self, title,
-            "Navigate to the checklist article for the set you want, "
-            "then click Yes to continue.",
-            ["Yes", "Cancel"], "Yes",
-        )
-        if proceed != "Yes":
-            self.statusBar().showMessage("Extraction cancelled.")
+            self.statusBar().showMessage(
+                "Launch the browser (choose Beckett) and navigate to a "
+                "checklist article first."
+            )
             return
 
+        # Per Brandon: this used to force-navigate to the news listing
+        # page on every single run, which reset wherever he'd already
+        # navigated to and was WHY product/sport kept coming up blank
+        # (current_url() was reading the reset news-listing URL, not
+        # the article). It now just reads wherever the browser already
+        # is - same approach _extract_tcdb() already uses - so
+        # navigating there once (via Launch Browser -> Beckett, or
+        # manually) is all that's needed, and re-running extraction
+        # doesn't move the browser out from under you.
         current_url = self.browser_manager.current_url() or ""
         derived = parse_beckett_url(current_url)
         default_product, default_sport = derived if derived else ("", "")
