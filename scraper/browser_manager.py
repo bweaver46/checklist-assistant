@@ -728,22 +728,60 @@ class BrowserManager:
 
     def click_beckett_full_checklist(self) -> str:
         """Click Beckett's 'Full Checklist' tab and return that tab
-        panel's HTML. Finds the tab panel by following the tab link's
-        own href (e.g. '#advgb-tabs-tab4') rather than hardcoding a tab
-        number, since that number isn't guaranteed to be the same
-        across different Beckett articles."""
+        panel's HTML.
+
+        Primary strategy (confirmed 2026-07-26 against the live 2026
+        Topps Pristine Baseball page, DOM-inspected directly): this is
+        the "Advanced Gutenberg" WordPress tabs plugin, used site-wide
+        for Beckett checklist articles. Its aria-controls attribute is
+        broken/decorative - it points to near-empty placeholder
+        elements (just the tab's own label text, not real content),
+        NOT the real content. The actual association between a tab
+        button and its content is purely POSITIONAL: the Nth tab
+        button (role="tab", in DOM order) corresponds to the Nth
+        ".advgb-tab-body" element (also in DOM order) within the same
+        ".advgb-tabs-wrapper" container. Every tab's content already
+        exists in the DOM regardless of which is visually active (they
+        differ only by inline display:none) - clicking isn't strictly
+        required to read the content, but is still done first for
+        consistency/safety in case some article's markup genuinely
+        needs it.
+
+        Fallback strategy: the original <a><strong> structure this was
+        first built against (from a hand-provided HTML snippet, never
+        actually confirmed live before 2026-07-26). Kept as a defensive
+        second attempt in case some article uses a different/older
+        tabs structure entirely - costs nothing since .count() checks
+        avoid waiting out the full auto-wait timeout on a pattern that
+        isn't present (the bug that caused the original 30s timeout).
+        """
         page = self._require_page()
+
+        wrapper = page.locator(".advgb-tabs-wrapper").first
+        if wrapper.count() > 0:
+            tabs = wrapper.locator('[role="tab"]')
+            bodies = wrapper.locator(".advgb-tab-body")
+            tab_count = tabs.count()
+            body_count = bodies.count()
+            for i in range(tab_count):
+                if tabs.nth(i).inner_text().strip() == "Full Checklist":
+                    tabs.nth(i).click()
+                    if i < body_count:
+                        return bodies.nth(i).evaluate("el => el.outerHTML")
+                    break
+
         tab_link = page.locator("a", has=page.locator("strong", has_text="Full Checklist")).first
-        href = tab_link.get_attribute("href") or ""
-        panel_id = href.lstrip("#")
-        tab_link.click()
-        if panel_id:
-            panel_selector = f"#{panel_id}, div[aria-labelledby='{panel_id}']"
-            return page.locator(panel_selector).first.evaluate("el => el.outerHTML")
-        # Fallback if the href-based lookup ever fails on a differently
-        # structured page - report the whole page rather than crash, so
-        # the parser at least has something to work with and Brandon can
-        # tell us what actually happened.
+        if tab_link.count() > 0:
+            href = tab_link.get_attribute("href") or ""
+            panel_id = href.lstrip("#")
+            tab_link.click()
+            if panel_id:
+                panel_selector = f"#{panel_id}, div[aria-labelledby='{panel_id}']"
+                return page.locator(panel_selector).first.evaluate("el => el.outerHTML")
+
+        # Last resort - report the whole page rather than crash, so
+        # the parser at least has something to work with and Brandon
+        # can tell us what actually happened.
         return page.content()
 
     def close(self) -> None:
