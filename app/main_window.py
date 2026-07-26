@@ -99,13 +99,10 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def on_launch_browser(self) -> None:
-        site, ok = self._prompt_combo(
-            "Launch Browser", "Which site?",
-            ["BuySportsCards", "Beckett"], default="BuySportsCards",
+        site = PromptDialog.question(
+            self, "Launch Browser", "Which site?",
+            ["BuySportsCards", "Beckett"], "BuySportsCards",
         )
-        if not ok:
-            self.statusBar().showMessage("Launch cancelled.")
-            return
 
         start_url = (
             "https://www.beckett.com/news" if site == "Beckett"
@@ -120,6 +117,7 @@ class MainWindow(QMainWindow):
             # Already launched - just move the existing browser to the
             # requested site instead of ignoring the choice.
             self.browser_manager.navigate_to_url(start_url)
+        self.browser_manager.bring_to_front()
         url = self.browser_manager.current_url()
         self.statusBar().showMessage(f"Browser ready at {url}")
 
@@ -592,6 +590,7 @@ class MainWindow(QMainWindow):
         # navigating there once (via Launch Browser -> Beckett, or
         # manually) is all that's needed, and re-running extraction
         # doesn't move the browser out from under you.
+        self.browser_manager.bring_to_front()
         current_url = self.browser_manager.current_url() or ""
         derived = parse_beckett_url(current_url)
         default_product, default_sport = derived if derived else ("", "")

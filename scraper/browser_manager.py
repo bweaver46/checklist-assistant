@@ -108,6 +108,20 @@ class BrowserManager:
         )
         self._page = self._browser.new_page(viewport=None)
         self._page.goto(start_url)
+        self._page.bring_to_front()
+
+    def bring_to_front(self) -> None:
+        """Force the automated browser window to the front. Used so
+        Brandon can't lose track of which window is actually connected
+        to the app - confirmed 2026-07-26 this was the real source of
+        repeated 'blank product/sport' reports: he was navigating in a
+        completely different (his everyday) Chrome window, not this
+        one. Playwright's Chromium is a separate browser install from
+        regular Chrome - distinct Dock icon, shows an 'automated test
+        software' banner - but that's easy to miss if you're not
+        looking for it."""
+        if self._page is not None:
+            self._page.bring_to_front()
 
     def current_url(self) -> str | None:
         """Return the URL currently displayed in the browser, if any.
