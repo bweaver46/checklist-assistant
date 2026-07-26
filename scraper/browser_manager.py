@@ -21,7 +21,10 @@ from __future__ import annotations
 
 import re
 
-from playwright.sync_api import sync_playwright, Browser, Page, Playwright, Locator
+from playwright.sync_api import (
+    sync_playwright, Browser, Page, Playwright, Locator,
+    TimeoutError as PlaywrightTimeoutError,
+)
 
 from scraper.card_record import CardRecord
 from settings.selectors import (
@@ -107,10 +110,25 @@ class BrowserManager:
         self._page.goto(start_url)
 
     def current_url(self) -> str | None:
-        """Return the URL currently displayed in the browser, if any."""
+        """Return the URL currently displayed in the browser, if any.
+
+        Waits for the page to finish loading first (best-effort, 5s
+        cap) - confirmed 2026-07-26 (Brandon): reading .url while
+        Beckett's article page is still mid-navigation (e.g. right
+        after clicking Yes on the "navigate and click Yes" prompt) can
+        catch a stale/intermediate URL, which makes parse_beckett_url()
+        derive nothing and leaves the product/sport prompts blank on
+        that run even though the same URL derives correctly once
+        settled. A timeout here just means the page didn't fully
+        settle in time - falls through to whatever .url already is
+        rather than blocking forever."""
         if self._page is None:
             return None
         self._sync_to_latest_page()
+        try:
+            self._page.wait_for_load_state("domcontentloaded", timeout=5000)
+        except PlaywrightTimeoutError:
+            pass
         return self._page.url
 
     def _sync_to_latest_page(self) -> None:

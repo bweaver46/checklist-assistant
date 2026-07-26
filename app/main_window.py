@@ -579,13 +579,11 @@ class MainWindow(QMainWindow):
             return
         product, sport = answer
 
-        output_name_raw, ok = self._prompt_text(
-            title, "Name this export (e.g. '2025 Bowman Baseball'):"
-        )
-        if not ok:
-            self.statusBar().showMessage("Extraction cancelled.")
-            return
-        output_name = resolve_unique_output_name(output_name_raw)
+        # Per Brandon: the export name should always just be the
+        # product, no separate prompt - it was redundant, and re-typing
+        # (or re-confirming) the same thing twice added an extra click
+        # for no reason.
+        output_name = resolve_unique_output_name(product)
 
         self.extract_button.setEnabled(False)
         try:
