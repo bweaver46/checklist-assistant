@@ -1,32 +1,36 @@
 """
 Phase 8: write the final checklist CSV - must match ColLock's import
-template exactly for whichever checklist_type produced it. ColLock's
-Sets bulk-import and Players bulk-import use TWO DIFFERENT column
-layouts (confirmed against Brandon's actual templates), not one shared
-schema - see SET_HEADER_MAP vs PLAYER_HEADER_MAP below.
+template exactly for whichever checklist_type produced it.
 
-SET_HEADER_MAP (updated 2026-07-22): the "type" column is dropped
-entirely - ColLock's Sets template has no equivalent column. The value
-is still tracked internally on ChecklistRow (used elsewhere, e.g.
-merge.py's grouping key) - it's just not written out for Sets.
+SET_HEADER_MAP (corrected 2026-07-26, Brandon supplied the actual
+current collock-bulk-set-template.csv): this now matches
+PLAYER_HEADER_MAP's schema exactly - lowercase headers, "type"
+included, "attributes" before card_number, "base_serial" (not
+"Serial"). The previous version of this map (capitalized headers, no
+"type" column, "Set name"/"Insert / subset"/"Card number"/"Player /
+card name"/"Serial") was based on an earlier template that's since
+been superseded - ColLock's Sets bulk-import evidently now uses the
+same column layout as Players. If a genuinely different Sets template
+shows up again later, don't assume - ask for the actual file, same as
+this fix.
 Column mapping (internal attribute -> external header):
-    sub_type    -> Sport
-    year        -> Year
-    brand       -> Brand
-    set         -> Set name
-    insert      -> Insert / subset
-    card_number -> Card number
-    player      -> Player / card name
-    team        -> Team
-    attributes  -> Attributes
-    base        -> Base
-    base_serial -> Serial
+    type        -> type    (lowercased at write time)
+    sub_type    -> sport
+    year        -> year
+    brand       -> brand
+    set         -> set
+    insert      -> insert
+    attributes  -> attributes
+    card_number -> card_number
+    player      -> player
+    team        -> team
+    base        -> base
+    base_serial -> base_serial
 
 PLAYER_HEADER_MAP (added 2026-07-24, confirmed against
-collock-bulk-player-template.csv): a completely different layout from
-Sets - lowercase headers matching the internal attribute names almost
-verbatim, "type" IS included (Sets drops it, Players keeps it), and
-"attributes" sits BEFORE card_number (Sets has it after Team).
+collock-bulk-player-template.csv): identical layout to SET_HEADER_MAP
+above (see history note there for why they used to differ and no
+longer do).
     type        -> type   (lowercased at write time - the internal
                             value is "Sports", template shows "sports")
     sub_type    -> sport
@@ -63,20 +67,21 @@ import csv
 from exporter.checklist_template import ChecklistRow
 
 # (internal ChecklistRow attribute, external CSV header) in the exact
-# order ColLock's Sets template expects. "type" is intentionally
-# excluded - see module docstring.
+# order ColLock's Sets template expects (corrected 2026-07-26 - see
+# module docstring; this now matches PLAYER_HEADER_MAP exactly).
 SET_HEADER_MAP = [
-    ("sub_type", "Sport"),
-    ("year", "Year"),
-    ("brand", "Brand"),
-    ("set", "Set name"),
-    ("insert", "Insert / subset"),
-    ("card_number", "Card number"),
-    ("player", "Player / card name"),
-    ("team", "Team"),
-    ("attributes", "Attributes"),
-    ("base", "Base"),
-    ("base_serial", "Serial"),
+    ("type", "type"),
+    ("sub_type", "sport"),
+    ("year", "year"),
+    ("brand", "brand"),
+    ("set", "set"),
+    ("insert", "insert"),
+    ("attributes", "attributes"),
+    ("card_number", "card_number"),
+    ("player", "player"),
+    ("team", "team"),
+    ("base", "base"),
+    ("base_serial", "base_serial"),
 ]
 
 # (internal ChecklistRow attribute, external CSV header) in the exact
