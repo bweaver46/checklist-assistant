@@ -542,7 +542,8 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def _prompt_product_and_sport(
-        self, title: str, default_product: str = "", default_sport: str = ""
+        self, title: str, default_product: str = "", default_sport: str = "",
+        debug_url: str | None = None,
     ) -> tuple[str, str] | None:
         """Shared by Beckett/TCDB - neither site gives a clean brand/
         set string separate from the sport the way BSC's own Set
@@ -551,12 +552,17 @@ class MainWindow(QMainWindow):
         use (year/brand/set split, brand_set_exceptions.csv included).
         default_product/default_sport pre-fill from the URL when it's
         derivable (see scraper.site_detect.parse_beckett_url) - still
-        editable, not skipped, in case the guess is wrong."""
-        product, ok = self._prompt_text(
-            title,
+        editable, not skipped, in case the guess is wrong.
+        debug_url: TEMPORARY - if given, shown in the prompt label so
+        we can see exactly what current_url() returned live."""
+        label = (
             "Product (e.g. '2025 Bowman', '1972 Topps') - do not "
-            "include the sport, that's asked separately:",
-            default=default_product,
+            "include the sport, that's asked separately:"
+        )
+        if debug_url is not None:
+            label += f"\n\n[debug] current_url() returned: {debug_url!r}"
+        product, ok = self._prompt_text(
+            title, label, default=default_product,
         )
         if not ok or not product.strip():
             return None
@@ -590,7 +596,15 @@ class MainWindow(QMainWindow):
         derived = parse_beckett_url(current_url)
         default_product, default_sport = derived if derived else ("", "")
 
-        answer = self._prompt_product_and_sport(title, default_product, default_sport)
+        # TEMPORARY DEBUG (remove once the blank-product bug is
+        # confirmed fixed): parse_beckett_url() derives correctly for
+        # every URL tested in isolation, so this shows the RAW value
+        # current_url() actually returned live, to see whether it
+        # differs from what the browser's address bar displays.
+        answer = self._prompt_product_and_sport(
+            title, default_product, default_sport,
+            debug_url=current_url,
+        )
         if answer is None:
             self.statusBar().showMessage("Extraction cancelled.")
             return
