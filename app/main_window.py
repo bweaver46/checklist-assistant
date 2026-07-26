@@ -70,6 +70,14 @@ class MainWindow(QMainWindow):
         self.extract_button.clicked.connect(self.on_extract_checklist)
         layout.addWidget(self.extract_button)
 
+        self.extract_beckett_button = QPushButton("Extract Beckett Checklist")
+        self.extract_beckett_button.clicked.connect(self._extract_beckett)
+        layout.addWidget(self.extract_beckett_button)
+
+        self.extract_tcdb_button = QPushButton("Extract TCDB Checklist")
+        self.extract_tcdb_button.clicked.connect(self._extract_tcdb)
+        layout.addWidget(self.extract_tcdb_button)
+
         self.pause_button = QPushButton("Pause")
         self.pause_button.clicked.connect(self.on_pause_resume)
         self.pause_button.setVisible(False)
