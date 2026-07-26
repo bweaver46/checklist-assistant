@@ -551,28 +551,26 @@ class MainWindow(QMainWindow):
     def _extract_beckett(self) -> None:
         title = "Extract Checklist (Beckett)"
 
-        current = self.browser_manager.current_url() if self.browser_manager.is_launched else None
-        default_url = current if current and "beckett.com" in current else ""
-        url, ok = self._prompt_text(
-            title,
-            "Beckett checklist article URL (e.g. "
-            "https://www.beckett.com/news/2025-bowman-baseball-cards/) - "
-            "leave as-is if you're already on the right page:",
-            default=default_url,
-        )
-        if not ok or not url.strip():
-            self.statusBar().showMessage("Extraction cancelled.")
-            return
-        url = url.strip()
-
-        self.statusBar().showMessage(f"Opening {url}…")
+        news_url = "https://www.beckett.com/news"
+        self.statusBar().showMessage(f"Opening {news_url}…")
         QApplication.processEvents()
         if not self.browser_manager.is_launched:
-            self.browser_manager.launch(start_url=url)
+            self.browser_manager.launch(start_url=news_url)
         else:
-            self.browser_manager.navigate_to_url(url)
+            self.browser_manager.navigate_to_url(news_url)
 
-        derived = parse_beckett_url(url)
+        proceed = PromptDialog.question(
+            self, title,
+            "Navigate to the checklist article for the set you want, "
+            "then click Yes to continue.",
+            ["Yes", "Cancel"], "Yes",
+        )
+        if proceed != "Yes":
+            self.statusBar().showMessage("Extraction cancelled.")
+            return
+
+        current_url = self.browser_manager.current_url() or ""
+        derived = parse_beckett_url(current_url)
         default_product, default_sport = derived if derived else ("", "")
 
         answer = self._prompt_product_and_sport(title, default_product, default_sport)
