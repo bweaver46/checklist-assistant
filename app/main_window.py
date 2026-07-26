@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
 from app.prompt_dialog import PromptDialog
 
 from scraper.browser_manager import BrowserManager
-from scraper.site_detect import detect_source, BSC, BECKETT, TCDB
+from scraper.site_detect import detect_source, parse_beckett_url, BSC, BECKETT, TCDB
 from scraper.tcdb_pagination import tcdb_page_url
 from app.extraction_worker import ExtractionWorker
 from settings.window_layout import MAIN_WINDOW_POSITION
@@ -522,21 +522,27 @@ class MainWindow(QMainWindow):
     # Beckett extraction (no login, single page - "Full Checklist" tab)
     # ------------------------------------------------------------------
 
-    def _prompt_product_and_sport(self, title: str) -> tuple[str, str] | None:
+    def _prompt_product_and_sport(
+        self, title: str, default_product: str = "", default_sport: str = ""
+    ) -> tuple[str, str] | None:
         """Shared by Beckett/TCDB - neither site gives a clean brand/
         set string separate from the sport the way BSC's own Set
         column does, so Brandon types both once per extraction. These
         get run through the exact same parse_set() logic BSC's rows
-        use (year/brand/set split, brand_set_exceptions.csv included)."""
+        use (year/brand/set split, brand_set_exceptions.csv included).
+        default_product/default_sport pre-fill from the URL when it's
+        derivable (see scraper.site_detect.parse_beckett_url) - still
+        editable, not skipped, in case the guess is wrong."""
         product, ok = self._prompt_text(
             title,
             "Product (e.g. '2025 Bowman', '1972 Topps') - do not "
             "include the sport, that's asked separately:",
+            default=default_product,
         )
         if not ok or not product.strip():
             return None
 
-        sport, ok = self._prompt_text(title, "Sport:")
+        sport, ok = self._prompt_text(title, "Sport:", default=default_sport)
         if not ok:
             return None
 
@@ -544,7 +550,32 @@ class MainWindow(QMainWindow):
 
     def _extract_beckett(self) -> None:
         title = "Extract Checklist (Beckett)"
-        answer = self._prompt_product_and_sport(title)
+
+        current = self.browser_manager.current_url() if self.browser_manager.is_launched else None
+        default_url = current if current and "beckett.com" in current else ""
+        url, ok = self._prompt_text(
+            title,
+            "Beckett checklist article URL (e.g. "
+            "https://www.beckett.com/news/2025-bowman-baseball-cards/) - "
+            "leave as-is if you're already on the right page:",
+            default=default_url,
+        )
+        if not ok or not url.strip():
+            self.statusBar().showMessage("Extraction cancelled.")
+            return
+        url = url.strip()
+
+        self.statusBar().showMessage(f"Opening {url}…")
+        QApplication.processEvents()
+        if not self.browser_manager.is_launched:
+            self.browser_manager.launch(start_url=url)
+        else:
+            self.browser_manager.navigate_to_url(url)
+
+        derived = parse_beckett_url(url)
+        default_product, default_sport = derived if derived else ("", "")
+
+        answer = self._prompt_product_and_sport(title, default_product, default_sport)
         if answer is None:
             self.statusBar().showMessage("Extraction cancelled.")
             return
