@@ -523,7 +523,7 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def _prompt_product_and_sport(
-        self, title: str, default_product: str = "", default_sport: str = "", diag: str = ""
+        self, title: str, default_product: str = "", default_sport: str = ""
     ) -> tuple[str, str] | None:
         """Shared by Beckett/TCDB - neither site gives a clean brand/
         set string separate from the sport the way BSC's own Set
@@ -532,14 +532,13 @@ class MainWindow(QMainWindow):
         use (year/brand/set split, brand_set_exceptions.csv included).
         default_product/default_sport pre-fill from the URL when it's
         derivable (see scraper.site_detect.parse_beckett_url) - still
-        editable, not skipped, in case the guess is wrong.
-        diag: TEMPORARY - prepended to the Product prompt's label for
-        on-screen debugging of the derivation. Remove once confirmed
-        working."""
-        label = "Product (e.g. '2025 Bowman', '1972 Topps') - do not include the sport, that's asked separately:"
-        if diag:
-            label = f"{diag}\n\n{label}"
-        product, ok = self._prompt_text(title, label, default=default_product)
+        editable, not skipped, in case the guess is wrong."""
+        product, ok = self._prompt_text(
+            title,
+            "Product (e.g. '2025 Bowman', '1972 Topps') - do not "
+            "include the sport, that's asked separately:",
+            default=default_product,
+        )
         if not ok or not product.strip():
             return None
 
@@ -574,10 +573,7 @@ class MainWindow(QMainWindow):
         derived = parse_beckett_url(current_url)
         default_product, default_sport = derived if derived else ("", "")
 
-        answer = self._prompt_product_and_sport(
-            title, default_product, default_sport,
-            diag=f"[DIAG] current_url={current_url!r} derived={derived!r}",
-        )
+        answer = self._prompt_product_and_sport(title, default_product, default_sport)
         if answer is None:
             self.statusBar().showMessage("Extraction cancelled.")
             return

@@ -33,9 +33,56 @@ class FakeRow:
 class FakePage:
     def __init__(self, rows):
         self._rows = rows
+        self.context = FakeContext([self])  # real Playwright pages always have .context
 
     def locator(self, selector):
         return FakeLocator(self._rows)
+
+
+class FakeContext:
+    def __init__(self, pages):
+        self.pages = pages
+
+
+class FakePageWithUrl(FakePage):
+    """FakePage plus .url and .context, needed to test
+    _sync_to_latest_page() (which reads page.context.pages)."""
+    def __init__(self, rows, url):
+        super().__init__(rows)
+        self.url = url
+        self.context = None  # set by the test after creating all pages
+
+
+def test_sync_to_latest_page_follows_a_new_tab():
+    # Confirmed 2026-07-26 (Brandon): Beckett's Baseball/Year nav
+    # dropdown's "View All" link opens a NEW TAB. Chrome auto-switches
+    # focus to it, so it looks like "the same window" - but Playwright
+    # never automatically follows a new tab on its own, so _page would
+    # stay stuck on the OLD tab (still /news) forever without this fix.
+    bm = BrowserManager()
+    old_page = FakePageWithUrl([], "https://www.beckett.com/news/")
+    new_page = FakePageWithUrl([], "https://www.beckett.com/news/2026-topps-pristine-baseball-cards/")
+    context = FakeContext([old_page, new_page])
+    old_page.context = context
+    new_page.context = context
+    bm._page = old_page
+
+    url = bm.current_url()
+
+    assert url == "https://www.beckett.com/news/2026-topps-pristine-baseball-cards/"
+    assert bm._page is new_page
+
+
+def test_sync_to_latest_page_is_a_noop_with_only_one_tab():
+    bm = BrowserManager()
+    page = FakePageWithUrl([], "https://www.beckett.com/news/")
+    page.context = FakeContext([page])
+    bm._page = page
+
+    url = bm.current_url()
+
+    assert url == "https://www.beckett.com/news/"
+    assert bm._page is page
 
 
 def test_team_cache_only_fetches_once_per_distinct_player():
@@ -321,6 +368,8 @@ def test_year_checkin_lettered_variant_rows_are_untouched():
 
 
 if __name__ == "__main__":
+    test_sync_to_latest_page_follows_a_new_tab()
+    test_sync_to_latest_page_is_a_noop_with_only_one_tab()
     test_team_cache_only_fetches_once_per_distinct_player()
     test_team_cache_does_not_fetch_at_all_when_fetch_team_is_false()
     test_team_cache_persists_across_extraction_runs()

@@ -110,11 +110,33 @@ class BrowserManager:
         """Return the URL currently displayed in the browser, if any."""
         if self._page is None:
             return None
+        self._sync_to_latest_page()
         return self._page.url
+
+    def _sync_to_latest_page(self) -> None:
+        """If a new tab has opened since we last checked (e.g. a site's
+        nav menu link uses target="_blank", or a JS window.open() -
+        confirmed 2026-07-26 against Beckett's Baseball/Year dropdown
+        nav, whose 'View All' links open this way), Chrome auto-
+        switches focus to it, so it looks and feels like 'the same
+        window' to Brandon even though it's technically a new tab in
+        the same BrowserContext. Playwright, left alone, keeps
+        _page pointed at the ORIGINAL tab forever - it has no reason to
+        follow the new one on its own. This keeps _page pointed at
+        whichever tab was most recently opened, which is a reasonable
+        proxy for "the one Brandon is actually looking at" since he's
+        never intentionally working two tabs at once in this workflow.
+        A no-op if there's only one tab open (the common case)."""
+        if self._page is None:
+            return
+        pages = self._page.context.pages
+        if pages and pages[-1] is not self._page:
+            self._page = pages[-1]
 
     def _require_page(self) -> Page:
         if self._page is None:
             raise RuntimeError("Browser is not launched. Click 'Launch Browser' first.")
+        self._sync_to_latest_page()
         return self._page
 
     # ------------------------------------------------------------------
