@@ -28,6 +28,10 @@ from app.extraction_worker import ExtractionWorker
 from settings.window_layout import MAIN_WINDOW_POSITION
 from settings.last_run import load_last_run, save_last_run
 from settings.accumulator import clear_accumulated, accumulated_count
+from settings.beckett_accumulator import (
+    load_beckett_accumulated, save_beckett_accumulated, clear_beckett_accumulated,
+    beckett_accumulated_count,
+)
 from settings.team_cache import clear_team_cache
 from settings.year_team_cache import clear_year_team_cache
 from settings.output_naming import resolve_unique_output_name, final_export_path
@@ -449,21 +453,25 @@ class MainWindow(QMainWindow):
 
     def on_clear_accumulated(self) -> None:
         count = accumulated_count()
-        if count == 0:
+        beckett_count = beckett_accumulated_count()
+        total = count + beckett_count
+        if total == 0:
             self.statusBar().showMessage("No accumulated data to clear.")
             return
         answer = PromptDialog.question(
             self, "Clear Accumulated Data",
-            f"Clear all {count:,} accumulated rows?\n\n"
-            "This removes the data from all previous page-range runs. "
-            "The next extraction will start fresh.",
+            f"Clear all {total:,} accumulated rows ({count:,} BSC, "
+            f"{beckett_count:,} Beckett)?\n\n"
+            "This removes the data from all previous page-range runs "
+            "and Beckett pulls. The next extraction will start fresh.",
             ["Yes", "No"], "No",
         )
         if answer == "Yes":
             clear_accumulated()
+            clear_beckett_accumulated()
             clear_team_cache()
             clear_year_team_cache()
-            self.statusBar().showMessage(f"Cleared {count:,} accumulated rows and team cache.")
+            self.statusBar().showMessage(f"Cleared {total:,} accumulated rows and team cache.")
 
     def _on_worker_error(self, message: str) -> None:
         self._teardown_worker()
@@ -595,39 +603,45 @@ class MainWindow(QMainWindow):
             return
         product, sport = answer
 
-        # Per Brandon: the export name should always just be the
-        # product, no separate prompt - it was redundant, and re-typing
-        # (or re-confirming) the same thing twice added an extra click
-        # for no reason.
-        output_name = resolve_unique_output_name(product)
-
         self.extract_button.setEnabled(False)
         try:
             self.statusBar().showMessage("Clicking Full Checklist tab…")
             QApplication.processEvents()
             try:
                 html = self.browser_manager.click_beckett_full_checklist()
-                rows = parse_beckett_checklist(html)
+                new_rows = parse_beckett_checklist(html)
             except Exception as exc:  # noqa: BLE001
                 self.statusBar().showMessage(f"Error: {exc}")
                 return
 
-            if not rows:
+            if not new_rows:
                 self.statusBar().showMessage(
                     "No cards found on this page - check you're on a "
                     "Beckett checklist article and try again."
                 )
                 return
 
+            # Accumulate with any previous Beckett pulls this session -
+            # e.g. Base release + Celebration Mega Box + All-Star Game
+            # Mega Box, anything sharing the same year/brand/set -
+            # instead of overwriting. output_name is captured on the
+            # first pull and reused for every pull after, so the file
+            # doesn't get a new "(2)"-style name each time.
+            existing_rows, existing_output_name = load_beckett_accumulated()
+            all_rows = existing_rows + new_rows
+            output_name = existing_output_name or resolve_unique_output_name(product)
+            save_beckett_accumulated(all_rows, output_name)
+
             context = {"product": product, "sport": sport}
-            checklist_rows = build_external_checklist_rows(rows, context)
+            checklist_rows = build_external_checklist_rows(all_rows, context)
             checklist_rows = sort_rows_by_brand(checklist_rows)
 
             final_path = final_export_path(output_name)
             write_final_csv(checklist_rows, final_path)
 
             self.statusBar().showMessage(
-                f"Done: {len(checklist_rows):,} cards → {final_path}"
+                f"Done: +{len(new_rows):,} new rows ({len(all_rows):,} total "
+                f"accumulated) → {len(checklist_rows):,} cards. Saved to {final_path}"
             )
         finally:
             self.extract_button.setEnabled(True)

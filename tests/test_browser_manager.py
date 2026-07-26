@@ -52,6 +52,9 @@ class FakePageWithUrl(FakePage):
         self.url = url
         self.context = None  # set by the test after creating all pages
 
+    def wait_for_load_state(self, *args, **kwargs):
+        pass  # real Page.wait_for_load_state(); current_url() calls this, no-op here
+
 
 def test_sync_to_latest_page_follows_a_new_tab():
     # Confirmed 2026-07-26 (Brandon): Beckett's Baseball/Year nav
