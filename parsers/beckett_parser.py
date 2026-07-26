@@ -142,6 +142,27 @@ prefix happens to be blank (there's nothing prior in that category to
 "continue"). This preserves the confirmed Rated Prospects case (same
 "" prefix as Base Set immediately before it -> stays a subsection)
 while correctly splitting Pristine's un-suffixed insert headings.
+
+"Base - X" variation re-listing (confirmed 2026-07-26, Brandon -
+2026 Topps Chrome page): some products (Chrome's own "Variations"
+category) write headings like "Base - Lightboard Variations",
+"Base - Image Variations", "Base - Award Winner Variations" that
+re-list Base Set's OWN card numbers (1, 2, 7, 9, 12...) - these mean
+"this existing Base Set card ALSO comes in this variation," not "here
+are new physical cards." This is unambiguous (unlike the general
+re-listing nuance noted above) because of the literal "Base -"
+prefix, so it's handled directly rather than left as a flagged
+limitation: any <h3> matching BASE_VARIATION_PREFIX merges its card
+lines onto the matching already-emitted Base Set row (matched by
+card_number, insert=="") as an EXTRA parallel tuple
+(name, serial) - name is the heading text with the "Base -" prefix
+stripped (redundant once merged onto the base row), serial is
+whatever trailing "/N" the line's team field carries (e.g. "1 Shohei
+Ohtani, Los Angeles Dodgers /25" -> serial "25"), blank if none. No
+new row is emitted for these lines at all. Doesn't yet handle a
+variation section's OWN parallel sub-rainbow (e.g. Image Variations'
+own Green/Purple/Gold Refractor list) - only the base variation
+marker itself; flag to Brandon if that layer is ever needed.
 """
 
 from __future__ import annotations
@@ -156,6 +177,7 @@ CAPTION_LINE = re.compile(r"^\d+\s+cards?\b", re.IGNORECASE)
 RC_SUFFIX = re.compile(r"\s*\(RC\)\s*$|\s+RC\s*$")
 CARD_NUM_TOKEN = re.compile(r"^(?:\d+|[A-Z0-9]+-[A-Z0-9\-]+)$")
 CHECKLIST_SUFFIX = re.compile(r"\s*Checklist\s*$", re.IGNORECASE)
+BASE_VARIATION_PREFIX = re.compile(r"^Base\s*[\u2013\u2014-]\s*", re.IGNORECASE)
 ONE_OF_ONE_SUFFIX = re.compile(r"^(.*?)\s+1/1\s*$")
 TEAM_PAREN_SUFFIX = re.compile(r"^(.*?)\s*\(([^)]+)\)\s*$")
 PARALLEL_LINE_PATTERN = re.compile(r"^[^,]+?(?:\s+/\d+|\s+1/1)\s*$")
@@ -317,6 +339,10 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
     pending_heading: str | None = None
     pending_is_checklist_suffix = False
     last_prefix: str | None = None
+    # Set when the current <h3> is a "Base - X" variation re-listing
+    # (see module docstring) - card lines under it merge onto the
+    # matching Base Set row instead of becoming new rows.
+    base_variation_name: str | None = None
 
     def flush() -> None:
         nonlocal buffer
@@ -395,16 +421,28 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
             declared_count = None
             pending_heading = None
             last_prefix = None
+            base_variation_name = None
         elif el.name == "h3":
             flush()
             text = el.get_text(strip=True)
-            # Classification is deferred to the first card line seen
-            # under this heading (need its card-number prefix) - see
-            # module docstring. Stash the heading text and whether it
-            # already satisfies the old "ends in Checklist" rule.
-            pending_heading = text
-            pending_is_checklist_suffix = bool(CHECKLIST_SUFFIX.search(text))
-            current_subsection = ""
+            base_variation_match = BASE_VARIATION_PREFIX.match(text)
+            if base_variation_match:
+                # "Base - X" - re-lists Base Set's own numbers, merge
+                # onto those rows instead of treating as a new Insert
+                # or deferring classification (see module docstring).
+                base_variation_name = BASE_VARIATION_PREFIX.sub("", text).strip()
+                pending_heading = None
+                current_subsection = ""
+            else:
+                base_variation_name = None
+                # Classification is deferred to the first card line
+                # seen under this heading (need its card-number
+                # prefix) - see module docstring. Stash the heading
+                # text and whether it already satisfies the old "ends
+                # in Checklist" rule.
+                pending_heading = text
+                pending_is_checklist_suffix = bool(CHECKLIST_SUFFIX.search(text))
+                current_subsection = ""
             current_parallels = []
             caption_seen = False
             declared_count = None
@@ -420,6 +458,15 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
                 lines = _clean_lines(el)
                 if _looks_like_parallel_list_paragraph(lines):
                     current_parallels = [_parse_parallel_li(line) for line in lines]
+                elif lines and base_variation_name is not None:
+                    for line in lines:
+                        num, _name, _team, _is_rc, _team_note, serial = _parse_line(line)
+                        if not num:
+                            continue
+                        for row in rows:
+                            if row["card_number"] == num and row["insert"] == "":
+                                row["parallels"].append((base_variation_name, serial))
+                                break
                 elif lines:
                     if pending_heading is not None:
                         num, *_rest = _parse_line(lines[0])
