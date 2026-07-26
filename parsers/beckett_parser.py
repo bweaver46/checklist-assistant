@@ -83,6 +83,36 @@ SUBSECTION LABEL, not a new Insert - it goes into attributes instead,
 and Insert is left unchanged (in this case, still blank, since it's
 still part of Base Set). It still gets its own caption/parallel-list
 scope like any other heading; only where its name is written differs.
+
+Plain-paragraph blanket parallels (confirmed 2026-07-26, Brandon -
+Dual Autographed Preeminent Pieces / Dual Preeminent Relics inserts):
+some products write their blanket parallel list as bare paragraph
+lines instead of the <ul><li> structure above, e.g.:
+
+    <p>4 cards<br>Parallel</p>            <- still just the caption
+    <p>Gold /1</p>                          <- the parallel list itself,
+                                                just one entry here
+    <p>PPDAR-HRJ Cal Ripken Jr./Gunnar Henderson, Baltimore Orioles /5
+    <br>...(more card lines)</p>
+
+Same meaning as the <ul> case (this parallel applies to every card in
+the section) - just different markup. Detected by
+_looks_like_parallel_list_paragraph(): a <p> where EVERY line has no
+comma and ends in "/<digits>" or "1/1" is treated as a parallel-list
+update rather than card-buffer lines. Note each of these cards ALSO
+had its own individual print-run serial appended to its team text
+(e.g. "Baltimore Orioles /5") - that's the separate base_serial pattern
+documented in _parse_line's docstring, not a parallel at all; a card
+can have both a base_serial AND a blanket parallel with its own serial
+at the same time, they're independent.
+
+Team suffixes (confirmed 2026-07-26, Brandon): a card line's Team can
+carry two different kinds of trailing text that are NOT part of the
+team name - see _parse_line's docstring for the full rules:
+    "Pittsburgh Pirates (All-Star Game)" - parenthetical card
+        attribute, moved to attributes.
+    "Texas Rangers /25" - the card's own print-run serial, moved to
+        base_serial.
 """
 
 from __future__ import annotations
@@ -99,6 +129,7 @@ CARD_NUM_TOKEN = re.compile(r"^(?:\d+|[A-Z0-9]+-[A-Z0-9\-]+)$")
 CHECKLIST_SUFFIX = re.compile(r"\s*Checklist\s*$", re.IGNORECASE)
 ONE_OF_ONE_SUFFIX = re.compile(r"^(.*?)\s+1/1\s*$")
 TEAM_PAREN_SUFFIX = re.compile(r"^(.*?)\s*\(([^)]+)\)\s*$")
+PARALLEL_LINE_PATTERN = re.compile(r"^[^,]+?(?:\s+/\d+|\s+1/1)\s*$")
 
 
 def _parse_parallel_li(text: str) -> tuple[str, str]:
@@ -146,6 +177,21 @@ def _extract_count(p_tag: Tag) -> int | None:
 
 def _is_commentary(p_tag: Tag) -> bool:
     return p_tag.find("em") is not None or p_tag.find("a") is not None
+
+
+def _looks_like_parallel_list_paragraph(lines: list[str]) -> bool:
+    """True if every line looks like a blanket-parallel entry (a name
+    with no comma, ending in '/<digits>' or '1/1') rather than a real
+    card line. Confirmed 2026-07-26 (Brandon) - some products write
+    their blanket parallel list as bare paragraph lines (e.g.
+    "Gold /1" on its own line right after the caption) instead of the
+    <ul><li> structure this parser already handled - same meaning
+    (this parallel applies to every card in the section), different
+    markup. A real card line always either has a comma (", Team") or,
+    in the rare no-team case, is just a plain name that does NOT end
+    in a slash-number or "1/1" - so requiring ALL lines in the
+    paragraph to match this shape is a safe, narrow signal."""
+    return bool(lines) and all(PARALLEL_LINE_PATTERN.match(line) for line in lines)
 
 
 def _parse_line(line: str) -> tuple[str, str, str, bool, str, str]:
@@ -325,7 +371,11 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
                 declared_count = _extract_count(el)
                 caption_seen = True
             elif not _is_commentary(el):
-                buffer.extend(_clean_lines(el))
+                lines = _clean_lines(el)
+                if _looks_like_parallel_list_paragraph(lines):
+                    current_parallels = [_parse_parallel_li(line) for line in lines]
+                else:
+                    buffer.extend(lines)
 
         prev_was_ul = is_ul
 
