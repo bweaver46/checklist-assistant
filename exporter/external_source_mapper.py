@@ -42,7 +42,7 @@ def build_checklist_rows(rows: list[dict], context: dict) -> list[ChecklistRow]:
             player=row.get("player", ""),
             team=row.get("team", ""),
             base="",
-            base_serial="",
+            base_serial=row.get("base_serial", ""),
             parallels=row.get("parallels", []),
         ))
     return checklist_rows

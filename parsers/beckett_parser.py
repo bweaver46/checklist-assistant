@@ -98,6 +98,7 @@ RC_SUFFIX = re.compile(r"\s*\(RC\)\s*$|\s+RC\s*$")
 CARD_NUM_TOKEN = re.compile(r"^(?:\d+|[A-Z0-9]+-[A-Z0-9\-]+)$")
 CHECKLIST_SUFFIX = re.compile(r"\s*Checklist\s*$", re.IGNORECASE)
 ONE_OF_ONE_SUFFIX = re.compile(r"^(.*?)\s+1/1\s*$")
+TEAM_PAREN_SUFFIX = re.compile(r"^(.*?)\s*\(([^)]+)\)\s*$")
 
 
 def _parse_parallel_li(text: str) -> tuple[str, str]:
@@ -147,9 +148,24 @@ def _is_commentary(p_tag: Tag) -> bool:
     return p_tag.find("em") is not None or p_tag.find("a") is not None
 
 
-def _parse_line(line: str) -> tuple[str, str, str, bool]:
-    """Split one card line into (card_number, name, team, is_rc).
-    card_number/team are '' when not present in the line."""
+def _parse_line(line: str) -> tuple[str, str, str, bool, str, str]:
+    """Split one card line into
+    (card_number, name, team, is_rc, team_note, base_serial).
+    card_number/team are '' when not present in the line.
+
+    team_note is a parenthetical note trailing the team name (e.g.
+    "Pittsburgh Pirates (All-Star Game)" -> team "Pittsburgh Pirates",
+    team_note "All-Star Game") - it's a card attribute, not part of the
+    team, and gets folded into attributes by the caller.
+
+    base_serial is a print-run number trailing the team with no
+    parallel name attached (e.g. "Texas Rangers /25" -> team
+    "Texas Rangers", base_serial "25") - this is the card's OWN serial
+    number, not a named parallel, so it belongs in base_serial rather
+    than the parallels list. Confirmed against Brandon's report
+    2026-07-26 - a card line's team can carry either of these
+    trailing suffixes.
+    """
     is_rc = False
     match = RC_SUFFIX.search(line)
     if match:
@@ -168,15 +184,27 @@ def _parse_line(line: str) -> tuple[str, str, str, bool]:
     else:
         name, team = rest.strip(), ""
 
-    return card_number, name, team, is_rc
+    team_note = ""
+    paren_match = TEAM_PAREN_SUFFIX.match(team)
+    if paren_match:
+        team, team_note = paren_match.group(1).strip(), paren_match.group(2).strip()
+
+    base_serial = ""
+    stripped_team, serial = split_trailing_slash_serial(team)
+    if serial:
+        team, base_serial = stripped_team.strip(), serial
+
+    return card_number, name, team, is_rc, team_note, base_serial
 
 
-def _build_attributes(category: str, is_rc: bool, subsection: str = "") -> str:
+def _build_attributes(category: str, is_rc: bool, subsection: str = "", team_note: str = "") -> str:
     tags = []
     if is_rc:
         tags.append("RC")
     if subsection:
         tags.append(subsection)
+    if team_note:
+        tags.append(team_note)
     if category == "Autographs":
         tags.append("Autograph")
     return ", ".join(tags)
@@ -207,31 +235,41 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
             teams: list[str] = []
             card_number = ""
             rc_any = False
+            team_notes: list[str] = []
+            base_serial = ""
             for line in buffer:
-                num, name, team, is_rc = _parse_line(line)
+                num, name, team, is_rc, team_note, serial = _parse_line(line)
                 if num and not card_number:
                     card_number = num
                 names.append(name)
                 if team:
                     teams.append(team)
+                if team_note:
+                    team_notes.append(team_note)
+                if serial and not base_serial:
+                    base_serial = serial
                 rc_any = rc_any or is_rc
             rows.append({
                 "insert": current_insert,
                 "card_number": card_number,
                 "player": " / ".join(names),
                 "team": " / ".join(teams),
-                "attributes": _build_attributes(current_category, rc_any, current_subsection),
+                "attributes": _build_attributes(
+                    current_category, rc_any, current_subsection, ", ".join(team_notes)
+                ),
+                "base_serial": base_serial,
                 "parallels": list(current_parallels),
             })
         else:
             for line in buffer:
-                num, name, team, is_rc = _parse_line(line)
+                num, name, team, is_rc, team_note, serial = _parse_line(line)
                 rows.append({
                     "insert": current_insert,
                     "card_number": num,
                     "player": name,
                     "team": team,
-                    "attributes": _build_attributes(current_category, is_rc, current_subsection),
+                    "attributes": _build_attributes(current_category, is_rc, current_subsection, team_note),
+                    "base_serial": serial,
                     "parallels": list(current_parallels),
                 })
         buffer = []
