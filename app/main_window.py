@@ -172,6 +172,12 @@ class MainWindow(QMainWindow):
                 )
                 if ok:
                     last = {**last, "team": new_team.strip()}
+                # Player mode no longer offers fetch_team at all - force
+                # it off even if an older saved session still has
+                # fetch_team: true sitting in last_run.json, or reusing
+                # settings would silently re-trigger the auto-fetch
+                # machinery this flow no longer asks about.
+                last = {**last, "fetch_team": False}
             return last
         return "ask"  # type: ignore[return-value]
 
