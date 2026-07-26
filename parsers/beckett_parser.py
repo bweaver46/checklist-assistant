@@ -113,6 +113,35 @@ team name - see _parse_line's docstring for the full rules:
         attribute, moved to attributes.
     "Texas Rangers /25" - the card's own print-run serial, moved to
         base_serial.
+
+New-Insert detection when the heading doesn't say "Checklist"
+(confirmed 2026-07-26, Brandon - 2026 Topps Pristine page): the
+"<h3> ends in Checklist" rule assumed every product names its insert
+headings that way. Pristine doesn't - headings like "Pristine
+Autographs", "Spotless Signatures", "Monogram", "Italics" never say
+"Checklist", but each IS a genuinely separate checklist (own card-
+number prefix: PA-, SS-, M-, I-...), not a subsection of whatever
+came before. Per Brandon: "99% of sets have a different prefix" for
+a real new insert; the exception is products like Donruss where an
+insert is numbered plainly 1, 2, 3... with no letter prefix - but
+those headings DO say "...Checklist", so the original rule already
+covers them.
+
+New rule: an <h3> starts a new Insert if EITHER (a) it ends in the
+word "Checklist" (original rule, unchanged), OR (b) the card-number
+prefix of the first card line under it differs from the prefix
+active immediately before this heading. Prefix = the text before the
+first "-" in a card number (e.g. "PA-AF" -> "PA", "A-1" -> "A"), or
+"" for a plain numeric card number like "101". Classification is
+deferred until that first card line is seen (the heading alone
+doesn't carry a card number), tracked via `pending_heading` /
+`last_prefix` in parse_beckett_checklist(). last_prefix resets to
+None at every <h2> category boundary, so the first <h3> under a new
+top-level category is always treated as a new Insert even if its
+prefix happens to be blank (there's nothing prior in that category to
+"continue"). This preserves the confirmed Rated Prospects case (same
+"" prefix as Base Set immediately before it -> stays a subsection)
+while correctly splitting Pristine's un-suffixed insert headings.
 """
 
 from __future__ import annotations
@@ -130,6 +159,15 @@ CHECKLIST_SUFFIX = re.compile(r"\s*Checklist\s*$", re.IGNORECASE)
 ONE_OF_ONE_SUFFIX = re.compile(r"^(.*?)\s+1/1\s*$")
 TEAM_PAREN_SUFFIX = re.compile(r"^(.*?)\s*\(([^)]+)\)\s*$")
 PARALLEL_LINE_PATTERN = re.compile(r"^[^,]+?(?:\s+/\d+|\s+1/1)\s*$")
+
+
+def _extract_prefix(card_number: str) -> str:
+    """'PA-AF' -> 'PA'. 'A-1' -> 'A'. '101' -> '' (plain numeric, no
+    letter prefix). Used to detect a genuinely new Insert when its
+    heading doesn't say 'Checklist' - see module docstring."""
+    if "-" in card_number:
+        return card_number.split("-", 1)[0]
+    return ""
 
 
 def _parse_parallel_li(text: str) -> tuple[str, str]:
@@ -271,6 +309,14 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
     caption_seen = False
     declared_count: int | None = None
     buffer: list[str] = []
+    # Deferred Insert-vs-subsection classification (see module
+    # docstring, "New-Insert detection..."). pending_heading holds an
+    # <h3>'s text once seen but not yet classified; last_prefix is the
+    # card-number prefix of whatever section most recently had actual
+    # card lines, used as the comparison baseline.
+    pending_heading: str | None = None
+    pending_is_checklist_suffix = False
+    last_prefix: str | None = None
 
     def flush() -> None:
         nonlocal buffer
@@ -347,18 +393,18 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
             current_parallels = []
             caption_seen = False
             declared_count = None
+            pending_heading = None
+            last_prefix = None
         elif el.name == "h3":
             flush()
             text = el.get_text(strip=True)
-            if CHECKLIST_SUFFIX.search(text):
-                current_insert = CHECKLIST_SUFFIX.sub("", text).strip()
-                current_subsection = ""
-            else:
-                # Not a new checklist/Insert - a subsection label (e.g.
-                # "Rated Prospects") within whatever Insert is already
-                # in effect. Insert stays unchanged; the label goes
-                # into attributes instead.
-                current_subsection = text
+            # Classification is deferred to the first card line seen
+            # under this heading (need its card-number prefix) - see
+            # module docstring. Stash the heading text and whether it
+            # already satisfies the old "ends in Checklist" rule.
+            pending_heading = text
+            pending_is_checklist_suffix = bool(CHECKLIST_SUFFIX.search(text))
+            current_subsection = ""
             current_parallels = []
             caption_seen = False
             declared_count = None
@@ -374,7 +420,20 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
                 lines = _clean_lines(el)
                 if _looks_like_parallel_list_paragraph(lines):
                     current_parallels = [_parse_parallel_li(line) for line in lines]
-                else:
+                elif lines:
+                    if pending_heading is not None:
+                        num, *_rest = _parse_line(lines[0])
+                        prefix = _extract_prefix(num)
+                        if pending_is_checklist_suffix or prefix != last_prefix:
+                            current_insert = CHECKLIST_SUFFIX.sub("", pending_heading).strip()
+                            current_subsection = ""
+                        else:
+                            current_subsection = pending_heading
+                        last_prefix = prefix
+                        pending_heading = None
+                    elif not buffer:
+                        num, *_rest = _parse_line(lines[0])
+                        last_prefix = _extract_prefix(num)
                     buffer.extend(lines)
 
         prev_was_ul = is_ul
