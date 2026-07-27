@@ -601,7 +601,10 @@ class MainWindow(QMainWindow):
             QApplication.processEvents()
             try:
                 html = self.browser_manager.click_beckett_full_checklist()
-                new_rows = parse_beckett_checklist(html)
+                new_rows = parse_beckett_checklist(
+                    html,
+                    force_new_insert_for_all_h3=self.browser_manager.used_tab_combine_fallback,
+                )
             except Exception as exc:  # noqa: BLE001
                 self.statusBar().showMessage(f"Error: {exc}")
                 PromptDialog.error(self, title, str(exc))

@@ -336,11 +336,28 @@ def _build_attributes(category: str, is_rc: bool, subsection: str = "", team_not
     return ", ".join(tags)
 
 
-def parse_beckett_checklist(container_html: str) -> list[dict]:
+def parse_beckett_checklist(
+    container_html: str, force_new_insert_for_all_h3: bool = False,
+) -> list[dict]:
     """Parse the Full Checklist tab's container HTML into a list of
     raw row dicts, each with keys: insert, card_number, player, team,
     attributes, parallels (list of (parallel, serial) tuples, [] when
-    the section has no blanket parallel list)."""
+    the section has no blanket parallel list).
+
+    force_new_insert_for_all_h3: set True when container_html came
+    from BrowserManager's tab-combining fallback (no aggregate "Full
+    Checklist" tab existed - see click_beckett_full_checklist and
+    BrowserManager.used_tab_combine_fallback), confirmed 2026-07-26
+    (Brandon, Road To Opening Day). On a page like that, headings such
+    as "Dual Autographs" share the same card-number prefix as the
+    tab's baseline cards (both "A-"), so the normal prefix-based rule
+    folds them into a subsection/attribute instead of their own
+    Insert - wrong for this kind of page, where Brandon wants them
+    treated as full Inserts. This flag skips the prefix comparison
+    entirely and treats every <h3> as a new Insert. Only meant for
+    that fallback's output - leave False for normal aggregate-tab
+    HTML, where the prefix-based rule is still what's confirmed
+    correct (e.g. Rated Prospects staying a subsection of Base Set)."""
     soup = BeautifulSoup(container_html, "html.parser")
 
     rows: list[dict] = []
@@ -495,7 +512,11 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
                     if pending_heading is not None:
                         num, *_rest = _parse_line(lines[0])
                         prefix = _extract_prefix(num)
-                        if pending_is_checklist_suffix or prefix != last_prefix:
+                        if (
+                            pending_is_checklist_suffix
+                            or prefix != last_prefix
+                            or force_new_insert_for_all_h3
+                        ):
                             current_insert = CHECKLIST_SUFFIX.sub("", pending_heading).strip()
                             current_subsection = ""
                         else:

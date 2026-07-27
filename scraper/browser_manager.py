@@ -45,6 +45,12 @@ class BrowserManager:
         self._playwright: Playwright | None = None
         self._browser: Browser | None = None
         self._page: Page | None = None
+        # Set by click_beckett_full_checklist() so the caller can tell
+        # the parser whether this HTML came from a real aggregate
+        # "Full Checklist" tab or from combining per-category tabs -
+        # the latter needs different Insert-classification behavior,
+        # see parse_beckett_checklist's force_new_insert_for_all_h3.
+        self.used_tab_combine_fallback: bool = False
         # Maps Name (the raw website text) -> Team, reset at the start
         # of each extract_all_pages() run. Most rows in a set are
         # parallels of the SAME player appearing over and over - this
@@ -792,6 +798,7 @@ class BrowserManager:
         avoid waiting out the full auto-wait timeout on a pattern that
         isn't present (the bug that caused the original 30s timeout).
         """
+        self.used_tab_combine_fallback = False
         page = self._require_page()
 
         wrapper = page.locator(".advgb-tabs-wrapper").first
@@ -835,8 +842,26 @@ class BrowserManager:
                     tabs.nth(i).click()
                     if i < body_count:
                         body_html = bodies.nth(i).evaluate("el => el.outerHTML")
-                        html_parts.append(f"<h2>{tab_labels[i]}</h2>{body_html}")
+                        label = tab_labels[i]
+                        prefix_html = f"<h2>{label}</h2>"
+                        if label.strip().lower() != "base":
+                            # Give this tab's own cards a baseline
+                            # Insert of the tab's own name (e.g.
+                            # "Autographs") instead of leaving Insert
+                            # blank - confirmed 2026-07-26 (Brandon,
+                            # Road To Opening Day): on this kind of
+                            # no-Full-Checklist page, what would
+                            # normally just be an attribute tag
+                            # (Autograph, Dual Autographs) needs to be
+                            # the Insert value instead. The "Checklist"
+                            # suffix forces this via the existing new-
+                            # Insert rule. Base is excluded - its cards
+                            # keep Insert blank, matching every other
+                            # product's Base Set rows.
+                            prefix_html += f"<h3>{label} Checklist</h3>"
+                        html_parts.append(prefix_html + body_html)
                 if html_parts:
+                    self.used_tab_combine_fallback = True
                     return "".join(html_parts)
 
         tab_link = page.locator("a", has=page.locator("strong", has_text="Full Checklist")).first
