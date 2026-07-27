@@ -28,10 +28,6 @@ from app.extraction_worker import ExtractionWorker
 from settings.window_layout import MAIN_WINDOW_POSITION
 from settings.last_run import load_last_run, save_last_run
 from settings.accumulator import clear_accumulated, accumulated_count
-from settings.beckett_accumulator import (
-    load_beckett_accumulated, save_beckett_accumulated, clear_beckett_accumulated,
-    beckett_accumulated_count,
-)
 from settings.team_cache import clear_team_cache
 from settings.year_team_cache import clear_year_team_cache
 from settings.output_naming import resolve_unique_output_name, final_export_path
@@ -453,25 +449,21 @@ class MainWindow(QMainWindow):
 
     def on_clear_accumulated(self) -> None:
         count = accumulated_count()
-        beckett_count = beckett_accumulated_count()
-        total = count + beckett_count
-        if total == 0:
+        if count == 0:
             self.statusBar().showMessage("No accumulated data to clear.")
             return
         answer = PromptDialog.question(
             self, "Clear Accumulated Data",
-            f"Clear all {total:,} accumulated rows ({count:,} BSC, "
-            f"{beckett_count:,} Beckett)?\n\n"
-            "This removes the data from all previous page-range runs "
-            "and Beckett pulls. The next extraction will start fresh.",
+            f"Clear all {count:,} accumulated rows?\n\n"
+            "This removes the data from all previous page-range runs. "
+            "The next extraction will start fresh.",
             ["Yes", "No"], "No",
         )
         if answer == "Yes":
             clear_accumulated()
-            clear_beckett_accumulated()
             clear_team_cache()
             clear_year_team_cache()
-            self.statusBar().showMessage(f"Cleared {total:,} accumulated rows and team cache.")
+            self.statusBar().showMessage(f"Cleared {count:,} accumulated rows and team cache.")
 
     def _on_worker_error(self, message: str) -> None:
         self._teardown_worker()
@@ -621,27 +613,24 @@ class MainWindow(QMainWindow):
                 )
                 return
 
-            # Accumulate with any previous Beckett pulls this session -
-            # e.g. Base release + Celebration Mega Box + All-Star Game
-            # Mega Box, anything sharing the same year/brand/set -
-            # instead of overwriting. output_name is captured on the
-            # first pull and reused for every pull after, so the file
-            # doesn't get a new "(2)"-style name each time.
-            existing_rows, existing_output_name = load_beckett_accumulated()
-            all_rows = existing_rows + new_rows
-            output_name = existing_output_name or resolve_unique_output_name(product)
-            save_beckett_accumulated(all_rows, output_name)
+            # Per Brandon 2026-07-26: accumulating pulls into one file
+            # inside the app turned out more trouble than it was worth
+            # (naming had to match exactly, easy to trip over) -
+            # combining related pulls (Base release + Celebration Mega
+            # Box + etc.) is easier done outside the app instead. Back
+            # to each pull writing its own standalone, uniquely-named
+            # file every time.
+            output_name = resolve_unique_output_name(product)
 
             context = {"product": product, "sport": sport}
-            checklist_rows = build_external_checklist_rows(all_rows, context)
+            checklist_rows = build_external_checklist_rows(new_rows, context)
             checklist_rows = sort_rows_by_brand(checklist_rows)
 
             final_path = final_export_path(output_name)
             write_final_csv(checklist_rows, final_path)
 
             self.statusBar().showMessage(
-                f"Done: +{len(new_rows):,} new rows ({len(all_rows):,} total "
-                f"accumulated) → {len(checklist_rows):,} cards. Saved to {final_path}"
+                f"Done: {len(checklist_rows):,} cards → {final_path}"
             )
         finally:
             self.extract_button.setEnabled(True)
