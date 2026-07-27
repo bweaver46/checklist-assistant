@@ -27,6 +27,7 @@ from playwright.sync_api import (
 )
 
 from scraper.card_record import CardRecord
+from parsers.beckett_parser import extract_flat_checklist_html
 from settings.selectors import (
     ROW_SELECTOR, FIELD_SELECTORS, PAGINATION_NAV_SELECTOR,
     TEAM_DETAIL_LABEL_SELECTOR, DESCRIPTION_DETAIL_LABEL_SELECTOR,
@@ -873,24 +874,32 @@ class BrowserManager:
                 panel_selector = f"#{panel_id}, div[aria-labelledby='{panel_id}']"
                 return page.locator(panel_selector).first.evaluate("el => el.outerHTML")
 
-        # No tabs structure of any kind found (neither the
-        # advgb-tabs-wrapper case above nor the old <a><strong> case)
-        # - confirmed 2026-07-26 (Brandon, real extraction against the
-        # All-Star Game Mega Box article): some Beckett articles are
-        # short supplementary pages with no tabs at all. Falling back
-        # to page.content() here used to feed the ENTIRE page (nav
-        # menu, cookie banner, article prose) into
-        # parse_beckett_checklist(), producing garbage rows like
-        # insert="Top Menu" and card_number/player fields containing
-        # whole sentences of prose. Raising here instead surfaces a
-        # clear, specific error message rather than silently writing
-        # bad data into the accumulator.
+        # No tabs structure of any kind (neither advgb-tabs-wrapper
+        # nor the old <a><strong> case) - confirmed 2026-07-26
+        # (Brandon, 2026 Topps Hobby Rip Night Baseball): some
+        # articles are a single flat body with the checklist directly
+        # in the article prose, no tabs at all. Try isolating just the
+        # checklist content via extract_flat_checklist_html() (see its
+        # docstring for the exact boundary rule) before giving up.
+        flat_html = extract_flat_checklist_html(page.content())
+        if flat_html is not None:
+            return flat_html
+
+        # Truly nothing found - not even a flat-body checklist section
+        # (extract_flat_checklist_html found no "Checklist"-ending
+        # heading, or no "Protect Your Collection With" boundary after
+        # it). Confirmed 2026-07-26 (Brandon, All-Star Game Mega Box
+        # article): some Beckett articles genuinely have no checklist
+        # section to isolate at all. Raising here instead of falling
+        # back to page.content() surfaces a clear, specific error
+        # rather than silently writing bad data into the accumulator.
         raise RuntimeError(
-            "Could not find any checklist tabs on this page (neither "
-            "a 'Full Checklist' tab nor individual category tabs like "
-            "Base/Autographs). Some Beckett articles (e.g. short "
-            "supplementary releases like an All-Star Game Mega Box "
-            "page) don't have a tabbed checklist at all - check the "
+            "Could not find a checklist on this page - no tabs, and "
+            "no flat checklist section either (expected a heading "
+            "ending in 'Checklist' followed eventually by 'Protect "
+            "Your Collection With:'). Some Beckett articles (e.g. "
+            "short supplementary releases like an All-Star Game Mega "
+            "Box page) don't have a checklist at all - check the "
             "article actually has one before extracting."
         )
 

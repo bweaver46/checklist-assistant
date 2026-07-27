@@ -178,6 +178,11 @@ RC_SUFFIX = re.compile(r"\s*\(RC\)\s*$|\s+RC\s*$")
 CARD_NUM_TOKEN = re.compile(r"^(?:\d+[A-Za-z]*|[A-Za-z]+\d+|[A-Z0-9]+-[A-Z0-9\-]+)$")
 CHECKLIST_SUFFIX = re.compile(r"\s*Checklist\s*$", re.IGNORECASE)
 BASE_VARIATION_PREFIX = re.compile(r"^Base\s*[\u2013\u2014-]\s*", re.IGNORECASE)
+# Used by extract_flat_checklist_html() - see its docstring.
+CHECKLIST_TITLE_PATTERN = re.compile(
+    r"Checklist(\s*[\u2013\u2014-]\s*Master Card List)?\s*$", re.IGNORECASE
+)
+FOOTER_BOUNDARY_PATTERN = re.compile(r"protect your collection with", re.IGNORECASE)
 ONE_OF_ONE_SUFFIX = re.compile(r"^(.*?)\s+1/1\s*$")
 TEAM_PAREN_SUFFIX = re.compile(r"^(.*?)\s*\(([^)]+)\)\s*$")
 PARALLEL_LINE_PATTERN = re.compile(r"^[^,]+?(?:\s+/\d+|\s+1/1)\s*$")
@@ -334,6 +339,61 @@ def _build_attributes(category: str, is_rc: bool, subsection: str = "", team_not
     if category == "Autographs":
         tags.append("Autograph")
     return ", ".join(tags)
+
+
+def extract_flat_checklist_html(full_page_html: str) -> str | None:
+    """For Beckett articles with NO tabs structure at all - a single
+    flat article body (e.g. 2026 Topps Hobby Rip Night Baseball,
+    confirmed 2026-07-26 Brandon) rather than Pristine/Chrome's tabbed
+    layout or Road To Opening Day's per-category-tabs-no-aggregate
+    layout. Feeding the WHOLE page to parse_beckett_checklist() would
+    misparse every h2/h3/p on the page (nav menu, footer, comments,
+    related articles) as if it were checklist content - the exact
+    "garbage rows" problem the hard error this replaces was written
+    to avoid.
+
+    Isolates just the real checklist content using two boundaries
+    confirmed identical across every Beckett checklist article seen
+    so far (tabbed or not):
+      - START: the heading (h1/h2/h3) that IS the checklist section
+        title - ends in "Checklist", optionally followed by
+        "- Master Card List" (Pristine/Chrome's phrasing). This is
+        NOT the same as the page's overall <h1> article title, which
+        usually says "... Checklist and Details" or similar and
+        doesn't match this pattern (correctly excluded, since starting
+        there would also capture the intro prose/shop links above the
+        actual checklist).
+      - END: the "Protect Your Collection With:" boilerplate that
+        Beckett appends after every checklist, verbatim, before
+        related-articles/comments/footer content.
+
+    Returns the HTML between those two boundaries (exclusive of the
+    title heading, exclusive of the boilerplate), or None if either
+    boundary isn't found - callers should treat None as "couldn't
+    safely isolate the checklist," not silently fall back to the whole
+    page. NOT YET CONFIRMED against a live no-tabs page - report back
+    what the exported CSV looks like the first time this runs for
+    real."""
+    soup = BeautifulSoup(full_page_html, "html.parser")
+    elements = soup.find_all(["h1", "h2", "h3", "h4", "p", "ul"])
+
+    start_idx = None
+    for i, el in enumerate(elements):
+        if el.name in ("h1", "h2", "h3") and CHECKLIST_TITLE_PATTERN.search(el.get_text()):
+            start_idx = i + 1
+            break
+    if start_idx is None:
+        return None
+
+    end_idx = None
+    for i in range(start_idx, len(elements)):
+        if FOOTER_BOUNDARY_PATTERN.search(elements[i].get_text()):
+            end_idx = i
+            break
+    if end_idx is None:
+        return None
+
+    return "".join(str(el) for el in elements[start_idx:end_idx])
 
 
 def parse_beckett_checklist(
