@@ -181,6 +181,7 @@ BASE_VARIATION_PREFIX = re.compile(r"^Base\s*[\u2013\u2014-]\s*", re.IGNORECASE)
 ONE_OF_ONE_SUFFIX = re.compile(r"^(.*?)\s+1/1\s*$")
 TEAM_PAREN_SUFFIX = re.compile(r"^(.*?)\s*\(([^)]+)\)\s*$")
 PARALLEL_LINE_PATTERN = re.compile(r"^[^,]+?(?:\s+/\d+|\s+1/1)\s*$")
+ALL_CARDS_SERIAL_PATTERN = re.compile(r"^all cards are\s*/(\d+)", re.IGNORECASE)
 
 
 def _extract_prefix(card_number: str) -> str:
@@ -233,6 +234,25 @@ def _extract_count(p_tag: Tag) -> int | None:
     if not match:
         return None
     return int(re.match(r"^\d+", lines[0]).group())
+
+
+def _extract_all_cards_serial(p_tag: Tag) -> str:
+    """Read a section-wide serial note off the caption paragraph's
+    OTHER lines (e.g. 'Vintage Stock Variations' caption reads
+    '100 cards<br>All cards are /99' - the count line is handled by
+    _extract_count, this reads the '/99' the caption states for every
+    card in the section). Confirmed 2026-07-26 (Brandon, real 2026
+    Topps Series 1 data): this note used to be silently discarded
+    entirely (only the caption's first line was ever read), so a
+    "Base - Vintage Stock Variations" merge onto Base Set rows (see
+    BASE_VARIATION_PREFIX handling) landed with no serial at all even
+    though the page states one for the whole section. Returns '' if no
+    such line is present."""
+    for line in _clean_lines(p_tag)[1:]:
+        match = ALL_CARDS_SERIAL_PATTERN.match(line)
+        if match:
+            return match.group(1)
+    return ""
 
 
 def _is_commentary(p_tag: Tag) -> bool:
@@ -330,6 +350,7 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
     current_parallels: list[tuple[str, str]] = []
     caption_seen = False
     declared_count: int | None = None
+    declared_all_cards_serial: str = ""
     buffer: list[str] = []
     # Deferred Insert-vs-subsection classification (see module
     # docstring, "New-Insert detection..."). pending_heading holds an
@@ -375,7 +396,7 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
                 "attributes": _build_attributes(
                     current_category, rc_any, current_subsection, ", ".join(team_notes)
                 ),
-                "base_serial": base_serial,
+                "base_serial": base_serial or declared_all_cards_serial,
                 "parallels": list(current_parallels),
             })
         else:
@@ -387,7 +408,7 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
                     "player": name,
                     "team": team,
                     "attributes": _build_attributes(current_category, is_rc, current_subsection, team_note),
-                    "base_serial": serial,
+                    "base_serial": serial or declared_all_cards_serial,
                     "parallels": list(current_parallels),
                 })
         buffer = []
@@ -419,6 +440,7 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
             current_parallels = []
             caption_seen = False
             declared_count = None
+            declared_all_cards_serial = ""
             pending_heading = None
             last_prefix = None
             base_variation_name = None
@@ -446,6 +468,7 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
             current_parallels = []
             caption_seen = False
             declared_count = None
+            declared_all_cards_serial = ""
         elif el.name == "h4":
             pass
         elif el.name == "ul":
@@ -453,6 +476,7 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
         elif el.name == "p":
             if not caption_seen:
                 declared_count = _extract_count(el)
+                declared_all_cards_serial = _extract_all_cards_serial(el)
                 caption_seen = True
             elif not _is_commentary(el):
                 lines = _clean_lines(el)
@@ -465,7 +489,7 @@ def parse_beckett_checklist(container_html: str) -> list[dict]:
                             continue
                         for row in rows:
                             if row["card_number"] == num and row["insert"] == "":
-                                row["parallels"].append((base_variation_name, serial))
+                                row["parallels"].append((base_variation_name, serial or declared_all_cards_serial))
                                 break
                 elif lines:
                     if pending_heading is not None:
