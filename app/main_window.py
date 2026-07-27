@@ -604,6 +604,7 @@ class MainWindow(QMainWindow):
                 new_rows = parse_beckett_checklist(html)
             except Exception as exc:  # noqa: BLE001
                 self.statusBar().showMessage(f"Error: {exc}")
+                PromptDialog.error(self, title, str(exc))
                 return
 
             if not new_rows:

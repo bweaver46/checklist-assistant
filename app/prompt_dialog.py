@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QComboBox, QPushButton,
+    QComboBox, QPushButton, QTextEdit,
 )
 from PySide6.QtCore import Qt
 
@@ -70,6 +70,29 @@ class PromptDialog(QDialog):
         d._add_ok_cancel()
         ok = d.exec()
         return box.currentText(), bool(ok)
+
+    @staticmethod
+    def error(parent, title: str, message: str) -> None:
+        """Show an error with the full text selectable/copyable -
+        confirmed 2026-07-26 (Brandon): the status bar shows the full
+        message but its text can't be selected/copied, which matters
+        for error text he needs to paste elsewhere. Uses a read-only
+        QTextEdit rather than QLabel specifically so mouse-drag
+        selection and Cmd+C work normally."""
+        d = PromptDialog(parent, title, "")
+        box = QTextEdit()
+        box.setPlainText(message)
+        box.setReadOnly(True)
+        box.setFixedHeight(120)
+        d._layout.addWidget(box)
+        ok = QPushButton("OK")
+        ok.setDefault(True)
+        ok.clicked.connect(d.accept)
+        row = QHBoxLayout()
+        row.addStretch()
+        row.addWidget(ok)
+        d._layout.addLayout(row)
+        d.exec()
 
     @staticmethod
     def question(parent, title: str, label: str,

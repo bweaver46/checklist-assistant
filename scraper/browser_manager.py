@@ -779,10 +779,15 @@ class BrowserManager:
         consistency/safety in case some article's markup genuinely
         needs it.
 
-        Fallback strategy: the original <a><strong> structure this was
-        first built against (from a hand-provided HTML snippet, never
-        actually confirmed live before 2026-07-26). Kept as a defensive
-        second attempt in case some article uses a different/older
+        Fallback strategy 1: if this article's tabs don't include a
+        "Full Checklist" tab at all (some products only have per-
+        category tabs), combine every other tab's body instead of
+        giving up - see the inline comment below for the exact rule.
+
+        Fallback strategy 2: the original <a><strong> structure this
+        was first built against (from a hand-provided HTML snippet,
+        never actually confirmed live before 2026-07-26). Kept as a
+        defensive attempt in case some article uses a different/older
         tabs structure entirely - costs nothing since .count() checks
         avoid waiting out the full auto-wait timeout on a pattern that
         isn't present (the bug that caused the original 30s timeout).
@@ -795,12 +800,44 @@ class BrowserManager:
             bodies = wrapper.locator(".advgb-tab-body")
             tab_count = tabs.count()
             body_count = bodies.count()
-            for i in range(tab_count):
-                if tabs.nth(i).inner_text().strip() == "Full Checklist":
+            tab_labels = [tabs.nth(i).inner_text().strip() for i in range(tab_count)]
+
+            if "Full Checklist" in tab_labels:
+                i = tab_labels.index("Full Checklist")
+                tabs.nth(i).click()
+                if i < body_count:
+                    return bodies.nth(i).evaluate("el => el.outerHTML")
+
+            # No single tab already combines everything - confirmed
+            # 2026-07-26 (Brandon, 2026 Topps Now Road To Opening Day
+            # page): some articles only have per-category tabs (Base,
+            # Autographs, ...) with nothing that aggregates them.
+            # Concatenate every tab's body EXCEPT "Team Sets" - that
+            # one re-lists the exact same cards grouped by team instead
+            # of by insert, so including it would duplicate every row -
+            # and feed the combined HTML to the parser as if it came
+            # from one "Full Checklist" tab. A synthetic <h2>{label}</h2>
+            # is prepended to each tab's content so current_category
+            # (and the "Autograph" attribute tag that depends on it)
+            # is set correctly even if the tab's own content doesn't
+            # repeat its label as a heading - harmless if it already
+            # does. NOT YET CONFIRMED against a live no-Full-Checklist
+            # page - same "first real run is the test" caveat as the
+            # rest of this method; report back what the exported CSV
+            # looks like if something's off.
+            combinable = [
+                i for i, label in enumerate(tab_labels)
+                if label.strip().lower() != "team sets"
+            ]
+            if combinable:
+                html_parts = []
+                for i in combinable:
                     tabs.nth(i).click()
                     if i < body_count:
-                        return bodies.nth(i).evaluate("el => el.outerHTML")
-                    break
+                        body_html = bodies.nth(i).evaluate("el => el.outerHTML")
+                        html_parts.append(f"<h2>{tab_labels[i]}</h2>{body_html}")
+                if html_parts:
+                    return "".join(html_parts)
 
         tab_link = page.locator("a", has=page.locator("strong", has_text="Full Checklist")).first
         if tab_link.count() > 0:
@@ -811,23 +848,25 @@ class BrowserManager:
                 panel_selector = f"#{panel_id}, div[aria-labelledby='{panel_id}']"
                 return page.locator(panel_selector).first.evaluate("el => el.outerHTML")
 
-        # No Full Checklist tab found by either strategy. Confirmed
-        # 2026-07-26 (Brandon, real extraction against the All-Star
-        # Game Mega Box article): some Beckett articles are short
-        # supplementary pages with no tabs structure at all - falling
-        # back to page.content() here used to feed the ENTIRE page
-        # (nav menu, cookie banner, article prose) into
+        # No tabs structure of any kind found (neither the
+        # advgb-tabs-wrapper case above nor the old <a><strong> case)
+        # - confirmed 2026-07-26 (Brandon, real extraction against the
+        # All-Star Game Mega Box article): some Beckett articles are
+        # short supplementary pages with no tabs at all. Falling back
+        # to page.content() here used to feed the ENTIRE page (nav
+        # menu, cookie banner, article prose) into
         # parse_beckett_checklist(), producing garbage rows like
         # insert="Top Menu" and card_number/player fields containing
         # whole sentences of prose. Raising here instead surfaces a
         # clear, specific error message rather than silently writing
         # bad data into the accumulator.
         raise RuntimeError(
-            "Could not find a 'Full Checklist' tab on this page. "
-            "Some Beckett articles (e.g. short supplementary releases "
-            "like an All-Star Game Mega Box page) don't have one - "
-            "check the article actually has Base/Autographs/.../Full "
-            "Checklist tabs before extracting."
+            "Could not find any checklist tabs on this page (neither "
+            "a 'Full Checklist' tab nor individual category tabs like "
+            "Base/Autographs). Some Beckett articles (e.g. short "
+            "supplementary releases like an All-Star Game Mega Box "
+            "page) don't have a tabbed checklist at all - check the "
+            "article actually has one before extracting."
         )
 
     def close(self) -> None:
