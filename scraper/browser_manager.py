@@ -811,10 +811,24 @@ class BrowserManager:
                 panel_selector = f"#{panel_id}, div[aria-labelledby='{panel_id}']"
                 return page.locator(panel_selector).first.evaluate("el => el.outerHTML")
 
-        # Last resort - report the whole page rather than crash, so
-        # the parser at least has something to work with and Brandon
-        # can tell us what actually happened.
-        return page.content()
+        # No Full Checklist tab found by either strategy. Confirmed
+        # 2026-07-26 (Brandon, real extraction against the All-Star
+        # Game Mega Box article): some Beckett articles are short
+        # supplementary pages with no tabs structure at all - falling
+        # back to page.content() here used to feed the ENTIRE page
+        # (nav menu, cookie banner, article prose) into
+        # parse_beckett_checklist(), producing garbage rows like
+        # insert="Top Menu" and card_number/player fields containing
+        # whole sentences of prose. Raising here instead surfaces a
+        # clear, specific error message rather than silently writing
+        # bad data into the accumulator.
+        raise RuntimeError(
+            "Could not find a 'Full Checklist' tab on this page. "
+            "Some Beckett articles (e.g. short supplementary releases "
+            "like an All-Star Game Mega Box page) don't have one - "
+            "check the article actually has Base/Autographs/.../Full "
+            "Checklist tabs before extracting."
+        )
 
     def close(self) -> None:
         """Close the browser and stop Playwright cleanly."""

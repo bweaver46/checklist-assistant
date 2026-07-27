@@ -175,7 +175,7 @@ from exporter.convert import split_trailing_slash_serial
 
 CAPTION_LINE = re.compile(r"^\d+\s+cards?\b", re.IGNORECASE)
 RC_SUFFIX = re.compile(r"\s*\(RC\)\s*$|\s+RC\s*$")
-CARD_NUM_TOKEN = re.compile(r"^(?:\d+|[A-Z0-9]+-[A-Z0-9\-]+)$")
+CARD_NUM_TOKEN = re.compile(r"^(?:\d+[A-Za-z]*|[A-Za-z]+\d+|[A-Z0-9]+-[A-Z0-9\-]+)$")
 CHECKLIST_SUFFIX = re.compile(r"\s*Checklist\s*$", re.IGNORECASE)
 BASE_VARIATION_PREFIX = re.compile(r"^Base\s*[\u2013\u2014-]\s*", re.IGNORECASE)
 ONE_OF_ONE_SUFFIX = re.compile(r"^(.*?)\s+1/1\s*$")
