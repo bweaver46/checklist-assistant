@@ -20,6 +20,7 @@ Everything goes through this class.
 from __future__ import annotations
 
 import re
+from urllib.parse import urlparse
 
 from playwright.sync_api import (
     sync_playwright, Browser, Page, Playwright, Locator,
@@ -163,14 +164,29 @@ class BrowserManager:
         _page pointed at the ORIGINAL tab forever - it has no reason to
         follow the new one on its own. This keeps _page pointed at
         whichever tab was most recently opened, which is a reasonable
-        proxy for "the one Brandon is actually looking at" since he's
-        never intentionally working two tabs at once in this workflow.
-        A no-op if there's only one tab open (the common case)."""
+        proxy for "the one Brandon is actually looking at" - EXCEPT
+        when that new tab is just the same site's bare homepage
+        (confirmed 2026-08-01: BuySportsCards pops its own home page
+        open in a second tab on its own, unrelated to anything Brandon
+        clicks; following it stranded _page on a blank homepage with
+        no checklist rows, so Extract read zero rows and reported "no
+        data"). A same-host tab whose path is empty/"/" is treated as
+        this kind of noise and ignored; a different host, or a deeper
+        path on the same host (e.g. Beckett's article links), is still
+        followed. A no-op if there's only one tab open (the common
+        case)."""
         if self._page is None:
             return
         pages = self._page.context.pages
-        if pages and pages[-1] is not self._page:
-            self._page = pages[-1]
+        if not pages or pages[-1] is self._page:
+            return
+        newest = pages[-1]
+        current_host = urlparse(self._page.url).netloc.lower()
+        newest_host = urlparse(newest.url).netloc.lower()
+        newest_path = urlparse(newest.url).path.strip("/")
+        if newest_host == current_host and not newest_path:
+            return
+        self._page = newest
 
     def _require_page(self) -> Page:
         if self._page is None:

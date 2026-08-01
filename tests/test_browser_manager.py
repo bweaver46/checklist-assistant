@@ -76,6 +76,29 @@ def test_sync_to_latest_page_follows_a_new_tab():
     assert bm._page is new_page
 
 
+def test_sync_to_latest_page_ignores_same_host_bare_homepage():
+    # Confirmed 2026-08-01 (Brandon): BuySportsCards pops its own home
+    # page open in a second tab on its own (unrelated to anything he
+    # clicks). Before this fix, _sync_to_latest_page followed it like
+    # any other new tab, stranding _page on the blank homepage - so
+    # Extract Checklist read zero rows and reported "no data" even
+    # though the loaded checklist tab was still sitting right there.
+    bm = BrowserManager()
+    checklist_page = FakePageWithUrl(
+        [], "https://www.buysportscards.com/sets/2025-topps-chrome-baseball"
+    )
+    homepage_popup = FakePageWithUrl([], "https://www.buysportscards.com/")
+    context = FakeContext([checklist_page, homepage_popup])
+    checklist_page.context = context
+    homepage_popup.context = context
+    bm._page = checklist_page
+
+    url = bm.current_url()
+
+    assert url == "https://www.buysportscards.com/sets/2025-topps-chrome-baseball"
+    assert bm._page is checklist_page
+
+
 def test_sync_to_latest_page_is_a_noop_with_only_one_tab():
     bm = BrowserManager()
     page = FakePageWithUrl([], "https://www.beckett.com/news/")
@@ -372,6 +395,7 @@ def test_year_checkin_lettered_variant_rows_are_untouched():
 
 if __name__ == "__main__":
     test_sync_to_latest_page_follows_a_new_tab()
+    test_sync_to_latest_page_ignores_same_host_bare_homepage()
     test_sync_to_latest_page_is_a_noop_with_only_one_tab()
     test_team_cache_only_fetches_once_per_distinct_player()
     test_team_cache_does_not_fetch_at_all_when_fetch_team_is_false()
