@@ -62,6 +62,15 @@ class BrowserManager:
         # all its parallels.
         # Used for Set-mode team fetching (many distinct players).
         self._team_cache: dict[str, str] = {}
+        # Reset at the top of each read_all_rows() call - lets
+        # extract_all_pages() report, per page, how many Set-mode team
+        # lookups were served from _team_cache vs. actually fetched via
+        # the Add page. Added 2026-08-01 (Brandon): without this there
+        # was no way to confirm whether the cache was genuinely working
+        # as designed on a given run, or whether a set was just
+        # introducing new player names later than expected.
+        self._last_cache_hit_count = 0
+        self._last_fetch_count = 0
         # Used for Player-mode team fetching (one player, potentially
         # thousands of rows across many years). Keyed "name|year" ->
         # see settings/year_team_cache.py for the value states
@@ -280,6 +289,8 @@ class BrowserManager:
         """
         page = self._require_page()
         self._newly_mixed_this_call = {}
+        self._last_cache_hit_count = 0
+        self._last_fetch_count = 0
         records: list[CardRecord] = []
         rows = page.locator(selector)
         count = rows.count()
@@ -303,6 +314,7 @@ class BrowserManager:
                 elif not is_letter_variant and record.name in self._team_cache:
                     # Non-lettered cache hit - skip the page visit.
                     record.team = self._team_cache[record.name]
+                    self._last_cache_hit_count += 1
                 else:
                     team, description = self.fetch_card_details_for_row(row)
                     record.description = description
@@ -313,6 +325,7 @@ class BrowserManager:
                         # have different descriptions, so they're never
                         # served from this cache.
                         self._team_cache[record.name] = team
+                        self._last_fetch_count += 1
                     if pause_callback:
                         pause_callback()
             records.append(record)
@@ -730,7 +743,13 @@ class BrowserManager:
                 self._newly_mixed_this_call = {}
 
             if on_status:
-                on_status(f"Page {current_page}: {len(page_records)} rows — {len(all_records):,} total")
+                stats = ""
+                if fetch_team and not sample_team_by_year:
+                    stats = (
+                        f" ({self._last_fetch_count} looked up, "
+                        f"{self._last_cache_hit_count} cached)"
+                    )
+                on_status(f"Page {current_page}: {len(page_records)} rows — {len(all_records):,} total{stats}")
 
             at_end_page = end_page > 0 and current_page >= end_page
             at_last_page = not self.has_next_page()
