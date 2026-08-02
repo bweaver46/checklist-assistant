@@ -62,6 +62,21 @@ def clean_description(description: str) -> str:
     return WHITESPACE_PATTERN.sub(" ", text).strip()
 
 
+def tokenize_attributes(attrs: str) -> set[str]:
+    """Split a raw BSC Attribute(s) cell ('AS, SP, VAR', '-', 'SN150')
+    into the individual non-serial, non-VAR tokens it actually carries
+    ('AS', 'SP'). VAR is dropped (implied by being a parallel); serial
+    numbers (SN/PR) are dropped (handled separately via parse_serial)."""
+    if not attrs or attrs.strip() == "-":
+        return set()
+    return {
+        t.strip()
+        for t in attrs.split(",")
+        if t.strip() and t.strip().upper() != "VAR"
+        and not re.match(r'^(SN|PR)\d+$', t.strip(), re.IGNORECASE)
+    }
+
+
 def attributes_extra(variant_attrs: str, base_attrs: str) -> str:
     """Return the attribute tokens present in variant_attrs but NOT in
     base_attrs, excluding 'VAR' (which is implied by being a parallel).
@@ -70,18 +85,8 @@ def attributes_extra(variant_attrs: str, base_attrs: str) -> str:
     'SN50'    vs '-'  -> ''   (serials are handled via parse_serial)
     'SP'      vs 'SP' -> ''   (same as base, goes to card attributes)
     """
-    def tokenize(attrs: str) -> set[str]:
-        if not attrs or attrs.strip() == "-":
-            return set()
-        return {
-            t.strip()
-            for t in attrs.split(",")
-            if t.strip() and t.strip().upper() != "VAR"
-            and not re.match(r'^(SN|PR)\d+$', t.strip(), re.IGNORECASE)
-        }
-
-    base_tokens = tokenize(base_attrs)
-    variant_tokens = tokenize(variant_attrs)
+    base_tokens = tokenize_attributes(base_attrs)
+    variant_tokens = tokenize_attributes(variant_attrs)
     extra = variant_tokens - base_tokens
     return ", ".join(sorted(extra))
 
@@ -192,12 +197,32 @@ def build_checklist_rows(
             for occ, _ in group
         )
 
+        # Find the base (non-lettered, non-base-variant) row's attributes.
+        # Needed here (not just for the lettered-variant comparison further
+        # down) because this is also where a plain code like "AS" or "RC" -
+        # scraped straight off BSC's own Attribute(s) column, with no
+        # serial number and no Add-page description text behind it -
+        # actually makes it into the output. Confirmed missing entirely
+        # (Brandon, 2026-08-01, 2026 Topps Heritage #10 "AS", #13 "ASR",
+        # #32 "RC"): these tokens were previously read into occ.attributes
+        # but only ever consulted for autograph detection and the lettered-
+        # variant's attributes_extra() delta - never copied into card_attrs
+        # itself, so a code with no other distinguishing text just vanished.
+        base_occ_attrs = "-"
+        for occ, _ in group:
+            if occ.is_base and not occ.is_letter_variant:
+                base_occ_attrs = occ.attributes
+                break
+
         card_attrs_parts = []
         if section.strip():
             card_attrs_parts.append(section.strip())
         for leftover in leftover_texts:
             if leftover.strip() and leftover.strip() not in card_attrs_parts:
                 card_attrs_parts.append(leftover.strip())
+        for token in sorted(tokenize_attributes(base_occ_attrs)):
+            if token not in card_attrs_parts:
+                card_attrs_parts.append(token)
 
         already_says_autograph = any(
             "autograph" in (text or "").lower()
@@ -213,13 +238,6 @@ def build_checklist_rows(
         letter_group = [(occ, fb) for occ, fb in non_base_group if occ.is_letter_variant]
         regular_group = [(occ, fb) for occ, fb in non_base_group if not occ.is_letter_variant]
 
-        # Find the base (non-lettered, non-base-variant) row's attributes
-        # for comparison when building lettered variant parallel names.
-        base_occ_attrs = "-"
-        for occ, _ in group:
-            if occ.is_base and not occ.is_letter_variant:
-                base_occ_attrs = occ.attributes
-                break
 
         parallels: list[tuple[str, str]] = []
 
