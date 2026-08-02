@@ -143,9 +143,67 @@ def group_key(occurrence: RawOccurrence) -> tuple:
         occurrence.brand,
         occurrence.set,
         occurrence.card_number,
-        occurrence.player,
-        occurrence.team,
+        normalize_player_for_grouping(occurrence.player),
     )
+
+
+# Known trailing subset/insert abbreviation codes BSC appends directly onto
+# the Name cell text itself (not the separate Attribute(s) column) for some
+# rows of a card but not others - e.g. the same physical "World Series
+# Highlights" card_number showed up scraped as ALL of "World Series
+# Highlights", "World Series Highlights WSHL", "World Series Highlights
+# WSHL,", and "World Series Highlights SP, WSHL," across its different
+# print-version rows (Brandon, 2026-08-02, 2026 Topps Heritage). Because
+# group_key previously matched on the raw player text verbatim, each of
+# these variations formed its own separate output row instead of being
+# recognized as parallels of the same card. Extend this set as new codes
+# turn up in other sets - same "grows over time" spirit as
+# settings/brand_set_exceptions.csv in the sibling PSA import project.
+KNOWN_TRAILING_NAME_CODES = {"LL", "ALC", "NLC", "WSHL", "SP"}
+
+
+def normalize_player_for_grouping(player: str) -> str:
+    """Strip a trailing comma and/or a trailing run of known subset codes
+    (see KNOWN_TRAILING_NAME_CODES) so different scrapes of the same card
+    that got these codes tacked onto the Name text inconsistently still
+    group together. Only ever used for the grouping KEY - the actual
+    displayed player text is chosen separately (see below) so nothing is
+    lost from the export, just consolidated onto one row."""
+    text = player.strip()
+    while True:
+        text = text.rstrip(",").rstrip()
+        words = text.split(" ")
+        if words and words[-1] in KNOWN_TRAILING_NAME_CODES:
+            text = " ".join(words[:-1]).rstrip()
+        else:
+            break
+    return text
+
+
+def pick_display_player(group: list[tuple]) -> str:
+    """Prefer whichever occurrence's raw player text is already 'clean'
+    (equal to its own normalized form - no trailing comma, no known
+    trailing code) as what actually gets exported, since that's the
+    version without scrape-artifact suffix text stuck on it. Falls back
+    to the first occurrence's raw text if every row in the group has one
+    of these suffixes for some reason."""
+    for occ, _ in group:
+        raw = occ.player.strip()
+        if raw == normalize_player_for_grouping(raw):
+            return raw
+    return group[0][0].player
+
+
+def pick_display_team(group: list[tuple]) -> str:
+    """Prefer the first non-blank team text in the group - a blank team
+    on one row of an otherwise-identical card is a scrape gap (the Add
+    page fetch didn't return one that time), not a genuinely different
+    card, so it shouldn't produce its own row nor should it win out over
+    a row where the team WAS captured."""
+    for occ, _ in group:
+        if occ.team.strip():
+            return occ.team.strip()
+    return ""
 
 
 def build_checklist_rows(
@@ -158,7 +216,9 @@ def build_checklist_rows(
     rows: list[ChecklistRow] = []
 
     for key, group in groups.items():
-        type_, sport, year, brand, set_value, card_number, player, team = key
+        type_, sport, year, brand, set_value, card_number, _normalized_player = key
+        player = pick_display_player(group)
+        team = pick_display_team(group)
         first_occurrence = group[0][0]
 
         # Base rows (is_base=True) are excluded from the common-prefix
