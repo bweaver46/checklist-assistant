@@ -177,26 +177,35 @@ def assign_insert_clusters(bucket: list[tuple[RawOccurrence, str]]) -> list[int]
     Marvels..." texts) and every print version of both dumped as flat
     Parallels instead.
 
-    If the bucket contains a genuine Base row, every non-base row in it
-    IS a Parallel of that one base card by definition - always cluster
-    0, no splitting (this is the normal case: Optic colors, Rated
-    Prospects Optic Signatures colors, etc. - all legitimately belong to
-    the one base card they're rows for).
+    Every Base and Parallel row in a bucket always belongs to that one
+    base card - cluster 0, never split (Optic colors, Rated Prospects
+    Optic Signatures colors, etc. all legitimately belong to the one
+    base card they're rows for).
 
-    Only a bucket with NO Base row (pure-Insert) can actually be more
-    than one card. Walk its rows in the order BSC listed them and start
-    a new cluster whenever a row's Variant Name is NOT a word-wise
-    continuation of the current cluster's anchor (its first, plain/
-    un-suffixed row) - i.e. whenever the listing has visibly moved on to
-    a different insert."""
-    if any(occ.is_base for occ, _ in bucket):
-        return [0] * len(bucket)
-
+    Insert rows are different: a card's OWN number can independently
+    double as the number BSC gave an entirely unrelated Insert set for
+    that same player - e.g. 2026 Donruss Jacob Wilson is base card
+    #13 (with its own normal Optic/Artist Proofs parallels), and #13
+    is SEPARATELY the number his "Diamond Marvels" insert happens to
+    use (confirmed against the raw export, Brandon 2026-08-06 - the
+    first version of this fix assumed a Base row in the bucket meant
+    everything else was that card's own parallel, which merged Diamond
+    Marvels into Jacob Wilson's base row instead of splitting it out).
+    So only Insert-type rows (RawOccurrence.is_insert) get clustered:
+    walk them in the order BSC listed them and start a new cluster
+    whenever a row's Variant Name is NOT a word-wise continuation of
+    the current cluster's anchor (its first, plain/un-suffixed row) -
+    i.e. whenever the listing has visibly moved on to a different
+    insert. A bucket can freely mix cluster 0 (Base + its Parallels)
+    with one or more Insert clusters found this way."""
     cluster_ids: list[int] = []
     anchor: str = ""
     current_id = 0
     next_id = 1
     for occ, _ in bucket:
+        if not occ.is_insert:
+            cluster_ids.append(0)
+            continue
         text = occ.variant_name
         if not anchor or not _starts_with_words(text, anchor):
             anchor = text

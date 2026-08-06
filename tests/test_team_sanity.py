@@ -4,7 +4,7 @@ check (Brandon, 2026-08-06).
 """
 
 from exporter.checklist_template import ChecklistRow
-from exporter.team_sanity import find_sport_team_mismatches
+from exporter.team_sanity import find_sport_team_mismatches, certain_flags, review_flags
 
 
 def row(**kwargs) -> ChecklistRow:
@@ -102,3 +102,17 @@ def test_multi_player_card_ny_giants_one_notable_one_not_still_passes():
         player="Christy Mathewson / Some Rando",
     )]
     assert find_sport_team_mismatches(rows) == []
+
+
+# --- certain_flags/review_flags split ---
+
+def test_generic_mismatch_is_certain_giants_and_braves_are_not():
+    rows = [
+        row(sub_type="Baseball", team="Seattle Seahawks", player="Someone"),
+        row(sub_type="Football", team="Boston Braves", year="1932", player="Random Guy"),
+        row(sub_type="Baseball", team="New York Giants", year="2026", player="Some Rando"),
+    ]
+    flagged = find_sport_team_mismatches(rows)
+    assert len(certain_flags(flagged)) == 1
+    assert len(review_flags(flagged)) == 2
+    assert certain_flags(flagged)[0].team == "Seattle Seahawks"

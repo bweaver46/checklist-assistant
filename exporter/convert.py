@@ -150,6 +150,7 @@ class RawOccurrence:
     attributes: str
     leftover_name_text: str  # leftover from Primary Player extraction
     is_base: bool = False         # True when the website's Variant column read "Base"
+    is_insert: bool = False       # True when the website's Variant column read "Insert" (as opposed to "Parallel")
     is_letter_variant: bool = False  # True when card number has a trailing letter (1b, 1c)
     description: str = ""         # from the Add page; used to build lettered variant parallel name
 
@@ -368,6 +369,7 @@ def build_raw_occurrence(record: CardRecord, context: dict | None = None) -> tup
         attributes=record.attributes,
         leftover_name_text=leftover_name_text,
         is_base=(record.variant.strip().lower() == "base"),
+        is_insert=(record.variant.strip().lower() == "insert"),
         is_letter_variant=is_letter_variant,
         description=record.description,
     )

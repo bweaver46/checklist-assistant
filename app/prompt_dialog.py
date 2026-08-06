@@ -96,21 +96,36 @@ class PromptDialog(QDialog):
 
     @staticmethod
     def review_flags(parent, title: str, flagged: list) -> set[int]:
-        """Shows one row per FlaggedCard (exporter/team_sanity.py) with a
-        checkbox, unchecked by default. Checked = reject (remove from the
-        export); unchecked = approve (keep as-is). Returns the set of
-        row_index values the user checked to reject. Closing/Cancel is
-        treated the same as approving everything - nothing gets removed
-        on a dismissed dialog, since silently dropping cards is worse
-        than leaving a questionable one in for Brandon to catch by eye
-        later."""
+        """Shows one row per FlaggedCard (exporter/team_sanity.py,
+        review_flags() tier only - Boston Braves/New York Giants, the
+        genuinely ambiguous cases) with a checkbox, unchecked by
+        default. Checked = reject (remove from the export); unchecked =
+        approve (keep as-is). Returns the set of row_index values the
+        user checked to reject. Closing/Cancel is treated the same as
+        approving everything - nothing gets removed on a dismissed
+        dialog, since silently dropping cards is worse than leaving a
+        questionable one in for Brandon to catch by eye later.
+
+        The clear-cut cross-sport mismatches (certain_flags() tier) never
+        reach this dialog at all - those are auto-dropped before this is
+        even called (Brandon, 2026-08-06: the first version put all 140+
+        of them in here too, which just meant clicking through obviously-
+        wrong rows one at a time for no reason)."""
         d = PromptDialog(
             parent, title,
-            f"{len(flagged)} card(s) flagged for review - team doesn't "
-            "look right for this sport. Check any you want REMOVED from "
-            "the export; leave unchecked to keep them.",
+            f"{len(flagged)} card(s) need a judgment call - same team name is "
+            "legit in either sport depending on the player/year. Check any you "
+            "want REMOVED from the export; leave unchecked to keep them.",
         )
         d.setFixedWidth(560)
+
+        select_row = QHBoxLayout()
+        select_all_btn = QPushButton("Select All")
+        unselect_all_btn = QPushButton("Unselect All")
+        select_row.addWidget(select_all_btn)
+        select_row.addWidget(unselect_all_btn)
+        select_row.addStretch()
+        d._layout.addLayout(select_row)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -127,6 +142,9 @@ class PromptDialog(QDialog):
             cb = QCheckBox(text)
             inner.addWidget(cb)
             checkboxes.append((cb, card.row_index))
+
+        select_all_btn.clicked.connect(lambda: [cb.setChecked(True) for cb, _ in checkboxes])
+        unselect_all_btn.clicked.connect(lambda: [cb.setChecked(False) for cb, _ in checkboxes])
 
         inner.addStretch()
         scroll.setWidget(container)

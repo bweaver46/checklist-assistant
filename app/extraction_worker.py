@@ -27,7 +27,7 @@ from exporter.raw_export import write_raw_csv
 from exporter.convert import convert_all
 from exporter.merge import build_checklist_rows
 from exporter.cleanup import apply_cleanup
-from exporter.team_sanity import find_sport_team_mismatches
+from exporter.team_sanity import find_sport_team_mismatches, certain_flags, review_flags, FlaggedCard
 from exporter.final_export import write_final_csv, sort_rows_by_brand
 from settings.accumulator import load_accumulated, save_accumulated
 from settings.team_cache import load_team_cache, save_team_cache
@@ -182,14 +182,45 @@ class ExtractionWorker:
             # Team/sport sanity check (Brandon, 2026-08-06) - flags rows
             # whose Team doesn't look right for the sport this pull was
             # run under (catches scraper cross-contamination, e.g. NFL
-            # players showing up in a baseball pull). Review-only: never
-            # drops anything on its own. If on_review_flags is wired up
-            # (see main_window._on_review_flags), Brandon gets a
-            # checklist at the end of the run to reject specific rows;
-            # anything he doesn't check stays in as-is.
+            # players showing up in a baseball pull). Two tiers (see
+            # exporter/team_sanity.py): the clear-cut cross-sport
+            # mismatches are auto-dropped outright (no ambiguity, so no
+            # reason to make Brandon click through them one at a time -
+            # the first version did exactly that with 140+ rows on one
+            # pull, which is what this split fixes). Only the genuinely
+            # ambiguous Boston Braves/New York Giants cases go to the
+            # review dialog.
             flagged = find_sport_team_mismatches(checklist_rows)
-            if flagged and self._on_review_flags:
-                reject_indices = self._on_review_flags(flagged)
+            auto_drop = certain_flags(flagged)
+            needs_review = review_flags(flagged)
+
+            if auto_drop:
+                auto_drop_indices = {f.row_index for f in auto_drop}
+                self._on_progress(
+                    f"Removed {len(auto_drop_indices)} row(s) that clearly "
+                    "belonged to a different sport — see log for details."
+                )
+                for f in auto_drop:
+                    self._on_progress(f"  - dropped #{f.card_number} {f.player}: {f.reason}")
+                checklist_rows = [
+                    row for i, row in enumerate(checklist_rows)
+                    if i not in auto_drop_indices
+                ]
+                # Row indices on needs_review were computed against the
+                # pre-drop list - shift each one down by however many
+                # auto-dropped rows came before it, so they still point
+                # at the right row after the filter above.
+                needs_review = [
+                    FlaggedCard(
+                        row_index=f.row_index - sum(1 for d in auto_drop_indices if d < f.row_index),
+                        player=f.player, team=f.team, sport=f.sport, year=f.year,
+                        card_number=f.card_number, reason=f.reason, certain=f.certain,
+                    )
+                    for f in needs_review
+                ]
+
+            if needs_review and self._on_review_flags:
+                reject_indices = self._on_review_flags(needs_review)
                 if reject_indices:
                     checklist_rows = [
                         row for i, row in enumerate(checklist_rows)

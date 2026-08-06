@@ -481,6 +481,43 @@ def test_non_lettered_card_numbers_not_affected():
         assert rows[0].card_number == num.lstrip("#"), f"Failed for {num}"
 
 
+def test_insert_sharing_base_cards_own_number_still_splits_out():
+    # 2026 Donruss Jacob Wilson: base card #13 (with its own normal Optic
+    # parallels), and #13 is SEPARATELY the number his unrelated "Diamond
+    # Marvels" insert happens to use. The first version of the insert-
+    # collision fix assumed a Base row anywhere in the bucket meant
+    # everything else was that card's own parallel - which merged Diamond
+    # Marvels straight into the base row's parallels with no Insert name
+    # at all, instead of splitting it into its own row (Brandon,
+    # 2026-08-06, confirmed against the raw export).
+    records = [
+        CardRecord(name="Jacob Wilson", card_number="#13", set="2026 Donruss",
+                   variant="Base", variant_name="-", attributes="-"),
+        CardRecord(name="Jacob Wilson", card_number="#13", set="2026 Donruss",
+                   variant="Parallel", variant_name="Artist Proofs", attributes="SN25"),
+        CardRecord(name="Jacob Wilson", card_number="#13", set="2026 Donruss",
+                   variant="Parallel", variant_name="Optic", attributes="-"),
+        CardRecord(name="Jacob Wilson", card_number="#13", set="2026 Donruss",
+                   variant="Parallel", variant_name="Optic Gold", attributes="SN10"),
+        CardRecord(name="Jacob Wilson", card_number="#13", set="2026 Donruss",
+                   variant="Insert", variant_name="Diamond Marvels", attributes="-"),
+        CardRecord(name="Jacob Wilson", card_number="#13", set="2026 Donruss",
+                   variant="Insert", variant_name="Diamond Marvels Blue Ice", attributes="SN35"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 2
+
+    base_row = next(r for r in rows if not r.insert)
+    assert base_row.card_number == "13"
+    assert ("Artist Proofs", "25") in base_row.parallels
+    assert ("Optic Gold", "10") in base_row.parallels
+
+    insert_row = next(r for r in rows if r.insert)
+    assert insert_row.card_number == "13"
+    assert insert_row.insert == "Diamond Marvels"
+    assert [p[0] for p in insert_row.parallels] == ["Blue Ice"]
+
+
 if __name__ == "__main__":
     test_parse_set_brand_is_first_word_rest_is_set()
     test_parse_set_brand_exceptions_loaded_from_csv()
@@ -520,4 +557,5 @@ if __name__ == "__main__":
     test_lettered_variants_group_with_base_and_become_parallels()
     test_letter_stripped_from_card_number_in_output()
     test_non_lettered_card_numbers_not_affected()
+    test_insert_sharing_base_cards_own_number_still_splits_out()
     print("All tests passed.")

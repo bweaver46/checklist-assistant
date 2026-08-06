@@ -6,15 +6,25 @@ pull was run under - catches scraper cross-contamination (Brandon,
 2026-08-06: a 2026 Donruss BASEBALL pull came back with a few NFL
 players/teams mixed in - Chris Olave, Kenneth Walker III, etc.).
 
-This is a REVIEW check, never an auto-drop. A flagged row stays in the
-export as-is; flagging only surfaces it to Brandon at the end of the
-run so he can approve (keep) or reject (remove) it himself. Silently
-deleting a row on a guess is a worse failure mode than occasionally
-asking about one that turns out fine.
+Two tiers, split by how much judgment the match actually needs
+(Brandon, 2026-08-06, after the first version dumped 140+ obviously-
+wrong NFL rows into the same review dialog as the genuinely ambiguous
+ones - clicking through that many checkboxes for cards that were never
+actually in question isn't what he asked for):
 
-Two known team names are genuinely ambiguous across supported sports
-and get dedicated handling instead of the generic team-list check
-(Brandon, 2026-08-06):
+    AUTO-DROP (FlaggedCard.certain=True) - the generic check: a team
+    that matches a DIFFERENT sport's list and not its own sport's list.
+    There's no real ambiguity here - a team that only exists in a
+    completely different sport's list is essentially always wrong, so
+    these are removed automatically. The caller still reports what got
+    removed so Brandon can glance at the list without approving each
+    one by hand.
+
+    REVIEW (FlaggedCard.certain=False) - the two named exceptions below,
+    where the SAME team name is legitimately valid in either sport
+    depending on the specific card, so it takes a human looking at the
+    player to decide. These are the only ones that go into the
+    checkbox review dialog.
 
     "New York Giants" - MLB team through 1957 (moved to SF and became
     the Giants in 1958), and the current NFL team today. A modern-dated
@@ -35,11 +45,10 @@ and get dedicated handling instead of the generic team-list check
 
 Every other team name is checked against settings/sport_teams.csv (the
 sport's own current-team list, same editable-CSV pattern as
-brand_set_exceptions.csv). A team that doesn't match its own sport's
-list but DOES match a different sport's list is a strong contamination
-signal and gets flagged. A team that matches neither (a defunct team,
-a college team, international club, etc.) is left alone - the goal is
-catching a clear signal, not enforcing a closed team list.
+brand_set_exceptions.csv). A team that matches neither list (a defunct
+team, a college team, international club, etc.) is left alone entirely
+- the goal is catching a clear signal, not enforcing a closed team
+list.
 
 "Mixed" sport pulls (multi-sport products) skip this check entirely -
 team/sport mismatches are the whole point of that kind of product.
@@ -127,6 +136,7 @@ class FlaggedCard:
     year: str
     card_number: str
     reason: str
+    certain: bool  # True = auto-dropped, no ambiguity. False = needs Brandon's review.
 
 
 def _split_teams(team_text: str) -> list[str]:
@@ -168,6 +178,7 @@ def _check_team(
                 "Boston Braves (Football) - not on the 1932 Boston Braves roster, "
                 "the only season that team existed in the NFL. Check this isn't a "
                 "mislabeled Baseball card.",
+                certain=False,
             )
         return None
 
@@ -182,13 +193,15 @@ def _check_team(
                         f"New York Giants (Baseball, {row.year}) - the Giants moved to "
                         "SF after 1957 and this player isn't on the notable-Giants list. "
                         "Check this isn't mislabeled Football data.",
+                        certain=False,
                     )
         return None
 
     # Generic check: does this team belong to a DIFFERENT sport's list
     # but not this one's? That's the actual contamination signal - a
     # team matching nothing at all (defunct/college/international) is
-    # left alone.
+    # left alone. Unlike Giants/Braves above, there's no legitimate
+    # scenario for this one - straight auto-drop.
     known_for_sport = {t.lower() for t in sport_teams.get(sport.lower(), set())}
     if not known_for_sport or team_lower in known_for_sport:
         return None
@@ -200,15 +213,16 @@ def _check_team(
             return FlaggedCard(
                 row_index, row.player, team, sport, row.year, row.card_number,
                 f"'{team}' matches {other_sport.title()}'s team list, not {sport}'s - "
-                "possible cross-sport data.",
+                "removed as cross-sport data.",
+                certain=True,
             )
     return None
 
 
 def find_sport_team_mismatches(rows: list[ChecklistRow]) -> list[FlaggedCard]:
-    """Returns flagged rows for manual review. Never modifies rows -
-    dropping is the caller's decision after Brandon approves/rejects
-    each one (see app/prompt_dialog.py's review dialog)."""
+    """Returns every flagged row, both tiers mixed together - split them
+    with certain_flags()/review_flags() below. Never modifies rows
+    itself; that's the caller's job (see app/extraction_worker.py)."""
     sport_teams = load_sport_teams()
     flagged: list[FlaggedCard] = []
 
@@ -222,3 +236,13 @@ def find_sport_team_mismatches(rows: list[ChecklistRow]) -> list[FlaggedCard]:
                 flagged.append(result)
 
     return flagged
+
+
+def certain_flags(flagged: list[FlaggedCard]) -> list[FlaggedCard]:
+    """The auto-drop tier - generic cross-sport mismatches."""
+    return [f for f in flagged if f.certain]
+
+
+def review_flags(flagged: list[FlaggedCard]) -> list[FlaggedCard]:
+    """The manual-review tier - Giants/Braves ambiguous cases only."""
+    return [f for f in flagged if not f.certain]
