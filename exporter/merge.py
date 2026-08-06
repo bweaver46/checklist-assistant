@@ -135,7 +135,10 @@ def strip_common_prefix(text: str, prefix: str) -> str:
     return " ".join(text_words[len(prefix_words):])
 
 
-def group_key(occurrence: RawOccurrence) -> tuple:
+def prelim_key(occurrence: RawOccurrence) -> tuple:
+    """Key used to bucket raw occurrences before insert-cluster splitting
+    (see assign_insert_clusters). Does NOT by itself guarantee one card -
+    see that function for why."""
     return (
         occurrence.type,
         occurrence.sport,
@@ -145,6 +148,62 @@ def group_key(occurrence: RawOccurrence) -> tuple:
         occurrence.card_number,
         normalize_player_for_grouping(occurrence.player),
     )
+
+
+def _starts_with_words(text: str, prefix: str) -> bool:
+    """Word-wise, case-insensitive: does text begin with all of prefix's
+    words in order? Empty prefix never matches (there's nothing to be a
+    continuation of yet)."""
+    if not prefix:
+        return False
+    text_words = text.split()
+    prefix_words = prefix.split()
+    if len(text_words) < len(prefix_words):
+        return False
+    head = [w.lower() for w in text_words[: len(prefix_words)]]
+    return head == [w.lower() for w in prefix_words]
+
+
+def assign_insert_clusters(bucket: list[tuple[RawOccurrence, str]]) -> list[int]:
+    """A (card_number, player) bucket can legitimately contain more than
+    one unrelated card. BSC assigns each Insert set its own 1-N
+    numbering, and those numbering schemes collide across different
+    inserts for the same player - e.g. 2026 Donruss Jonah Tong's "#12" is
+    BOTH the "Crunch Time" insert AND a completely separate "Diamond
+    Marvels" insert (confirmed against the raw export, Brandon
+    2026-08-06). Grouping on card_number+player alone merged both
+    inserts' full run of parallels into one row with a blank Insert
+    (no shared word-prefix between "Crunch Time..." and "Diamond
+    Marvels..." texts) and every print version of both dumped as flat
+    Parallels instead.
+
+    If the bucket contains a genuine Base row, every non-base row in it
+    IS a Parallel of that one base card by definition - always cluster
+    0, no splitting (this is the normal case: Optic colors, Rated
+    Prospects Optic Signatures colors, etc. - all legitimately belong to
+    the one base card they're rows for).
+
+    Only a bucket with NO Base row (pure-Insert) can actually be more
+    than one card. Walk its rows in the order BSC listed them and start
+    a new cluster whenever a row's Variant Name is NOT a word-wise
+    continuation of the current cluster's anchor (its first, plain/
+    un-suffixed row) - i.e. whenever the listing has visibly moved on to
+    a different insert."""
+    if any(occ.is_base for occ, _ in bucket):
+        return [0] * len(bucket)
+
+    cluster_ids: list[int] = []
+    anchor: str = ""
+    current_id = 0
+    next_id = 1
+    for occ, _ in bucket:
+        text = occ.variant_name
+        if not anchor or not _starts_with_words(text, anchor):
+            anchor = text
+            current_id = next_id
+            next_id += 1
+        cluster_ids.append(current_id)
+    return cluster_ids
 
 
 # Known trailing subset/insert abbreviation codes BSC appends directly onto
@@ -209,14 +268,20 @@ def pick_display_team(group: list[tuple]) -> str:
 def build_checklist_rows(
     occurrences_with_fallback: list[tuple[RawOccurrence, str]]
 ) -> list[ChecklistRow]:
-    groups: "OrderedDict[tuple, list[tuple[RawOccurrence, str]]]" = OrderedDict()
+    prelim: "OrderedDict[tuple, list[tuple[RawOccurrence, str]]]" = OrderedDict()
     for occurrence, fallback_serial in occurrences_with_fallback:
-        groups.setdefault(group_key(occurrence), []).append((occurrence, fallback_serial))
+        prelim.setdefault(prelim_key(occurrence), []).append((occurrence, fallback_serial))
+
+    groups: "OrderedDict[tuple, list[tuple[RawOccurrence, str]]]" = OrderedDict()
+    for key, bucket in prelim.items():
+        cluster_ids = assign_insert_clusters(bucket)
+        for (occ, fallback_serial), cluster_id in zip(bucket, cluster_ids):
+            groups.setdefault(key + (cluster_id,), []).append((occ, fallback_serial))
 
     rows: list[ChecklistRow] = []
 
     for key, group in groups.items():
-        type_, sport, year, brand, set_value, card_number, _normalized_player = key
+        type_, sport, year, brand, set_value, card_number, _normalized_player, _cluster_id = key
         player = pick_display_player(group)
         team = pick_display_team(group)
         first_occurrence = group[0][0]
@@ -252,11 +317,6 @@ def build_checklist_rows(
         leftover_texts = [
             occ.leftover_name_text for occ, _ in group if occ.leftover_name_text.strip()
         ]
-        has_autograph = any(
-            occ.attributes and occ.attributes != "-" and AUTOGRAPH_PATTERN.search(occ.attributes)
-            for occ, _ in group
-        )
-
         # Find the base (non-lettered, non-base-variant) row's attributes.
         # Needed here (not just for the lettered-variant comparison further
         # down) because this is also where a plain code like "AS" or "RC" -
@@ -273,6 +333,28 @@ def build_checklist_rows(
             if occ.is_base and not occ.is_letter_variant:
                 base_occ_attrs = occ.attributes
                 break
+
+        # Autograph detection must come from the card's OWN print version,
+        # not from whichever of its parallels happens to be autographed.
+        # A group WITH a base row has one plain, non-autographed printing
+        # (the base row itself) even when one of its parallels is an
+        # autograph version - e.g. 2026 Donruss #101 Konnor Griffin is a
+        # plain Rated Prospect; only its "Rated Prospects Optic Signatures"
+        # PARALLEL is autographed. Checking the whole group here previously
+        # tagged the base card itself as "Autograph" (Brandon, 2026-08-06).
+        # A group with NO base row (a pure-Insert card, already isolated to
+        # its own insert by assign_insert_clusters above) has no such
+        # distinction to make - any row in it carrying AU means the card
+        # itself is an autograph insert.
+        if has_base_rows:
+            has_autograph = bool(
+                base_occ_attrs and base_occ_attrs != "-" and AUTOGRAPH_PATTERN.search(base_occ_attrs)
+            )
+        else:
+            has_autograph = any(
+                occ.attributes and occ.attributes != "-" and AUTOGRAPH_PATTERN.search(occ.attributes)
+                for occ, _ in group
+            )
 
         card_attrs_parts = []
         if section.strip():
