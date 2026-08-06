@@ -532,8 +532,14 @@ class MainWindow(QMainWindow):
             on_error=self._on_worker_error,
             on_paused=self._on_worker_paused,
             on_resumed=self._on_worker_resumed,
+            on_review_flags=self._on_review_flags,
         )
         self._worker.run()
+
+    def _on_review_flags(self, flagged: list) -> set[int]:
+        """Shows the team/sport mismatch review dialog and returns the
+        row_index set to reject. See exporter/team_sanity.py."""
+        return PromptDialog.review_flags(self, "Review Flagged Cards", flagged)
 
     # ------------------------------------------------------------------
     # Beckett extraction (no login, single page - "Full Checklist" tab)

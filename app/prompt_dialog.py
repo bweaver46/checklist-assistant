@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QComboBox, QPushButton, QTextEdit,
+    QComboBox, QPushButton, QTextEdit, QCheckBox, QScrollArea, QWidget,
 )
 from PySide6.QtCore import Qt
 
@@ -93,6 +93,48 @@ class PromptDialog(QDialog):
         row.addWidget(ok)
         d._layout.addLayout(row)
         d.exec()
+
+    @staticmethod
+    def review_flags(parent, title: str, flagged: list) -> set[int]:
+        """Shows one row per FlaggedCard (exporter/team_sanity.py) with a
+        checkbox, unchecked by default. Checked = reject (remove from the
+        export); unchecked = approve (keep as-is). Returns the set of
+        row_index values the user checked to reject. Closing/Cancel is
+        treated the same as approving everything - nothing gets removed
+        on a dismissed dialog, since silently dropping cards is worse
+        than leaving a questionable one in for Brandon to catch by eye
+        later."""
+        d = PromptDialog(
+            parent, title,
+            f"{len(flagged)} card(s) flagged for review - team doesn't "
+            "look right for this sport. Check any you want REMOVED from "
+            "the export; leave unchecked to keep them.",
+        )
+        d.setFixedWidth(560)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFixedHeight(320)
+        container = QWidget()
+        inner = QVBoxLayout(container)
+        checkboxes: list[tuple[QCheckBox, int]] = []
+
+        for card in flagged:
+            text = (
+                f"#{card.card_number}  {card.player} — {card.team} "
+                f"({card.sport}, {card.year})\n{card.reason}"
+            )
+            cb = QCheckBox(text)
+            inner.addWidget(cb)
+            checkboxes.append((cb, card.row_index))
+
+        inner.addStretch()
+        scroll.setWidget(container)
+        d._layout.addWidget(scroll)
+        d._add_ok_cancel()
+        d.exec()
+
+        return {row_index for cb, row_index in checkboxes if cb.isChecked()}
 
     @staticmethod
     def question(parent, title: str, label: str,

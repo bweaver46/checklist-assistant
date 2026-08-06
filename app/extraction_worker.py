@@ -27,6 +27,7 @@ from exporter.raw_export import write_raw_csv
 from exporter.convert import convert_all
 from exporter.merge import build_checklist_rows
 from exporter.cleanup import apply_cleanup
+from exporter.team_sanity import find_sport_team_mismatches
 from exporter.final_export import write_final_csv, sort_rows_by_brand
 from settings.accumulator import load_accumulated, save_accumulated
 from settings.team_cache import load_team_cache, save_team_cache
@@ -50,6 +51,7 @@ class ExtractionWorker:
         on_error,      # callable(str) -> None
         on_paused,     # callable() -> None
         on_resumed,    # callable() -> None
+        on_review_flags=None,  # callable(list[FlaggedCard]) -> set[int] of row_index to reject
     ) -> None:
         self._browser_manager = browser_manager
         self._context = context
@@ -58,6 +60,7 @@ class ExtractionWorker:
         self._on_error = on_error
         self._on_paused = on_paused
         self._on_resumed = on_resumed
+        self._on_review_flags = on_review_flags
         self._paused = False
 
     def pause(self) -> None:
@@ -175,6 +178,24 @@ class ExtractionWorker:
             occurrences = convert_all(all_records, self._context)
             checklist_rows = build_checklist_rows(occurrences)
             checklist_rows = apply_cleanup(checklist_rows)
+
+            # Team/sport sanity check (Brandon, 2026-08-06) - flags rows
+            # whose Team doesn't look right for the sport this pull was
+            # run under (catches scraper cross-contamination, e.g. NFL
+            # players showing up in a baseball pull). Review-only: never
+            # drops anything on its own. If on_review_flags is wired up
+            # (see main_window._on_review_flags), Brandon gets a
+            # checklist at the end of the run to reject specific rows;
+            # anything he doesn't check stays in as-is.
+            flagged = find_sport_team_mismatches(checklist_rows)
+            if flagged and self._on_review_flags:
+                reject_indices = self._on_review_flags(flagged)
+                if reject_indices:
+                    checklist_rows = [
+                        row for i, row in enumerate(checklist_rows)
+                        if i not in reject_indices
+                    ]
+
             checklist_rows = sort_rows_by_brand(checklist_rows)
 
             final_path = final_export_path(output_name)
