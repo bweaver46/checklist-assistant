@@ -62,3 +62,307 @@ Football,Seattle Seahawks
 Football,Tampa Bay Buccaneers
 Football,Tennessee Titans
 Football,Washington Commanders
+Basketball,Atlanta Hawks
+Basketball,Boston Celtics
+Basketball,Brooklyn Nets
+Basketball,Charlotte Hornets
+Basketball,Chicago Bulls
+Basketball,Cleveland Cavaliers
+Basketball,Dallas Mavericks
+Basketball,Denver Nuggets
+Basketball,Detroit Pistons
+Basketball,Golden State Warriors
+Basketball,Houston Rockets
+Basketball,Indiana Pacers
+Basketball,LA Clippers
+Basketball,Los Angeles Lakers
+Basketball,Memphis Grizzlies
+Basketball,Miami Heat
+Basketball,Milwaukee Bucks
+Basketball,Minnesota Timberwolves
+Basketball,New Orleans Pelicans
+Basketball,New York Knicks
+Basketball,Oklahoma City Thunder
+Basketball,Orlando Magic
+Basketball,Philadelphia 76ers
+Basketball,Phoenix Suns
+Basketball,Portland Trail Blazers
+Basketball,Sacramento Kings
+Basketball,San Antonio Spurs
+Basketball,Toronto Raptors
+Basketball,Utah Jazz
+Basketball,Washington Wizards
+Womens Basketball,Atlanta Dream
+Womens Basketball,Chicago Sky
+Womens Basketball,Connecticut Sun
+Womens Basketball,Dallas Wings
+Womens Basketball,Golden State Valkyries
+Womens Basketball,Indiana Fever
+Womens Basketball,Las Vegas Aces
+Womens Basketball,Los Angeles Sparks
+Womens Basketball,Minnesota Lynx
+Womens Basketball,New York Liberty
+Womens Basketball,Phoenix Mercury
+Womens Basketball,Portland Fire
+Womens Basketball,Seattle Storm
+Womens Basketball,Toronto Tempo
+Womens Basketball,Washington Mystics
+Hockey,Anaheim Ducks
+Hockey,Boston Bruins
+Hockey,Buffalo Sabres
+Hockey,Calgary Flames
+Hockey,Carolina Hurricanes
+Hockey,Chicago Blackhawks
+Hockey,Colorado Avalanche
+Hockey,Columbus Blue Jackets
+Hockey,Dallas Stars
+Hockey,Detroit Red Wings
+Hockey,Edmonton Oilers
+Hockey,Florida Panthers
+Hockey,Los Angeles Kings
+Hockey,Minnesota Wild
+Hockey,Montreal Canadiens
+Hockey,Nashville Predators
+Hockey,New Jersey Devils
+Hockey,New York Islanders
+Hockey,New York Rangers
+Hockey,Ottawa Senators
+Hockey,Philadelphia Flyers
+Hockey,Pittsburgh Penguins
+Hockey,San Jose Sharks
+Hockey,Seattle Kraken
+Hockey,St. Louis Blues
+Hockey,Tampa Bay Lightning
+Hockey,Toronto Maple Leafs
+Hockey,Utah Mammoth
+Hockey,Vancouver Canucks
+Hockey,Vegas Golden Knights
+Hockey,Washington Capitals
+Hockey,Winnipeg Jets
+Soccer,Atlanta United FC
+Soccer,Austin FC
+Soccer,Charlotte FC
+Soccer,Chicago Fire FC
+Soccer,Colorado Rapids
+Soccer,Columbus Crew
+Soccer,DC United
+Soccer,FC Cincinnati
+Soccer,FC Dallas
+Soccer,Houston Dynamo FC
+Soccer,Inter Miami CF
+Soccer,LA Galaxy
+Soccer,Los Angeles FC
+Soccer,CF Montreal
+Soccer,Minnesota United FC
+Soccer,Nashville SC
+Soccer,New England Revolution
+Soccer,New York City FC
+Soccer,New York Red Bulls
+Soccer,Orlando City SC
+Soccer,Philadelphia Union
+Soccer,Portland Timbers
+Soccer,Real Salt Lake
+Soccer,San Diego FC
+Soccer,San Jose Earthquakes
+Soccer,Seattle Sounders FC
+Soccer,Sporting Kansas City
+Soccer,St. Louis City SC
+Soccer,Toronto FC
+Soccer,Vancouver Whitecaps FC
+Soccer,Arsenal
+Soccer,Aston Villa
+Soccer,Bournemouth
+Soccer,Brentford
+Soccer,Brighton & Hove Albion
+Soccer,Burnley
+Soccer,Chelsea
+Soccer,Crystal Palace
+Soccer,Everton
+Soccer,Fulham
+Soccer,Leeds United
+Soccer,Liverpool
+Soccer,Manchester City
+Soccer,Manchester United
+Soccer,Newcastle United
+Soccer,Nottingham Forest
+Soccer,Sunderland
+Soccer,Tottenham Hotspur
+Soccer,West Ham United
+Soccer,Wolverhampton Wanderers
+NBA,Atlanta Hawks
+NBA,Boston Celtics
+NBA,Brooklyn Nets
+NBA,Charlotte Hornets
+NBA,Chicago Bulls
+NBA,Cleveland Cavaliers
+NBA,Dallas Mavericks
+NBA,Denver Nuggets
+NBA,Detroit Pistons
+NBA,Golden State Warriors
+NBA,Houston Rockets
+NBA,Indiana Pacers
+NBA,LA Clippers
+NBA,Los Angeles Lakers
+NBA,Memphis Grizzlies
+NBA,Miami Heat
+NBA,Milwaukee Bucks
+NBA,Minnesota Timberwolves
+NBA,New Orleans Pelicans
+NBA,New York Knicks
+NBA,Oklahoma City Thunder
+NBA,Orlando Magic
+NBA,Philadelphia 76ers
+NBA,Phoenix Suns
+NBA,Portland Trail Blazers
+NBA,Sacramento Kings
+NBA,San Antonio Spurs
+NBA,Toronto Raptors
+NBA,Utah Jazz
+NBA,Washington Wizards
+WNBA,Atlanta Dream
+WNBA,Chicago Sky
+WNBA,Connecticut Sun
+WNBA,Dallas Wings
+WNBA,Golden State Valkyries
+WNBA,Indiana Fever
+WNBA,Las Vegas Aces
+WNBA,Los Angeles Sparks
+WNBA,Minnesota Lynx
+WNBA,New York Liberty
+WNBA,Phoenix Mercury
+WNBA,Portland Fire
+WNBA,Seattle Storm
+WNBA,Toronto Tempo
+WNBA,Washington Mystics
+NHL,Anaheim Ducks
+NHL,Boston Bruins
+NHL,Buffalo Sabres
+NHL,Calgary Flames
+NHL,Carolina Hurricanes
+NHL,Chicago Blackhawks
+NHL,Colorado Avalanche
+NHL,Columbus Blue Jackets
+NHL,Dallas Stars
+NHL,Detroit Red Wings
+NHL,Edmonton Oilers
+NHL,Florida Panthers
+NHL,Los Angeles Kings
+NHL,Minnesota Wild
+NHL,Montreal Canadiens
+NHL,Nashville Predators
+NHL,New Jersey Devils
+NHL,New York Islanders
+NHL,New York Rangers
+NHL,Ottawa Senators
+NHL,Philadelphia Flyers
+NHL,Pittsburgh Penguins
+NHL,San Jose Sharks
+NHL,Seattle Kraken
+NHL,St. Louis Blues
+NHL,Tampa Bay Lightning
+NHL,Toronto Maple Leafs
+NHL,Utah Mammoth
+NHL,Vancouver Canucks
+NHL,Vegas Golden Knights
+NHL,Washington Capitals
+NHL,Winnipeg Jets
+MLS,Atlanta United FC
+MLS,Austin FC
+MLS,Charlotte FC
+MLS,Chicago Fire FC
+MLS,Colorado Rapids
+MLS,Columbus Crew
+MLS,DC United
+MLS,FC Cincinnati
+MLS,FC Dallas
+MLS,Houston Dynamo FC
+MLS,Inter Miami CF
+MLS,LA Galaxy
+MLS,Los Angeles FC
+MLS,CF Montreal
+MLS,Minnesota United FC
+MLS,Nashville SC
+MLS,New England Revolution
+MLS,New York City FC
+MLS,New York Red Bulls
+MLS,Orlando City SC
+MLS,Philadelphia Union
+MLS,Portland Timbers
+MLS,Real Salt Lake
+MLS,San Diego FC
+MLS,San Jose Earthquakes
+MLS,Seattle Sounders FC
+MLS,Sporting Kansas City
+MLS,St. Louis City SC
+MLS,Toronto FC
+MLS,Vancouver Whitecaps FC
+MLS,Arsenal
+MLS,Aston Villa
+MLS,Bournemouth
+MLS,Brentford
+MLS,Brighton & Hove Albion
+MLS,Burnley
+MLS,Chelsea
+MLS,Crystal Palace
+MLS,Everton
+MLS,Fulham
+MLS,Leeds United
+MLS,Liverpool
+MLS,Manchester City
+MLS,Manchester United
+MLS,Newcastle United
+MLS,Nottingham Forest
+MLS,Sunderland
+MLS,Tottenham Hotspur
+MLS,West Ham United
+MLS,Wolverhampton Wanderers
+Premier League,Atlanta United FC
+Premier League,Austin FC
+Premier League,Charlotte FC
+Premier League,Chicago Fire FC
+Premier League,Colorado Rapids
+Premier League,Columbus Crew
+Premier League,DC United
+Premier League,FC Cincinnati
+Premier League,FC Dallas
+Premier League,Houston Dynamo FC
+Premier League,Inter Miami CF
+Premier League,LA Galaxy
+Premier League,Los Angeles FC
+Premier League,CF Montreal
+Premier League,Minnesota United FC
+Premier League,Nashville SC
+Premier League,New England Revolution
+Premier League,New York City FC
+Premier League,New York Red Bulls
+Premier League,Orlando City SC
+Premier League,Philadelphia Union
+Premier League,Portland Timbers
+Premier League,Real Salt Lake
+Premier League,San Diego FC
+Premier League,San Jose Earthquakes
+Premier League,Seattle Sounders FC
+Premier League,Sporting Kansas City
+Premier League,St. Louis City SC
+Premier League,Toronto FC
+Premier League,Vancouver Whitecaps FC
+Premier League,Arsenal
+Premier League,Aston Villa
+Premier League,Bournemouth
+Premier League,Brentford
+Premier League,Brighton & Hove Albion
+Premier League,Burnley
+Premier League,Chelsea
+Premier League,Crystal Palace
+Premier League,Everton
+Premier League,Fulham
+Premier League,Leeds United
+Premier League,Liverpool
+Premier League,Manchester City
+Premier League,Manchester United
+Premier League,Newcastle United
+Premier League,Nottingham Forest
+Premier League,Sunderland
+Premier League,Tottenham Hotspur
+Premier League,West Ham United
+Premier League,Wolverhampton Wanderers
