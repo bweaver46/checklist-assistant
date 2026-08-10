@@ -155,6 +155,54 @@ class PromptDialog(QDialog):
         return {row_index for cb, row_index in checkboxes if cb.isChecked()}
 
     @staticmethod
+    def build_search_form(parent) -> dict[str, str] | None:
+        """The search-builder form (Brandon, 2026-08-08): Keyword is the
+        only required field, matching BSC's own free-text search box -
+        everything else narrows it further and is optional. Returns None
+        if cancelled or if Keyword was left blank on OK (rather than
+        silently building a keyword-less search)."""
+        d = PromptDialog(
+            parent, "Build a Search",
+            "Keyword is required (this is BSC's own search box - one or "
+            "more words). Everything else narrows the search further and "
+            "can be left blank.",
+        )
+        d.setFixedWidth(460)
+
+        fields: dict[str, QLineEdit] = {}
+        FORM_FIELDS = [
+            ("keyword", "Keyword (required)"),
+            ("sport", "Sport"),
+            ("year", "Year"),
+            ("set", "Set"),
+            ("variant", "Variant (Base / Insert / Parallel)"),
+            ("variant_name", "Variant Name"),
+            ("attribute", "Card Attribute"),
+            ("player", "Player"),
+            ("team", "Team"),
+            ("card_number", "Card Number"),
+        ]
+        for key, label_text in FORM_FIELDS:
+            row = QHBoxLayout()
+            lbl = QLabel(label_text)
+            lbl.setFixedWidth(220)
+            field = QLineEdit()
+            row.addWidget(lbl)
+            row.addWidget(field)
+            d._layout.addLayout(row)
+            fields[key] = field
+
+        d._add_ok_cancel()
+        ok = d.exec()
+        if not ok:
+            return None
+
+        values = {key: field.text().strip() for key, field in fields.items()}
+        if not values["keyword"]:
+            return None
+        return values
+
+    @staticmethod
     def question(parent, title: str, label: str,
                  buttons: list[str], default: str) -> str:
         """Returns the label of whichever button was clicked."""

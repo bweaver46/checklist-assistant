@@ -24,6 +24,7 @@ from app.prompt_dialog import PromptDialog
 from scraper.browser_manager import BrowserManager
 from scraper.site_detect import detect_source, parse_beckett_url, BSC, BECKETT, TCDB
 from scraper.tcdb_pagination import tcdb_page_url
+from scraper.search_url import build_search_url
 from app.extraction_worker import ExtractionWorker
 from settings.window_layout import MAIN_WINDOW_POSITION
 from settings.last_run import load_last_run, save_last_run
@@ -482,17 +483,50 @@ class MainWindow(QMainWindow):
     def on_extract_checklist(self) -> None:
         source = detect_source(self.browser_manager.current_url())
 
-        if source is None:
-            self.statusBar().showMessage(
-                "Launch the browser and navigate to a BuySportsCards, "
-                "Beckett, or TCDB page first."
-            )
-            return
         if source == BECKETT:
             self._extract_beckett()
             return
         if source == TCDB:
             self._extract_tcdb()
+            return
+
+        # source is BSC or None (browser not launched / on some other
+        # page) - either way, offer to build a search instead of
+        # requiring Brandon to have already navigated there by hand
+        # (2026-08-08). "Pull Displayed Page" is the previous default
+        # behavior, completely unchanged - answering this one new
+        # question is the only difference for that path.
+        choice = PromptDialog.question(
+            self, "Extract Checklist",
+            "Pull the page currently displayed in the browser, or build "
+            "a search from scratch?",
+            ["Pull Displayed", "Build a Search", "Cancel"], "Pull Displayed",
+        )
+        if choice == "Cancel":
+            self.statusBar().showMessage("Extraction cancelled.")
+            return
+        if choice == "Build a Search":
+            fields = PromptDialog.build_search_form(self)
+            if fields is None:
+                self.statusBar().showMessage(
+                    "Extraction cancelled — Keyword is required to build a search."
+                )
+                return
+            url = build_search_url(fields)
+            self.statusBar().showMessage(f"Navigating to built search: {url}")
+            QApplication.processEvents()
+            if not self.browser_manager.is_launched:
+                self.browser_manager.launch(start_url=url)
+            else:
+                self.browser_manager.navigate_to_url(url)
+            self.browser_manager.bring_to_front()
+            source = BSC
+
+        if source is None:
+            self.statusBar().showMessage(
+                "Launch the browser and navigate to a BuySportsCards, "
+                "Beckett, or TCDB page first."
+            )
             return
         # source == BSC - existing flow, unchanged.
 
