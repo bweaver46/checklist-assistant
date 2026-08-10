@@ -43,6 +43,17 @@ actually in question isn't what he asked for):
     whose player isn't on that one-season roster is almost certainly a
     mislabeled Baseball card, not a real product.
 
+A third case worth naming even though it's handled the plain way now
+(Brandon, 2026-08-07): known multi-sport athletes (Deion Sanders, Bo
+Jackson, etc.) briefly got their own always-flag-for-review rule here,
+since a team that looks valid for the pull's sport doesn't fully
+guarantee a specific card of theirs is really that sport. Reverted by
+request - too many manual review prompts for cards that are correct
+the vast majority of the time. They're just checked the same
+team-vs-sport-list way as everyone else below now; a genuinely
+mislabeled card for one of these players would need to be caught by
+eye rather than by this check.
+
 Every other team name is checked against settings/sport_teams.csv (the
 sport's own current-team list, same editable-CSV pattern as
 brand_set_exceptions.csv). A team that matches neither list (a defunct

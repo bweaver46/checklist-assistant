@@ -1,5 +1,4 @@
 sport,team
-Baseball,"""Athletics"" — playing in West Sacramento, CA (Sutter Health Park) while a permanent home is built"
 Baseball,Anaheim Angels
 Baseball,Arizona Diamondbacks
 Baseball,Athletics Athletics
@@ -20,8 +19,6 @@ Baseball,Brooklyn Dodgers
 Baseball,Brooklyn Robins/Dodgers
 Baseball,Brooklyn Superbas
 Baseball,California Angels
-Baseball,Charter American League franchise
-Baseball,"Charter American League franchise, Chicago White Sox"
 Baseball,Chicago Colts
 Baseball,Chicago Cubs
 Baseball,Chicago Orphans
@@ -50,8 +47,6 @@ Baseball,Milwaukee Braves
 Baseball,Milwaukee Brewers
 Baseball,Minnesota Twins
 Baseball,Montreal Expos
-Baseball,Moved from AL to NL
-Baseball,Moved from NL to AL
 Baseball,New York Gothams
 Baseball,New York Highlanders
 Baseball,New York Mets
@@ -399,7 +394,6 @@ NHL,Vancouver Canucks
 NHL,Vegas Golden Knights
 NHL,Washington Capitals
 NHL,Winnipeg Jets
-Soccer,1. FC Heidenheim football section formalized
 Soccer,1. FC Köln
 Soccer,1. FC Union Berlin
 Soccer,1. FSV Mainz 05
@@ -474,7 +468,6 @@ Soccer,Deportivo Alavés
 Soccer,Dial Square
 Soccer,Dortmund Borussia Dortmund
 Soccer,Eintracht Frankfurt
-Soccer,Eintracht merger lineage begins
 Soccer,Elche CF
 Soccer,Elche Elche CF
 Soccer,Everton Everton FC
@@ -492,7 +485,6 @@ Soccer,Florence Fiorentina
 Soccer,Foot-Ball Club Barcelona
 Soccer,Football Club Internazionale Milano
 Soccer,Football Club Torino
-Soccer,Formed present club Parma AC
 Soccer,Frankfurt Eintracht Frankfurt
 Soccer,Frankfurter Fussball Club Victoria
 Soccer,Freiburg SC Freiburg
@@ -507,7 +499,6 @@ Soccer,Getafe Getafe CF
 Soccer,Girona FC
 Soccer,Girona Girona FC
 Soccer,Gymnaste Club de Nice
-Soccer,Gymnastics club origins
 Soccer,Hamburg Hamburger SV
 Soccer,Hamburger SV
 Soccer,Heidenheim 1. FC Heidenheim
@@ -557,7 +548,6 @@ Soccer,Miami Inter Miami CF
 Soccer,Milan AC Milan
 Soccer,Milan Foot-Ball and Cricket Club
 Soccer,Milan Inter Milan
-Soccer,Milan reverted to English spelling as 'Milan'
 Soccer,Minnesota Minnesota United FC
 Soccer,Minnesota Stars FC / NASL club
 Soccer,Monaco AS Monaco
@@ -571,7 +561,6 @@ Soccer,Naples Napoli
 Soccer,Nashville Nashville SC
 Soccer,Nashville SC
 Soccer,New England Revolution
-Soccer,New San Jose Earthquakes expansion club revived the name/colors
 Soccer,New York City FC
 Soccer,New York NYCFC
 Soccer,New York Red Bulls
@@ -612,12 +601,7 @@ Soccer,Real Racing Club de Santander
 Soccer,Real Salt Lake
 Soccer,Real Sociedad
 Soccer,Red Bull New York
-Soccer,Refounded as Parma Calcio 1913 after bankruptcy
-Soccer,Refounded/rebranded Como 1907 after prior bankruptcy
 Soccer,Rennes Stade Rennais
-Soccer,Reverted 'Athletic' spelling convention to 'Atlético'
-Soccer,Reverted to Athletic Club
-Soccer,Reverted to Genoa CFC
 Soccer,Rome AS Roma
 Soccer,Rome Lazio
 Soccer,Royal Arsenal
@@ -640,8 +624,6 @@ Soccer,Sevilla FC
 Soccer,Seville Sevilla FC
 Soccer,Sinsheim TSG Hoffenheim
 Soccer,Società Podistica Lazio
-Soccer,Split from Aviación; Club Atlético de Madrid
-Soccer,"Split from Paris FC, retained PSG name"
 Soccer,Sporting Kansas City
 Soccer,St. Domingo FC
 Soccer,St. Louis City SC
@@ -679,7 +661,6 @@ Soccer,Vallecas/Oviedo Real Oviedo
 Soccer,Vancouver Whitecaps FC
 Soccer,Verdi FC Parma
 Soccer,Verona Hellas Verona
-Soccer,VfB Stuttgart lineage begins
 Soccer,VfL Wolfsburg
 Soccer,Vigo Celta Vigo
 Soccer,Villarreal CF
@@ -690,7 +671,6 @@ Soccer,Wolfsburg VfL Wolfsburg
 Soccer,Wolverhampton Wanderers
 Soccer,Wolverhampton Wolverhampton Wanderers
 Soccer,Woolwich Arsenal
-MLS,1. FC Heidenheim football section formalized
 MLS,1. FC Köln
 MLS,1. FC Union Berlin
 MLS,1. FSV Mainz 05
@@ -765,7 +745,6 @@ MLS,Deportivo Alavés
 MLS,Dial Square
 MLS,Dortmund Borussia Dortmund
 MLS,Eintracht Frankfurt
-MLS,Eintracht merger lineage begins
 MLS,Elche CF
 MLS,Elche Elche CF
 MLS,Everton Everton FC
@@ -783,7 +762,6 @@ MLS,Florence Fiorentina
 MLS,Foot-Ball Club Barcelona
 MLS,Football Club Internazionale Milano
 MLS,Football Club Torino
-MLS,Formed present club Parma AC
 MLS,Frankfurt Eintracht Frankfurt
 MLS,Frankfurter Fussball Club Victoria
 MLS,Freiburg SC Freiburg
@@ -798,7 +776,6 @@ MLS,Getafe Getafe CF
 MLS,Girona FC
 MLS,Girona Girona FC
 MLS,Gymnaste Club de Nice
-MLS,Gymnastics club origins
 MLS,Hamburg Hamburger SV
 MLS,Hamburger SV
 MLS,Heidenheim 1. FC Heidenheim
@@ -848,7 +825,6 @@ MLS,Miami Inter Miami CF
 MLS,Milan AC Milan
 MLS,Milan Foot-Ball and Cricket Club
 MLS,Milan Inter Milan
-MLS,Milan reverted to English spelling as 'Milan'
 MLS,Minnesota Minnesota United FC
 MLS,Minnesota Stars FC / NASL club
 MLS,Monaco AS Monaco
@@ -862,7 +838,6 @@ MLS,Naples Napoli
 MLS,Nashville Nashville SC
 MLS,Nashville SC
 MLS,New England Revolution
-MLS,New San Jose Earthquakes expansion club revived the name/colors
 MLS,New York City FC
 MLS,New York NYCFC
 MLS,New York Red Bulls
@@ -903,12 +878,7 @@ MLS,Real Racing Club de Santander
 MLS,Real Salt Lake
 MLS,Real Sociedad
 MLS,Red Bull New York
-MLS,Refounded as Parma Calcio 1913 after bankruptcy
-MLS,Refounded/rebranded Como 1907 after prior bankruptcy
 MLS,Rennes Stade Rennais
-MLS,Reverted 'Athletic' spelling convention to 'Atlético'
-MLS,Reverted to Athletic Club
-MLS,Reverted to Genoa CFC
 MLS,Rome AS Roma
 MLS,Rome Lazio
 MLS,Royal Arsenal
@@ -931,8 +901,6 @@ MLS,Sevilla FC
 MLS,Seville Sevilla FC
 MLS,Sinsheim TSG Hoffenheim
 MLS,Società Podistica Lazio
-MLS,Split from Aviación; Club Atlético de Madrid
-MLS,"Split from Paris FC, retained PSG name"
 MLS,Sporting Kansas City
 MLS,St. Domingo FC
 MLS,St. Louis City SC
@@ -970,7 +938,6 @@ MLS,Vallecas/Oviedo Real Oviedo
 MLS,Vancouver Whitecaps FC
 MLS,Verdi FC Parma
 MLS,Verona Hellas Verona
-MLS,VfB Stuttgart lineage begins
 MLS,VfL Wolfsburg
 MLS,Vigo Celta Vigo
 MLS,Villarreal CF
@@ -981,7 +948,6 @@ MLS,Wolfsburg VfL Wolfsburg
 MLS,Wolverhampton Wanderers
 MLS,Wolverhampton Wolverhampton Wanderers
 MLS,Woolwich Arsenal
-Premier League,1. FC Heidenheim football section formalized
 Premier League,1. FC Köln
 Premier League,1. FC Union Berlin
 Premier League,1. FSV Mainz 05
@@ -1056,7 +1022,6 @@ Premier League,Deportivo Alavés
 Premier League,Dial Square
 Premier League,Dortmund Borussia Dortmund
 Premier League,Eintracht Frankfurt
-Premier League,Eintracht merger lineage begins
 Premier League,Elche CF
 Premier League,Elche Elche CF
 Premier League,Everton Everton FC
@@ -1074,7 +1039,6 @@ Premier League,Florence Fiorentina
 Premier League,Foot-Ball Club Barcelona
 Premier League,Football Club Internazionale Milano
 Premier League,Football Club Torino
-Premier League,Formed present club Parma AC
 Premier League,Frankfurt Eintracht Frankfurt
 Premier League,Frankfurter Fussball Club Victoria
 Premier League,Freiburg SC Freiburg
@@ -1089,7 +1053,6 @@ Premier League,Getafe Getafe CF
 Premier League,Girona FC
 Premier League,Girona Girona FC
 Premier League,Gymnaste Club de Nice
-Premier League,Gymnastics club origins
 Premier League,Hamburg Hamburger SV
 Premier League,Hamburger SV
 Premier League,Heidenheim 1. FC Heidenheim
@@ -1139,7 +1102,6 @@ Premier League,Miami Inter Miami CF
 Premier League,Milan AC Milan
 Premier League,Milan Foot-Ball and Cricket Club
 Premier League,Milan Inter Milan
-Premier League,Milan reverted to English spelling as 'Milan'
 Premier League,Minnesota Minnesota United FC
 Premier League,Minnesota Stars FC / NASL club
 Premier League,Monaco AS Monaco
@@ -1153,7 +1115,6 @@ Premier League,Naples Napoli
 Premier League,Nashville Nashville SC
 Premier League,Nashville SC
 Premier League,New England Revolution
-Premier League,New San Jose Earthquakes expansion club revived the name/colors
 Premier League,New York City FC
 Premier League,New York NYCFC
 Premier League,New York Red Bulls
@@ -1194,12 +1155,7 @@ Premier League,Real Racing Club de Santander
 Premier League,Real Salt Lake
 Premier League,Real Sociedad
 Premier League,Red Bull New York
-Premier League,Refounded as Parma Calcio 1913 after bankruptcy
-Premier League,Refounded/rebranded Como 1907 after prior bankruptcy
 Premier League,Rennes Stade Rennais
-Premier League,Reverted 'Athletic' spelling convention to 'Atlético'
-Premier League,Reverted to Athletic Club
-Premier League,Reverted to Genoa CFC
 Premier League,Rome AS Roma
 Premier League,Rome Lazio
 Premier League,Royal Arsenal
@@ -1222,8 +1178,6 @@ Premier League,Sevilla FC
 Premier League,Seville Sevilla FC
 Premier League,Sinsheim TSG Hoffenheim
 Premier League,Società Podistica Lazio
-Premier League,Split from Aviación; Club Atlético de Madrid
-Premier League,"Split from Paris FC, retained PSG name"
 Premier League,Sporting Kansas City
 Premier League,St. Domingo FC
 Premier League,St. Louis City SC
@@ -1261,7 +1215,6 @@ Premier League,Vallecas/Oviedo Real Oviedo
 Premier League,Vancouver Whitecaps FC
 Premier League,Verdi FC Parma
 Premier League,Verona Hellas Verona
-Premier League,VfB Stuttgart lineage begins
 Premier League,VfL Wolfsburg
 Premier League,Vigo Celta Vigo
 Premier League,Villarreal CF
@@ -1272,7 +1225,6 @@ Premier League,Wolfsburg VfL Wolfsburg
 Premier League,Wolverhampton Wanderers
 Premier League,Wolverhampton Wolverhampton Wanderers
 Premier League,Woolwich Arsenal
-La Liga,1. FC Heidenheim football section formalized
 La Liga,1. FC Köln
 La Liga,1. FC Union Berlin
 La Liga,1. FSV Mainz 05
@@ -1347,7 +1299,6 @@ La Liga,Deportivo Alavés
 La Liga,Dial Square
 La Liga,Dortmund Borussia Dortmund
 La Liga,Eintracht Frankfurt
-La Liga,Eintracht merger lineage begins
 La Liga,Elche CF
 La Liga,Elche Elche CF
 La Liga,Everton Everton FC
@@ -1365,7 +1316,6 @@ La Liga,Florence Fiorentina
 La Liga,Foot-Ball Club Barcelona
 La Liga,Football Club Internazionale Milano
 La Liga,Football Club Torino
-La Liga,Formed present club Parma AC
 La Liga,Frankfurt Eintracht Frankfurt
 La Liga,Frankfurter Fussball Club Victoria
 La Liga,Freiburg SC Freiburg
@@ -1380,7 +1330,6 @@ La Liga,Getafe Getafe CF
 La Liga,Girona FC
 La Liga,Girona Girona FC
 La Liga,Gymnaste Club de Nice
-La Liga,Gymnastics club origins
 La Liga,Hamburg Hamburger SV
 La Liga,Hamburger SV
 La Liga,Heidenheim 1. FC Heidenheim
@@ -1430,7 +1379,6 @@ La Liga,Miami Inter Miami CF
 La Liga,Milan AC Milan
 La Liga,Milan Foot-Ball and Cricket Club
 La Liga,Milan Inter Milan
-La Liga,Milan reverted to English spelling as 'Milan'
 La Liga,Minnesota Minnesota United FC
 La Liga,Minnesota Stars FC / NASL club
 La Liga,Monaco AS Monaco
@@ -1444,7 +1392,6 @@ La Liga,Naples Napoli
 La Liga,Nashville Nashville SC
 La Liga,Nashville SC
 La Liga,New England Revolution
-La Liga,New San Jose Earthquakes expansion club revived the name/colors
 La Liga,New York City FC
 La Liga,New York NYCFC
 La Liga,New York Red Bulls
@@ -1485,12 +1432,7 @@ La Liga,Real Racing Club de Santander
 La Liga,Real Salt Lake
 La Liga,Real Sociedad
 La Liga,Red Bull New York
-La Liga,Refounded as Parma Calcio 1913 after bankruptcy
-La Liga,Refounded/rebranded Como 1907 after prior bankruptcy
 La Liga,Rennes Stade Rennais
-La Liga,Reverted 'Athletic' spelling convention to 'Atlético'
-La Liga,Reverted to Athletic Club
-La Liga,Reverted to Genoa CFC
 La Liga,Rome AS Roma
 La Liga,Rome Lazio
 La Liga,Royal Arsenal
@@ -1513,8 +1455,6 @@ La Liga,Sevilla FC
 La Liga,Seville Sevilla FC
 La Liga,Sinsheim TSG Hoffenheim
 La Liga,Società Podistica Lazio
-La Liga,Split from Aviación; Club Atlético de Madrid
-La Liga,"Split from Paris FC, retained PSG name"
 La Liga,Sporting Kansas City
 La Liga,St. Domingo FC
 La Liga,St. Louis City SC
@@ -1552,7 +1492,6 @@ La Liga,Vallecas/Oviedo Real Oviedo
 La Liga,Vancouver Whitecaps FC
 La Liga,Verdi FC Parma
 La Liga,Verona Hellas Verona
-La Liga,VfB Stuttgart lineage begins
 La Liga,VfL Wolfsburg
 La Liga,Vigo Celta Vigo
 La Liga,Villarreal CF
@@ -1563,7 +1502,6 @@ La Liga,Wolfsburg VfL Wolfsburg
 La Liga,Wolverhampton Wanderers
 La Liga,Wolverhampton Wolverhampton Wanderers
 La Liga,Woolwich Arsenal
-Serie A,1. FC Heidenheim football section formalized
 Serie A,1. FC Köln
 Serie A,1. FC Union Berlin
 Serie A,1. FSV Mainz 05
@@ -1638,7 +1576,6 @@ Serie A,Deportivo Alavés
 Serie A,Dial Square
 Serie A,Dortmund Borussia Dortmund
 Serie A,Eintracht Frankfurt
-Serie A,Eintracht merger lineage begins
 Serie A,Elche CF
 Serie A,Elche Elche CF
 Serie A,Everton Everton FC
@@ -1656,7 +1593,6 @@ Serie A,Florence Fiorentina
 Serie A,Foot-Ball Club Barcelona
 Serie A,Football Club Internazionale Milano
 Serie A,Football Club Torino
-Serie A,Formed present club Parma AC
 Serie A,Frankfurt Eintracht Frankfurt
 Serie A,Frankfurter Fussball Club Victoria
 Serie A,Freiburg SC Freiburg
@@ -1671,7 +1607,6 @@ Serie A,Getafe Getafe CF
 Serie A,Girona FC
 Serie A,Girona Girona FC
 Serie A,Gymnaste Club de Nice
-Serie A,Gymnastics club origins
 Serie A,Hamburg Hamburger SV
 Serie A,Hamburger SV
 Serie A,Heidenheim 1. FC Heidenheim
@@ -1721,7 +1656,6 @@ Serie A,Miami Inter Miami CF
 Serie A,Milan AC Milan
 Serie A,Milan Foot-Ball and Cricket Club
 Serie A,Milan Inter Milan
-Serie A,Milan reverted to English spelling as 'Milan'
 Serie A,Minnesota Minnesota United FC
 Serie A,Minnesota Stars FC / NASL club
 Serie A,Monaco AS Monaco
@@ -1735,7 +1669,6 @@ Serie A,Naples Napoli
 Serie A,Nashville Nashville SC
 Serie A,Nashville SC
 Serie A,New England Revolution
-Serie A,New San Jose Earthquakes expansion club revived the name/colors
 Serie A,New York City FC
 Serie A,New York NYCFC
 Serie A,New York Red Bulls
@@ -1776,12 +1709,7 @@ Serie A,Real Racing Club de Santander
 Serie A,Real Salt Lake
 Serie A,Real Sociedad
 Serie A,Red Bull New York
-Serie A,Refounded as Parma Calcio 1913 after bankruptcy
-Serie A,Refounded/rebranded Como 1907 after prior bankruptcy
 Serie A,Rennes Stade Rennais
-Serie A,Reverted 'Athletic' spelling convention to 'Atlético'
-Serie A,Reverted to Athletic Club
-Serie A,Reverted to Genoa CFC
 Serie A,Rome AS Roma
 Serie A,Rome Lazio
 Serie A,Royal Arsenal
@@ -1804,8 +1732,6 @@ Serie A,Sevilla FC
 Serie A,Seville Sevilla FC
 Serie A,Sinsheim TSG Hoffenheim
 Serie A,Società Podistica Lazio
-Serie A,Split from Aviación; Club Atlético de Madrid
-Serie A,"Split from Paris FC, retained PSG name"
 Serie A,Sporting Kansas City
 Serie A,St. Domingo FC
 Serie A,St. Louis City SC
@@ -1843,7 +1769,6 @@ Serie A,Vallecas/Oviedo Real Oviedo
 Serie A,Vancouver Whitecaps FC
 Serie A,Verdi FC Parma
 Serie A,Verona Hellas Verona
-Serie A,VfB Stuttgart lineage begins
 Serie A,VfL Wolfsburg
 Serie A,Vigo Celta Vigo
 Serie A,Villarreal CF
@@ -1854,7 +1779,6 @@ Serie A,Wolfsburg VfL Wolfsburg
 Serie A,Wolverhampton Wanderers
 Serie A,Wolverhampton Wolverhampton Wanderers
 Serie A,Woolwich Arsenal
-Bundesliga,1. FC Heidenheim football section formalized
 Bundesliga,1. FC Köln
 Bundesliga,1. FC Union Berlin
 Bundesliga,1. FSV Mainz 05
@@ -1929,7 +1853,6 @@ Bundesliga,Deportivo Alavés
 Bundesliga,Dial Square
 Bundesliga,Dortmund Borussia Dortmund
 Bundesliga,Eintracht Frankfurt
-Bundesliga,Eintracht merger lineage begins
 Bundesliga,Elche CF
 Bundesliga,Elche Elche CF
 Bundesliga,Everton Everton FC
@@ -1947,7 +1870,6 @@ Bundesliga,Florence Fiorentina
 Bundesliga,Foot-Ball Club Barcelona
 Bundesliga,Football Club Internazionale Milano
 Bundesliga,Football Club Torino
-Bundesliga,Formed present club Parma AC
 Bundesliga,Frankfurt Eintracht Frankfurt
 Bundesliga,Frankfurter Fussball Club Victoria
 Bundesliga,Freiburg SC Freiburg
@@ -1962,7 +1884,6 @@ Bundesliga,Getafe Getafe CF
 Bundesliga,Girona FC
 Bundesliga,Girona Girona FC
 Bundesliga,Gymnaste Club de Nice
-Bundesliga,Gymnastics club origins
 Bundesliga,Hamburg Hamburger SV
 Bundesliga,Hamburger SV
 Bundesliga,Heidenheim 1. FC Heidenheim
@@ -2012,7 +1933,6 @@ Bundesliga,Miami Inter Miami CF
 Bundesliga,Milan AC Milan
 Bundesliga,Milan Foot-Ball and Cricket Club
 Bundesliga,Milan Inter Milan
-Bundesliga,Milan reverted to English spelling as 'Milan'
 Bundesliga,Minnesota Minnesota United FC
 Bundesliga,Minnesota Stars FC / NASL club
 Bundesliga,Monaco AS Monaco
@@ -2026,7 +1946,6 @@ Bundesliga,Naples Napoli
 Bundesliga,Nashville Nashville SC
 Bundesliga,Nashville SC
 Bundesliga,New England Revolution
-Bundesliga,New San Jose Earthquakes expansion club revived the name/colors
 Bundesliga,New York City FC
 Bundesliga,New York NYCFC
 Bundesliga,New York Red Bulls
@@ -2067,12 +1986,7 @@ Bundesliga,Real Racing Club de Santander
 Bundesliga,Real Salt Lake
 Bundesliga,Real Sociedad
 Bundesliga,Red Bull New York
-Bundesliga,Refounded as Parma Calcio 1913 after bankruptcy
-Bundesliga,Refounded/rebranded Como 1907 after prior bankruptcy
 Bundesliga,Rennes Stade Rennais
-Bundesliga,Reverted 'Athletic' spelling convention to 'Atlético'
-Bundesliga,Reverted to Athletic Club
-Bundesliga,Reverted to Genoa CFC
 Bundesliga,Rome AS Roma
 Bundesliga,Rome Lazio
 Bundesliga,Royal Arsenal
@@ -2095,8 +2009,6 @@ Bundesliga,Sevilla FC
 Bundesliga,Seville Sevilla FC
 Bundesliga,Sinsheim TSG Hoffenheim
 Bundesliga,Società Podistica Lazio
-Bundesliga,Split from Aviación; Club Atlético de Madrid
-Bundesliga,"Split from Paris FC, retained PSG name"
 Bundesliga,Sporting Kansas City
 Bundesliga,St. Domingo FC
 Bundesliga,St. Louis City SC
@@ -2134,7 +2046,6 @@ Bundesliga,Vallecas/Oviedo Real Oviedo
 Bundesliga,Vancouver Whitecaps FC
 Bundesliga,Verdi FC Parma
 Bundesliga,Verona Hellas Verona
-Bundesliga,VfB Stuttgart lineage begins
 Bundesliga,VfL Wolfsburg
 Bundesliga,Vigo Celta Vigo
 Bundesliga,Villarreal CF
@@ -2145,7 +2056,6 @@ Bundesliga,Wolfsburg VfL Wolfsburg
 Bundesliga,Wolverhampton Wanderers
 Bundesliga,Wolverhampton Wolverhampton Wanderers
 Bundesliga,Woolwich Arsenal
-Ligue 1,1. FC Heidenheim football section formalized
 Ligue 1,1. FC Köln
 Ligue 1,1. FC Union Berlin
 Ligue 1,1. FSV Mainz 05
@@ -2220,7 +2130,6 @@ Ligue 1,Deportivo Alavés
 Ligue 1,Dial Square
 Ligue 1,Dortmund Borussia Dortmund
 Ligue 1,Eintracht Frankfurt
-Ligue 1,Eintracht merger lineage begins
 Ligue 1,Elche CF
 Ligue 1,Elche Elche CF
 Ligue 1,Everton Everton FC
@@ -2238,7 +2147,6 @@ Ligue 1,Florence Fiorentina
 Ligue 1,Foot-Ball Club Barcelona
 Ligue 1,Football Club Internazionale Milano
 Ligue 1,Football Club Torino
-Ligue 1,Formed present club Parma AC
 Ligue 1,Frankfurt Eintracht Frankfurt
 Ligue 1,Frankfurter Fussball Club Victoria
 Ligue 1,Freiburg SC Freiburg
@@ -2253,7 +2161,6 @@ Ligue 1,Getafe Getafe CF
 Ligue 1,Girona FC
 Ligue 1,Girona Girona FC
 Ligue 1,Gymnaste Club de Nice
-Ligue 1,Gymnastics club origins
 Ligue 1,Hamburg Hamburger SV
 Ligue 1,Hamburger SV
 Ligue 1,Heidenheim 1. FC Heidenheim
@@ -2303,7 +2210,6 @@ Ligue 1,Miami Inter Miami CF
 Ligue 1,Milan AC Milan
 Ligue 1,Milan Foot-Ball and Cricket Club
 Ligue 1,Milan Inter Milan
-Ligue 1,Milan reverted to English spelling as 'Milan'
 Ligue 1,Minnesota Minnesota United FC
 Ligue 1,Minnesota Stars FC / NASL club
 Ligue 1,Monaco AS Monaco
@@ -2317,7 +2223,6 @@ Ligue 1,Naples Napoli
 Ligue 1,Nashville Nashville SC
 Ligue 1,Nashville SC
 Ligue 1,New England Revolution
-Ligue 1,New San Jose Earthquakes expansion club revived the name/colors
 Ligue 1,New York City FC
 Ligue 1,New York NYCFC
 Ligue 1,New York Red Bulls
@@ -2358,12 +2263,7 @@ Ligue 1,Real Racing Club de Santander
 Ligue 1,Real Salt Lake
 Ligue 1,Real Sociedad
 Ligue 1,Red Bull New York
-Ligue 1,Refounded as Parma Calcio 1913 after bankruptcy
-Ligue 1,Refounded/rebranded Como 1907 after prior bankruptcy
 Ligue 1,Rennes Stade Rennais
-Ligue 1,Reverted 'Athletic' spelling convention to 'Atlético'
-Ligue 1,Reverted to Athletic Club
-Ligue 1,Reverted to Genoa CFC
 Ligue 1,Rome AS Roma
 Ligue 1,Rome Lazio
 Ligue 1,Royal Arsenal
@@ -2386,8 +2286,6 @@ Ligue 1,Sevilla FC
 Ligue 1,Seville Sevilla FC
 Ligue 1,Sinsheim TSG Hoffenheim
 Ligue 1,Società Podistica Lazio
-Ligue 1,Split from Aviación; Club Atlético de Madrid
-Ligue 1,"Split from Paris FC, retained PSG name"
 Ligue 1,Sporting Kansas City
 Ligue 1,St. Domingo FC
 Ligue 1,St. Louis City SC
@@ -2425,7 +2323,6 @@ Ligue 1,Vallecas/Oviedo Real Oviedo
 Ligue 1,Vancouver Whitecaps FC
 Ligue 1,Verdi FC Parma
 Ligue 1,Verona Hellas Verona
-Ligue 1,VfB Stuttgart lineage begins
 Ligue 1,VfL Wolfsburg
 Ligue 1,Vigo Celta Vigo
 Ligue 1,Villarreal CF

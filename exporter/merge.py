@@ -324,14 +324,27 @@ def build_checklist_rows(
         has_base_rows = len(non_base_group) < len(group)
         variant_texts = [occ.variant_name for occ, _ in non_base_group]
 
-        # When base rows are present, the non-base rows are parallels OF
-        # the base card. A single non-base text should be a parallel, not
-        # the Insert - only derive a common Insert prefix when 2+ non-base
-        # rows share one. (The single-item-is-its-own-prefix behavior is
-        # intentional for Insert-only groups with one print version, not
-        # for base+parallel groups.)
-        if has_base_rows and len(non_base_group) <= 1:
-            common_prefix = ""
+        # A single non-base row should become a Parallel, not the Insert,
+        # UNLESS the site itself labeled that row "Insert" (occ.is_insert) -
+        # that's the actual signal for "this text names the card itself,
+        # not a variation of some other base printing", not whether a
+        # Base row happened to also be captured in this bucket.
+        #
+        # Using has_base_rows here (previous version) was wrong: many
+        # autograph/relic parallels (e.g. "#SG-CO", "#SSS-AR") have no
+        # separate plain Base printing at all - BSC lists exactly one row
+        # for them, typed "Parallel" - so has_base_rows was False for
+        # them even though they are unambiguously NOT their own Insert.
+        # That silently dumped the whole Parallel name into `insert`
+        # instead of `parallel_1` (Brandon, 2026-08-06 - Topps Chrome
+        # export, ~64 cards mis-tagged this way in one run).
+        #
+        # (The single-item-is-its-own-prefix behavior is still correct
+        # and intentional for a real Insert-only group with one print
+        # version - that's exactly what occ.is_insert=True means.)
+        if len(non_base_group) <= 1:
+            single_is_insert = bool(non_base_group) and non_base_group[0][0].is_insert
+            common_prefix = variant_texts[0] if single_is_insert else ""
         else:
             common_prefix = longest_common_word_prefix(variant_texts)
 

@@ -33,6 +33,7 @@ from settings.accumulator import load_accumulated, save_accumulated
 from settings.team_cache import load_team_cache, save_team_cache
 from settings.year_team_cache import load_year_team_cache, save_year_team_cache
 from settings.output_naming import raw_export_path, final_export_path, DEFAULT_NAME
+from settings.keep_awake import start_keep_awake, stop_keep_awake
 
 
 class ExtractionWorker:
@@ -83,6 +84,7 @@ class ExtractionWorker:
             self._on_resumed()
 
     def run(self) -> None:
+        caffeinate_process = start_keep_awake()
         try:
             fetch_team = self._context.get("fetch_team", False)
             start_page = self._context.get("start_page", 1)
@@ -238,3 +240,5 @@ class ExtractionWorker:
 
         except Exception as exc:  # noqa: BLE001
             self._on_error(str(exc))
+        finally:
+            stop_keep_awake(caffeinate_process)
