@@ -518,6 +518,72 @@ def test_insert_sharing_base_cards_own_number_still_splits_out():
     assert [p[0] for p in insert_row.parallels] == ["Blue Ice"]
 
 
+def test_leading_apostrophe_stripped_from_card_number():
+    # BSC sometimes prefixes card_number with a literal apostrophe ahead
+    # of the "#" (its own anti-Excel-autoformat trick) - e.g. "'#DK10".
+    # clean_card_number only stripped "#", so the apostrophe survived
+    # straight through to the final export (2020 Panini Diamond Kings,
+    # confirmed against the raw export, Brandon 2026-08-08 - #DK10 and
+    # #206-FT both came out as "'#DK10"/"'#206-FT" instead of clean
+    # "DK10"/"206-FT").
+    for raw_num, expected in [("'#DK10", "DK10"), ("'#206-FT", "206-FT"), ("#101", "101")]:
+        records = [
+            CardRecord(name="Frank Thomas", card_number=raw_num, set="2020 Panini",
+                       variant="Base", variant_name="-", attributes="-"),
+        ]
+        rows = convert_and_build(records)
+        assert rows[0].card_number == expected, f"Failed for {raw_num!r}"
+
+
+def test_insert_with_no_bare_row_still_clusters_by_shrinking_anchor():
+    # 2020 Panini Diamond Kings' "DK 206 Signatures" insert never prints
+    # a bare, un-suffixed row at all - every row already has a color/
+    # tier suffix ("...Holo Blue", "...Holo Gold", "...Masterpiece", -
+    # confirmed against the raw export, Brandon 2026-08-08). Comparing
+    # every row against a FIXED first-row anchor ("...Holo Blue") meant
+    # "...Holo Gold" didn't literally start with those exact words and
+    # was treated as an unrelated new insert, and so on for every
+    # remaining row - the whole insert fragmented into one cluster per
+    # parallel instead of staying one card. Fixed by shrinking the
+    # anchor to the actual shared prefix as rows disagree, instead of
+    # requiring an exact-continuation match against the first row seen.
+    records = [
+        CardRecord(name="Frank Thomas", card_number="#206-FT", set="2020 Panini",
+                   variant="Insert", variant_name="DK 206 Signatures Holo Blue",
+                   attributes="AU, SN25"),
+        CardRecord(name="Frank Thomas", card_number="#206-FT", set="2020 Panini",
+                   variant="Insert", variant_name="DK 206 Signatures Holo Gold",
+                   attributes="AU, SN50"),
+        CardRecord(name="Frank Thomas", card_number="#206-FT", set="2020 Panini",
+                   variant="Insert", variant_name="DK 206 Signatures Masterpiece",
+                   attributes="AU, SN1"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 1
+    assert rows[0].insert == "DK 206 Signatures"
+    assert [p[0] for p in rows[0].parallels] == ["Holo Blue", "Holo Gold", "Masterpiece"]
+
+
+def test_single_word_bare_insert_anchor_still_clusters():
+    # Guards the OTHER side of the same fix: an insert whose real name
+    # genuinely is just one word ("Anime") must not fragment just
+    # because a one-word anchor, on its own, isn't normally enough to
+    # continue a cluster (that floor exists to stop two DIFFERENT
+    # inserts from merging over one coincidentally shared word). A row
+    # that fully extends the anchor as-is is always accepted regardless
+    # of word count - only a SHRINKING match is held to the two-word
+    # minimum.
+    records = [
+        CardRecord(name="Mike Trout", card_number="#BA-23", set="2026 Bowman",
+                   variant="Insert", variant_name="Anime", attributes="-"),
+        CardRecord(name="Mike Trout", card_number="#BA-23", set="2026 Bowman",
+                   variant="Insert", variant_name="Anime Black Refractors", attributes="SN10"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 1
+    assert rows[0].insert == "Anime"
+
+
 if __name__ == "__main__":
     test_parse_set_brand_is_first_word_rest_is_set()
     test_parse_set_brand_exceptions_loaded_from_csv()
@@ -558,4 +624,7 @@ if __name__ == "__main__":
     test_letter_stripped_from_card_number_in_output()
     test_non_lettered_card_numbers_not_affected()
     test_insert_sharing_base_cards_own_number_still_splits_out()
+    test_leading_apostrophe_stripped_from_card_number()
+    test_insert_with_no_bare_row_still_clusters_by_shrinking_anchor()
+    test_single_word_bare_insert_anchor_still_clusters()
     print("All tests passed.")

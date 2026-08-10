@@ -214,10 +214,19 @@ def parse_set(set_text: str) -> tuple[str, str, str]:
 
 
 def clean_card_number(card_number: str) -> str:
-    """Strip a leading '#'. Otherwise unchanged."""
+    """Strip a leading "'" and/or "#". BSC sometimes prefixes the raw
+    card_number with a literal apostrophe (its own anti-Excel-
+    autoformat trick, so a number like "206-FT" doesn't get silently
+    reinterpreted as a date) ahead of the "#" - e.g. "'#206-FT". Only
+    "#" was being stripped here, so that apostrophe survived straight
+    through to the final export whenever BSC included it (2020 Panini
+    Diamond Kings, confirmed against the raw export, Brandon
+    2026-08-08 - #DK10 and #206-FT both came out as "'#DK10"/"'#206-FT"
+    instead of "DK10"/"206-FT"). Strips any leading run of either
+    character, in any order, not just one apostrophe then one hash."""
     if not card_number:
         return ""
-    return card_number.lstrip("#").strip()
+    return re.sub(r"^['#]+", "", card_number).strip()
 
 
 def extract_card_number_prefix(card_number: str) -> str:

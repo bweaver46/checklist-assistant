@@ -150,20 +150,6 @@ def prelim_key(occurrence: RawOccurrence) -> tuple:
     )
 
 
-def _starts_with_words(text: str, prefix: str) -> bool:
-    """Word-wise, case-insensitive: does text begin with all of prefix's
-    words in order? Empty prefix never matches (there's nothing to be a
-    continuation of yet)."""
-    if not prefix:
-        return False
-    text_words = text.split()
-    prefix_words = prefix.split()
-    if len(text_words) < len(prefix_words):
-        return False
-    head = [w.lower() for w in text_words[: len(prefix_words)]]
-    return head == [w.lower() for w in prefix_words]
-
-
 def assign_insert_clusters(bucket: list[tuple[RawOccurrence, str]]) -> list[int]:
     """A (card_number, player) bucket can legitimately contain more than
     one unrelated card. BSC assigns each Insert set its own 1-N
@@ -193,11 +179,40 @@ def assign_insert_clusters(bucket: list[tuple[RawOccurrence, str]]) -> list[int]
     Marvels into Jacob Wilson's base row instead of splitting it out).
     So only Insert-type rows (RawOccurrence.is_insert) get clustered:
     walk them in the order BSC listed them and start a new cluster
-    whenever a row's Variant Name is NOT a word-wise continuation of
-    the current cluster's anchor (its first, plain/un-suffixed row) -
-    i.e. whenever the listing has visibly moved on to a different
-    insert. A bucket can freely mix cluster 0 (Base + its Parallels)
-    with one or more Insert clusters found this way."""
+    whenever a row's Variant Name doesn't share at least a two-word
+    prefix with the current cluster's running anchor - i.e. whenever
+    the listing has visibly moved on to a different insert. A bucket
+    can freely mix cluster 0 (Base + its Parallels) with one or more
+    Insert clusters found this way.
+
+    The anchor is the SHARED prefix seen so far in the current cluster,
+    not just the first row's full text - it shrinks as more of the
+    insert's differently-suffixed print versions come in. This matters
+    for inserts that never print a bare, un-suffixed version at all -
+    e.g. 2020 Panini Diamond Kings' "DK 206 Signatures" insert only
+    ever appears as "DK 206 Signatures Holo Blue", "...Holo Gold",
+    "...Masterpiece", etc. (confirmed against the raw export, Brandon
+    2026-08-08). Comparing every row against a fixed first-row anchor
+    ("...Holo Blue") meant "...Holo Gold" didn't literally start with
+    those exact words and got treated as an unrelated new insert, and
+    so on for every remaining row - the whole insert fragmented into
+    one cluster per parallel instead of staying one card. Shrinking the
+    anchor to the ACTUAL shared prefix after each row ("DK 206
+    Signatures", once "Holo Blue" and "Holo Gold" disagree at word 4)
+    fixes this without needing every insert to have a plain row to
+    anchor off of.
+
+    A minimum of two shared words is required to CONTINUE a cluster
+    once the anchor has already had to shrink to match a prior row -
+    a single generic shared word surviving a shrink (e.g. two unrelated
+    inserts that both merely start with "Rookie") isn't a strong enough
+    signal on its own, and would risk merging genuinely different
+    inserts the same way this function exists to prevent. That
+    threshold does NOT apply when a row fully extends the anchor as-is
+    (no shrinking needed) - otherwise a genuinely one-word insert name
+    (e.g. "Anime", extended by "Anime Black Refractors") would
+    incorrectly fragment on its very first color variant, since the
+    bare anchor itself is only one word."""
     cluster_ids: list[int] = []
     anchor: str = ""
     current_id = 0
@@ -207,10 +222,14 @@ def assign_insert_clusters(bucket: list[tuple[RawOccurrence, str]]) -> list[int]
             cluster_ids.append(0)
             continue
         text = occ.variant_name
-        if not anchor or not _starts_with_words(text, anchor):
+        shared = longest_common_word_prefix([anchor, text]) if anchor else ""
+        is_full_extension = bool(shared) and shared.lower() == anchor.lower()
+        if not shared or (not is_full_extension and len(shared.split()) < 2):
             anchor = text
             current_id = next_id
             next_id += 1
+        else:
+            anchor = shared
         cluster_ids.append(current_id)
     return cluster_ids
 
