@@ -1,53 +1,109 @@
 sport,team
+Baseball,"""Athletics"" — playing in West Sacramento, CA (Sutter Health Park) while a permanent home is built"
+Baseball,Anaheim Angels
 Baseball,Arizona Diamondbacks
+Baseball,Athletics Athletics
 Baseball,Atlanta Braves
 Baseball,Baltimore Orioles
+Baseball,Boston Americans
+Baseball,Boston Beaneaters
+Baseball,Boston Bees
+Baseball,Boston Braves
+Baseball,Boston Doves
+Baseball,Boston Red Caps
 Baseball,Boston Red Sox
+Baseball,Boston Red Stockings
+Baseball,Boston Rustlers
+Baseball,Brooklyn Atlantics
+Baseball,Brooklyn Bridegrooms
+Baseball,Brooklyn Dodgers
+Baseball,Brooklyn Robins/Dodgers
+Baseball,Brooklyn Superbas
+Baseball,California Angels
+Baseball,Charter American League franchise
+Baseball,"Charter American League franchise, Chicago White Sox"
+Baseball,Chicago Colts
 Baseball,Chicago Cubs
+Baseball,Chicago Orphans
 Baseball,Chicago White Sox
+Baseball,Chicago White Stockings
+Baseball,Cincinnati Red Stockings
+Baseball,Cincinnati Redlegs
 Baseball,Cincinnati Reds
+Baseball,Cleveland Blues
+Baseball,Cleveland Bronchos
 Baseball,Cleveland Guardians
+Baseball,Cleveland Indians
+Baseball,Cleveland Naps
 Baseball,Colorado Rockies
 Baseball,Detroit Tigers
+Baseball,Florida Marlins
 Baseball,Houston Astros
+Baseball,Houston Colt .45s
+Baseball,Kansas City Athletics
 Baseball,Kansas City Royals
 Baseball,Los Angeles Angels
+Baseball,Los Angeles Angels of Anaheim
 Baseball,Los Angeles Dodgers
 Baseball,Miami Marlins
+Baseball,Milwaukee Braves
 Baseball,Milwaukee Brewers
 Baseball,Minnesota Twins
+Baseball,Montreal Expos
+Baseball,Moved from AL to NL
+Baseball,Moved from NL to AL
+Baseball,New York Gothams
+Baseball,New York Highlanders
 Baseball,New York Mets
 Baseball,New York Yankees
-Baseball,Athletics
 Baseball,Oakland Athletics
+Baseball,Philadelphia Athletics
 Baseball,Philadelphia Phillies
+Baseball,Philadelphia Quakers
+Baseball,Pittsburgh Alleghenys
 Baseball,Pittsburgh Pirates
 Baseball,San Diego Padres
 Baseball,San Francisco Giants
 Baseball,Seattle Mariners
+Baseball,Seattle Pilots
+Baseball,St. Louis Brown Stockings
+Baseball,St. Louis Browns
 Baseball,St. Louis Cardinals
+Baseball,St. Louis Perfectos
+Baseball,Tampa Bay Devil Rays
 Baseball,Tampa Bay Rays
 Baseball,Texas Rangers
 Baseball,Toronto Blue Jays
 Baseball,Washington Nationals
+Baseball,Washington Senators
 Football,Arizona Cardinals
 Football,Atlanta Falcons
+Football,Baltimore Colts
 Football,Baltimore Ravens
+Football,Boston Patriots
+Football,Boston Redskins
 Football,Buffalo Bills
 Football,Carolina Panthers
+Football,Chicago (Morgan/Racine) Cardinals
 Football,Chicago Bears
+Football,Chicago Staleys
 Football,Cincinnati Bengals
 Football,Cleveland Browns
+Football,Cleveland Rams
 Football,Dallas Cowboys
+Football,Dallas Texans
+Football,Decatur Staleys
 Football,Denver Broncos
 Football,Detroit Lions
 Football,Green Bay Packers
+Football,Houston Oilers
 Football,Houston Texans
 Football,Indianapolis Colts
 Football,Jacksonville Jaguars
 Football,Kansas City Chiefs
 Football,Las Vegas Raiders
 Football,Los Angeles Chargers
+Football,Los Angeles Raiders
 Football,Los Angeles Rams
 Football,Miami Dolphins
 Football,Minnesota Vikings
@@ -55,314 +111,2328 @@ Football,New England Patriots
 Football,New Orleans Saints
 Football,New York Giants
 Football,New York Jets
+Football,Oakland Raiders
 Football,Philadelphia Eagles
+Football,Phoenix Cardinals
+Football,Pittsburgh Pirates
 Football,Pittsburgh Steelers
+Football,Portsmouth (Ohio) Spartans
+Football,San Diego Chargers
 Football,San Francisco 49ers
 Football,Seattle Seahawks
+Football,St. Louis Cardinals
+Football,St. Louis Rams
 Football,Tampa Bay Buccaneers
+Football,Tennessee Oilers
 Football,Tennessee Titans
+Football,Titans of New York
 Football,Washington Commanders
+Football,Washington Football Team
+Football,Washington Redskins
 Basketball,Atlanta Hawks
+Basketball,Baltimore Bullets
 Basketball,Boston Celtics
 Basketball,Brooklyn Nets
+Basketball,Buffalo Bisons
+Basketball,Buffalo Braves
+Basketball,Capital Bullets
+Basketball,Charlotte Bobcats
 Basketball,Charlotte Hornets
 Basketball,Chicago Bulls
+Basketball,Chicago Packers
+Basketball,Chicago Zephyrs
+Basketball,Cincinnati Royals
 Basketball,Cleveland Cavaliers
+Basketball,Dallas Chaparrals
 Basketball,Dallas Mavericks
 Basketball,Denver Nuggets
+Basketball,Denver Rockets
 Basketball,Detroit Pistons
+Basketball,Fort Wayne Zollner Pistons
 Basketball,Golden State Warriors
 Basketball,Houston Rockets
 Basketball,Indiana Pacers
-Basketball,LA Clippers
+Basketball,Kansas City Kings
+Basketball,Kansas City-Omaha Kings
+Basketball,LA Clippers Clippers
+Basketball,Los Angeles Clippers
 Basketball,Los Angeles Lakers
 Basketball,Memphis Grizzlies
 Basketball,Miami Heat
 Basketball,Milwaukee Bucks
+Basketball,Milwaukee Hawks
+Basketball,Minneapolis Lakers
 Basketball,Minnesota Timberwolves
+Basketball,New Jersey Americans
+Basketball,New Jersey Nets
+Basketball,New Orleans Hornets
+Basketball,New Orleans Jazz
 Basketball,New Orleans Pelicans
+Basketball,New Orleans/Oklahoma City Hornets
+Basketball,New York Knickerbockers
 Basketball,New York Knicks
+Basketball,New York Nets
 Basketball,Oklahoma City Thunder
 Basketball,Orlando Magic
 Basketball,Philadelphia 76ers
+Basketball,Philadelphia Warriors
 Basketball,Phoenix Suns
 Basketball,Portland Trail Blazers
+Basketball,Rochester Royals
+Basketball,Rochester Seagrams
 Basketball,Sacramento Kings
 Basketball,San Antonio Spurs
+Basketball,San Diego Clippers
+Basketball,San Diego Rockets
+Basketball,San Francisco Warriors
+Basketball,Seattle SuperSonics
+Basketball,St. Louis Hawks
+Basketball,Syracuse Nationals
 Basketball,Toronto Raptors
+Basketball,Tri-Cities Blackhawks
 Basketball,Utah Jazz
+Basketball,Vancouver Grizzlies
+Basketball,Washington Bullets
 Basketball,Washington Wizards
+NBA,Atlanta Hawks
+NBA,Baltimore Bullets
+NBA,Boston Celtics
+NBA,Brooklyn Nets
+NBA,Buffalo Bisons
+NBA,Buffalo Braves
+NBA,Capital Bullets
+NBA,Charlotte Bobcats
+NBA,Charlotte Hornets
+NBA,Chicago Bulls
+NBA,Chicago Packers
+NBA,Chicago Zephyrs
+NBA,Cincinnati Royals
+NBA,Cleveland Cavaliers
+NBA,Dallas Chaparrals
+NBA,Dallas Mavericks
+NBA,Denver Nuggets
+NBA,Denver Rockets
+NBA,Detroit Pistons
+NBA,Fort Wayne Zollner Pistons
+NBA,Golden State Warriors
+NBA,Houston Rockets
+NBA,Indiana Pacers
+NBA,Kansas City Kings
+NBA,Kansas City-Omaha Kings
+NBA,LA Clippers Clippers
+NBA,Los Angeles Clippers
+NBA,Los Angeles Lakers
+NBA,Memphis Grizzlies
+NBA,Miami Heat
+NBA,Milwaukee Bucks
+NBA,Milwaukee Hawks
+NBA,Minneapolis Lakers
+NBA,Minnesota Timberwolves
+NBA,New Jersey Americans
+NBA,New Jersey Nets
+NBA,New Orleans Hornets
+NBA,New Orleans Jazz
+NBA,New Orleans Pelicans
+NBA,New Orleans/Oklahoma City Hornets
+NBA,New York Knickerbockers
+NBA,New York Knicks
+NBA,New York Nets
+NBA,Oklahoma City Thunder
+NBA,Orlando Magic
+NBA,Philadelphia 76ers
+NBA,Philadelphia Warriors
+NBA,Phoenix Suns
+NBA,Portland Trail Blazers
+NBA,Rochester Royals
+NBA,Rochester Seagrams
+NBA,Sacramento Kings
+NBA,San Antonio Spurs
+NBA,San Diego Clippers
+NBA,San Diego Rockets
+NBA,San Francisco Warriors
+NBA,Seattle SuperSonics
+NBA,St. Louis Hawks
+NBA,Syracuse Nationals
+NBA,Toronto Raptors
+NBA,Tri-Cities Blackhawks
+NBA,Utah Jazz
+NBA,Vancouver Grizzlies
+NBA,Washington Bullets
+NBA,Washington Wizards
 Womens Basketball,Atlanta Dream
 Womens Basketball,Chicago Sky
 Womens Basketball,Connecticut Sun
 Womens Basketball,Dallas Wings
+Womens Basketball,Detroit Shock
 Womens Basketball,Golden State Valkyries
 Womens Basketball,Indiana Fever
 Womens Basketball,Las Vegas Aces
 Womens Basketball,Los Angeles Sparks
 Womens Basketball,Minnesota Lynx
 Womens Basketball,New York Liberty
+Womens Basketball,Orlando Miracle
 Womens Basketball,Phoenix Mercury
 Womens Basketball,Portland Fire
+Womens Basketball,San Antonio Silver Stars
+Womens Basketball,San Antonio Stars
 Womens Basketball,Seattle Storm
 Womens Basketball,Toronto Tempo
+Womens Basketball,Tulsa Shock
+Womens Basketball,Utah Starzz
 Womens Basketball,Washington Mystics
-Hockey,Anaheim Ducks
-Hockey,Boston Bruins
-Hockey,Buffalo Sabres
-Hockey,Calgary Flames
-Hockey,Carolina Hurricanes
-Hockey,Chicago Blackhawks
-Hockey,Colorado Avalanche
-Hockey,Columbus Blue Jackets
-Hockey,Dallas Stars
-Hockey,Detroit Red Wings
-Hockey,Edmonton Oilers
-Hockey,Florida Panthers
-Hockey,Los Angeles Kings
-Hockey,Minnesota Wild
-Hockey,Montreal Canadiens
-Hockey,Nashville Predators
-Hockey,New Jersey Devils
-Hockey,New York Islanders
-Hockey,New York Rangers
-Hockey,Ottawa Senators
-Hockey,Philadelphia Flyers
-Hockey,Pittsburgh Penguins
-Hockey,San Jose Sharks
-Hockey,Seattle Kraken
-Hockey,St. Louis Blues
-Hockey,Tampa Bay Lightning
-Hockey,Toronto Maple Leafs
-Hockey,Utah Mammoth
-Hockey,Vancouver Canucks
-Hockey,Vegas Golden Knights
-Hockey,Washington Capitals
-Hockey,Winnipeg Jets
-Soccer,Atlanta United FC
-Soccer,Austin FC
-Soccer,Charlotte FC
-Soccer,Chicago Fire FC
-Soccer,Colorado Rapids
-Soccer,Columbus Crew
-Soccer,DC United
-Soccer,FC Cincinnati
-Soccer,FC Dallas
-Soccer,Houston Dynamo FC
-Soccer,Inter Miami CF
-Soccer,LA Galaxy
-Soccer,Los Angeles FC
-Soccer,CF Montreal
-Soccer,Minnesota United FC
-Soccer,Nashville SC
-Soccer,New England Revolution
-Soccer,New York City FC
-Soccer,New York Red Bulls
-Soccer,Orlando City SC
-Soccer,Philadelphia Union
-Soccer,Portland Timbers
-Soccer,Real Salt Lake
-Soccer,San Diego FC
-Soccer,San Jose Earthquakes
-Soccer,Seattle Sounders FC
-Soccer,Sporting Kansas City
-Soccer,St. Louis City SC
-Soccer,Toronto FC
-Soccer,Vancouver Whitecaps FC
-Soccer,Arsenal
-Soccer,Aston Villa
-Soccer,Bournemouth
-Soccer,Brentford
-Soccer,Brighton & Hove Albion
-Soccer,Burnley
-Soccer,Chelsea
-Soccer,Crystal Palace
-Soccer,Everton
-Soccer,Fulham
-Soccer,Leeds United
-Soccer,Liverpool
-Soccer,Manchester City
-Soccer,Manchester United
-Soccer,Newcastle United
-Soccer,Nottingham Forest
-Soccer,Sunderland
-Soccer,Tottenham Hotspur
-Soccer,West Ham United
-Soccer,Wolverhampton Wanderers
-NBA,Atlanta Hawks
-NBA,Boston Celtics
-NBA,Brooklyn Nets
-NBA,Charlotte Hornets
-NBA,Chicago Bulls
-NBA,Cleveland Cavaliers
-NBA,Dallas Mavericks
-NBA,Denver Nuggets
-NBA,Detroit Pistons
-NBA,Golden State Warriors
-NBA,Houston Rockets
-NBA,Indiana Pacers
-NBA,LA Clippers
-NBA,Los Angeles Lakers
-NBA,Memphis Grizzlies
-NBA,Miami Heat
-NBA,Milwaukee Bucks
-NBA,Minnesota Timberwolves
-NBA,New Orleans Pelicans
-NBA,New York Knicks
-NBA,Oklahoma City Thunder
-NBA,Orlando Magic
-NBA,Philadelphia 76ers
-NBA,Phoenix Suns
-NBA,Portland Trail Blazers
-NBA,Sacramento Kings
-NBA,San Antonio Spurs
-NBA,Toronto Raptors
-NBA,Utah Jazz
-NBA,Washington Wizards
 WNBA,Atlanta Dream
 WNBA,Chicago Sky
 WNBA,Connecticut Sun
 WNBA,Dallas Wings
+WNBA,Detroit Shock
 WNBA,Golden State Valkyries
 WNBA,Indiana Fever
 WNBA,Las Vegas Aces
 WNBA,Los Angeles Sparks
 WNBA,Minnesota Lynx
 WNBA,New York Liberty
+WNBA,Orlando Miracle
 WNBA,Phoenix Mercury
 WNBA,Portland Fire
+WNBA,San Antonio Silver Stars
+WNBA,San Antonio Stars
 WNBA,Seattle Storm
 WNBA,Toronto Tempo
+WNBA,Tulsa Shock
+WNBA,Utah Starzz
 WNBA,Washington Mystics
+Hockey,Anaheim Ducks
+Hockey,Arizona Coyotes
+Hockey,Atlanta Flames
+Hockey,Atlanta Thrashers
+Hockey,Boston Bruins
+Hockey,Buffalo Sabres
+Hockey,Calgary Flames
+Hockey,Carolina Hurricanes
+Hockey,Chicago Black Hawks
+Hockey,Chicago Blackhawks
+Hockey,Colorado Avalanche
+Hockey,Colorado Rockies
+Hockey,Columbus Blue Jackets
+Hockey,Dallas Stars
+Hockey,Detroit Cougars
+Hockey,Detroit Falcons
+Hockey,Detroit Red Wings
+Hockey,Edmonton Oilers
+Hockey,Florida Panthers
+Hockey,Hartford Whalers
+Hockey,Kansas City Scouts
+Hockey,Los Angeles Kings
+Hockey,Mighty Ducks of Anaheim
+Hockey,Minnesota North Stars
+Hockey,Minnesota Wild
+Hockey,Montreal Canadiens
+Hockey,Nashville Predators
+Hockey,New England Whalers
+Hockey,New Jersey Devils
+Hockey,New York Islanders
+Hockey,New York Rangers
+Hockey,Ottawa Senators
+Hockey,Philadelphia Flyers
+Hockey,Phoenix Coyotes
+Hockey,Pittsburgh Penguins
+Hockey,Quebec Nordiques
+Hockey,San Jose Sharks
+Hockey,Seattle Kraken
+Hockey,St. Louis Blues
+Hockey,Tampa Bay Lightning
+Hockey,Toronto Arenas
+Hockey,Toronto Maple Leafs
+Hockey,Toronto St. Patricks
+Hockey,Utah Hockey Club
+Hockey,Utah Mammoth
+Hockey,Vancouver Canucks
+Hockey,Vegas Golden Knights
+Hockey,Washington Capitals
+Hockey,Winnipeg Jets
 NHL,Anaheim Ducks
+NHL,Arizona Coyotes
+NHL,Atlanta Flames
+NHL,Atlanta Thrashers
 NHL,Boston Bruins
 NHL,Buffalo Sabres
 NHL,Calgary Flames
 NHL,Carolina Hurricanes
+NHL,Chicago Black Hawks
 NHL,Chicago Blackhawks
 NHL,Colorado Avalanche
+NHL,Colorado Rockies
 NHL,Columbus Blue Jackets
 NHL,Dallas Stars
+NHL,Detroit Cougars
+NHL,Detroit Falcons
 NHL,Detroit Red Wings
 NHL,Edmonton Oilers
 NHL,Florida Panthers
+NHL,Hartford Whalers
+NHL,Kansas City Scouts
 NHL,Los Angeles Kings
+NHL,Mighty Ducks of Anaheim
+NHL,Minnesota North Stars
 NHL,Minnesota Wild
 NHL,Montreal Canadiens
 NHL,Nashville Predators
+NHL,New England Whalers
 NHL,New Jersey Devils
 NHL,New York Islanders
 NHL,New York Rangers
 NHL,Ottawa Senators
 NHL,Philadelphia Flyers
+NHL,Phoenix Coyotes
 NHL,Pittsburgh Penguins
+NHL,Quebec Nordiques
 NHL,San Jose Sharks
 NHL,Seattle Kraken
 NHL,St. Louis Blues
 NHL,Tampa Bay Lightning
+NHL,Toronto Arenas
 NHL,Toronto Maple Leafs
+NHL,Toronto St. Patricks
+NHL,Utah Hockey Club
 NHL,Utah Mammoth
 NHL,Vancouver Canucks
 NHL,Vegas Golden Knights
 NHL,Washington Capitals
 NHL,Winnipeg Jets
+Soccer,1. FC Heidenheim football section formalized
+Soccer,1. FC Köln
+Soccer,1. FC Union Berlin
+Soccer,1. FSV Mainz 05
+Soccer,ACF Fiorentina
+Soccer,AFC Bournemouth
+Soccer,AJ Auxerre
+Soccer,AS Monaco
+Soccer,AS Roma
+Soccer,Angers Angers SCO
+Soccer,Angers SCO
+Soccer,Ardwick Association FC
+Soccer,Arsenal Football Club
+Soccer,Associazione Calcio Milano
+Soccer,Aston Villa
+Soccer,Atalanta BC
+Soccer,Athletic Club
+Soccer,Athletic Club de Madrid
+Soccer,Atlanta United FC
+Soccer,Atlético Aviación
+Soccer,Atlético Club de Bilbao
+Soccer,Augsburg FC Augsburg
+Soccer,Austin FC
+Soccer,Auxerre AJ Auxerre
+Soccer,BC Augsburg
+Soccer,Ballspielverein Borussia Dortmund
+Soccer,Barcelona FC Barcelona
+Soccer,Bayer 04 Leverkusen
+Soccer,Bergamo Atalanta BC
+Soccer,Berlin Union Berlin
+Soccer,Bilbao Athletic Club
+Soccer,Birmingham Aston Villa
+Soccer,Bologna Bologna FC 1909
+Soccer,Bologna FC
+Soccer,Borussia Mönchengladbach
+Soccer,Boscombe FC
+Soccer,Boscombe St John's Institute FC
+Soccer,Bournemouth AFC Bournemouth
+Soccer,Bremen Werder Bremen
+Soccer,Brentford Brentford FC
+Soccer,Brentford FC
+Soccer,Brest Stade Brestois 29
+Soccer,Brighton & Hove Albion
+Soccer,Brighton Brighton & Hove Albion
+Soccer,Burnley Burnley FC
+Soccer,Burnley FC
+Soccer,CA Osasuna
+Soccer,CF Montréal
+Soccer,Cagliari Cagliari Calcio
+Soccer,Cagliari Calcio
+Soccer,Celta Vigo
+Soccer,Charlotte FC
+Soccer,Chelsea Chelsea FC
+Soccer,Chelsea FC
+Soccer,Chicago Fire
+Soccer,Chicago Fire FC
+Soccer,Chicago Fire Soccer Club
+Soccer,Cincinnati FC Cincinnati
+Soccer,Cologne 1. FC Köln
+Soccer,Colorado Rapids
+Soccer,Columbus Crew
+Soccer,Columbus Crew SC
+Soccer,Como Como 1907
+Soccer,Como Foot-Ball Club
+Soccer,Cremona Cremonese
+Soccer,Cremonese
+Soccer,Crystal Palace Crystal Palace FC
+Soccer,Crystal Palace FC
+Soccer,D.C. United
+Soccer,Dallas Burn
+Soccer,Dallas FC Dallas
+Soccer,Deportivo Alavés
+Soccer,Dial Square
+Soccer,Dortmund Borussia Dortmund
+Soccer,Eintracht Frankfurt
+Soccer,Eintracht merger lineage begins
+Soccer,Elche CF
+Soccer,Elche Elche CF
+Soccer,Everton Everton FC
+Soccer,Everton FC
+Soccer,FC Augsburg
+Soccer,FC Barcelona
+Soccer,FC Bayern München
+Soccer,FC Cincinnati
+Soccer,FC Dallas
+Soccer,FC Lorient
+Soccer,FC Metz
+Soccer,FC Nantes
+Soccer,FC St. Pauli
+Soccer,Florence Fiorentina
+Soccer,Foot-Ball Club Barcelona
+Soccer,Football Club Internazionale Milano
+Soccer,Football Club Torino
+Soccer,Formed present club Parma AC
+Soccer,Frankfurt Eintracht Frankfurt
+Soccer,Frankfurter Fussball Club Victoria
+Soccer,Freiburg SC Freiburg
+Soccer,Fulham FC
+Soccer,Fulham Fulham FC
+Soccer,Genoa Cricket and Football Club
+Soccer,Genoa Genoa CFC
+Soccer,Genova 1893
+Soccer,Getafe CF
+Soccer,Getafe Deportivo
+Soccer,Getafe Getafe CF
+Soccer,Girona FC
+Soccer,Girona Girona FC
+Soccer,Gymnaste Club de Nice
+Soccer,Gymnastics club origins
+Soccer,Hamburg Hamburger SV
+Soccer,Hamburger SV
+Soccer,Heidenheim 1. FC Heidenheim
+Soccer,Hellas Verona
+Soccer,Hotspur FC
+Soccer,Houston Dynamo FC
+Soccer,Inter Miami CF
+Soccer,Juventus Football Club
+Soccer,Kansas City Sporting KC
+Soccer,Kansas City Wiz
+Soccer,Kansas City Wizards
+Soccer,LA Galaxy
+Soccer,Le Havre Athletic Club
+Soccer,Le Havre Le Havre AC
+Soccer,Lecce US Lecce
+Soccer,Leeds Leeds United
+Soccer,Leeds United
+Soccer,Leipzig RB Leipzig
+Soccer,Lens RC Lens
+Soccer,Levante FC
+Soccer,Levante UD
+Soccer,Leverkusen Bayer 04 Leverkusen
+Soccer,Lille LOSC Lille
+Soccer,Lille Olympique Sporting Club
+Soccer,Liverpool FC
+Soccer,Liverpool Liverpool FC
+Soccer,London Tottenham Hotspur
+Soccer,London West Ham United
+Soccer,Lorient FC Lorient
+Soccer,Los Angeles FC
+Soccer,Los Angeles LA Galaxy
+Soccer,Los Angeles LAFC
+Soccer,Lyon Olympique Lyonnais
+Soccer,Madrid Atlético Madrid
+Soccer,Madrid Football Club
+Soccer,Madrid Rayo Vallecano
+Soccer,Madrid Real Madrid
+Soccer,Mainz 1. FSV Mainz 05
+Soccer,Manchester Arsenal
+Soccer,Manchester City
+Soccer,Manchester Manchester City
+Soccer,Manchester Manchester United
+Soccer,Manchester United
+Soccer,Marseille Olympique de Marseille
+Soccer,Metz FC Metz
+Soccer,Miami Inter Miami CF
+Soccer,Milan AC Milan
+Soccer,Milan Foot-Ball and Cricket Club
+Soccer,Milan Inter Milan
+Soccer,Milan reverted to English spelling as 'Milan'
+Soccer,Minnesota Minnesota United FC
+Soccer,Minnesota Stars FC / NASL club
+Soccer,Monaco AS Monaco
+Soccer,Montreal CF Montréal
+Soccer,Montreal Impact
+Soccer,Munich Bayern Munich
+Soccer,Mönchengladbach Borussia Mönchengladbach
+Soccer,Nantes FC Nantes
+Soccer,Naples Foot-Ball Club
+Soccer,Naples Napoli
+Soccer,Nashville Nashville SC
+Soccer,Nashville SC
+Soccer,New England Revolution
+Soccer,New San Jose Earthquakes expansion club revived the name/colors
+Soccer,New York City FC
+Soccer,New York NYCFC
+Soccer,New York Red Bulls
+Soccer,New York/New Jersey MetroStars
+Soccer,Newcastle Newcastle United
+Soccer,Newcastle United
+Soccer,Newton Heath LYR FC
+Soccer,Nice OGC Nice
+Soccer,Nottingham Forest
+Soccer,Nottingham Nottingham Forest
+Soccer,OGC Nice
+Soccer,Olympique Lyonnais
+Soccer,Olympique de Marseille
+Soccer,Orlando City SC
+Soccer,Orlando Orlando City SC
+Soccer,Osasuna CA Osasuna
+Soccer,Palma RCD Mallorca
+Soccer,Paris (suburbs) Paris FC
+Soccer,Paris FC
+Soccer,Paris Paris Saint-Germain
+Soccer,Paris Saint-Germain
+Soccer,Parma Parma Calcio
+Soccer,Philadelphia Philadelphia Union
+Soccer,Philadelphia Union
+Soccer,Pisa Pisa SC
+Soccer,Pisa Sporting Club
+Soccer,Portland Portland Timbers
+Soccer,RCD Mallorca
+Soccer,Racing Club de Lens
+Soccer,Racing Club de Strasbourg
+Soccer,"RasenBallsport Leipzig, founded by buying the playing rights of fifth-division SSV Markranstädt"
+Soccer,Rayo Vallecano
+Soccer,Real Betis Balompié
+Soccer,Real Betis Real Betis Balompié
+Soccer,Real Madrid CF
+Soccer,Real Oviedo
+Soccer,Real Racing Club de Santander
+Soccer,Real Salt Lake
+Soccer,Real Sociedad
+Soccer,Red Bull New York
+Soccer,Refounded as Parma Calcio 1913 after bankruptcy
+Soccer,Refounded/rebranded Como 1907 after prior bankruptcy
+Soccer,Rennes Stade Rennais
+Soccer,Reverted 'Athletic' spelling convention to 'Atlético'
+Soccer,Reverted to Athletic Club
+Soccer,Reverted to Genoa CFC
+Soccer,Rome AS Roma
+Soccer,Rome Lazio
+Soccer,Royal Arsenal
+Soccer,SC Freiburg
+Soccer,SS Lazio
+Soccer,SSC Napoli
+Soccer,SV Werder Bremen
+Soccer,Salt Lake City Real Salt Lake
+Soccer,San Diego FC
+Soccer,San Diego San Diego FC
+Soccer,San Jose Clash
+Soccer,San Jose Earthquakes
+Soccer,San Jose San Jose Earthquakes
+Soccer,San Sebastián Real Sociedad
+Soccer,Santander Real Racing Club
+Soccer,Sassuolo US Sassuolo Calcio
+Soccer,Seattle Sounders FC
+Soccer,Sevilla Balompié
+Soccer,Sevilla FC
+Soccer,Seville Sevilla FC
+Soccer,Sinsheim TSG Hoffenheim
+Soccer,Società Podistica Lazio
+Soccer,Split from Aviación; Club Atlético de Madrid
+Soccer,"Split from Paris FC, retained PSG name"
+Soccer,Sporting Kansas City
+Soccer,St. Domingo FC
+Soccer,St. Louis City SC
+Soccer,St. Louis St. Louis City SC
+Soccer,St. Luke's FC
+Soccer,St. Mark's
+Soccer,St. Pauli FC St. Pauli
+Soccer,Stade Brestois
+Soccer,Stade Rennais
+Soccer,Strasbourg RC Strasbourg
+Soccer,Stuttgart VfB Stuttgart
+Soccer,Sunderland AFC
+Soccer,Sunderland Sunderland AFC
+Soccer,Sunderland and District Teachers AFC
+Soccer,TSG 1899 Hoffenheim
+Soccer,Thames Ironworks FC
+Soccer,The Arsenal
+Soccer,Torino Calcio
+Soccer,Torino FC
+Soccer,Toronto FC
+Soccer,Toronto Toronto FC
+Soccer,Tottenham Hotspur
+Soccer,"Toulouse FC (present club, refounded after predecessor Toulouse FC (1937-67) folded)"
+Soccer,Toulouse Toulouse FC
+Soccer,Turin Juventus
+Soccer,Turin Torino FC
+Soccer,US Lecce
+Soccer,US Sassuolo Calcio
+Soccer,Udine Udinese Calcio
+Soccer,Udinese Calcio
+Soccer,Valencia CF
+Soccer,Valencia Levante UD
+Soccer,Valencia Valencia CF
+Soccer,Vallecas/Oviedo Real Oviedo
+Soccer,Vancouver Whitecaps FC
+Soccer,Verdi FC Parma
+Soccer,Verona Hellas Verona
+Soccer,VfB Stuttgart lineage begins
+Soccer,VfL Wolfsburg
+Soccer,Vigo Celta Vigo
+Soccer,Villarreal CF
+Soccer,Villarreal Villarreal CF
+Soccer,Vitoria-Gasteiz Deportivo Alavés
+Soccer,West Ham United
+Soccer,Wolfsburg VfL Wolfsburg
+Soccer,Wolverhampton Wanderers
+Soccer,Wolverhampton Wolverhampton Wanderers
+Soccer,Woolwich Arsenal
+MLS,1. FC Heidenheim football section formalized
+MLS,1. FC Köln
+MLS,1. FC Union Berlin
+MLS,1. FSV Mainz 05
+MLS,ACF Fiorentina
+MLS,AFC Bournemouth
+MLS,AJ Auxerre
+MLS,AS Monaco
+MLS,AS Roma
+MLS,Angers Angers SCO
+MLS,Angers SCO
+MLS,Ardwick Association FC
+MLS,Arsenal Football Club
+MLS,Associazione Calcio Milano
+MLS,Aston Villa
+MLS,Atalanta BC
+MLS,Athletic Club
+MLS,Athletic Club de Madrid
 MLS,Atlanta United FC
+MLS,Atlético Aviación
+MLS,Atlético Club de Bilbao
+MLS,Augsburg FC Augsburg
 MLS,Austin FC
+MLS,Auxerre AJ Auxerre
+MLS,BC Augsburg
+MLS,Ballspielverein Borussia Dortmund
+MLS,Barcelona FC Barcelona
+MLS,Bayer 04 Leverkusen
+MLS,Bergamo Atalanta BC
+MLS,Berlin Union Berlin
+MLS,Bilbao Athletic Club
+MLS,Birmingham Aston Villa
+MLS,Bologna Bologna FC 1909
+MLS,Bologna FC
+MLS,Borussia Mönchengladbach
+MLS,Boscombe FC
+MLS,Boscombe St John's Institute FC
+MLS,Bournemouth AFC Bournemouth
+MLS,Bremen Werder Bremen
+MLS,Brentford Brentford FC
+MLS,Brentford FC
+MLS,Brest Stade Brestois 29
+MLS,Brighton & Hove Albion
+MLS,Brighton Brighton & Hove Albion
+MLS,Burnley Burnley FC
+MLS,Burnley FC
+MLS,CA Osasuna
+MLS,CF Montréal
+MLS,Cagliari Cagliari Calcio
+MLS,Cagliari Calcio
+MLS,Celta Vigo
 MLS,Charlotte FC
+MLS,Chelsea Chelsea FC
+MLS,Chelsea FC
+MLS,Chicago Fire
 MLS,Chicago Fire FC
+MLS,Chicago Fire Soccer Club
+MLS,Cincinnati FC Cincinnati
+MLS,Cologne 1. FC Köln
 MLS,Colorado Rapids
 MLS,Columbus Crew
-MLS,DC United
+MLS,Columbus Crew SC
+MLS,Como Como 1907
+MLS,Como Foot-Ball Club
+MLS,Cremona Cremonese
+MLS,Cremonese
+MLS,Crystal Palace Crystal Palace FC
+MLS,Crystal Palace FC
+MLS,D.C. United
+MLS,Dallas Burn
+MLS,Dallas FC Dallas
+MLS,Deportivo Alavés
+MLS,Dial Square
+MLS,Dortmund Borussia Dortmund
+MLS,Eintracht Frankfurt
+MLS,Eintracht merger lineage begins
+MLS,Elche CF
+MLS,Elche Elche CF
+MLS,Everton Everton FC
+MLS,Everton FC
+MLS,FC Augsburg
+MLS,FC Barcelona
+MLS,FC Bayern München
 MLS,FC Cincinnati
 MLS,FC Dallas
+MLS,FC Lorient
+MLS,FC Metz
+MLS,FC Nantes
+MLS,FC St. Pauli
+MLS,Florence Fiorentina
+MLS,Foot-Ball Club Barcelona
+MLS,Football Club Internazionale Milano
+MLS,Football Club Torino
+MLS,Formed present club Parma AC
+MLS,Frankfurt Eintracht Frankfurt
+MLS,Frankfurter Fussball Club Victoria
+MLS,Freiburg SC Freiburg
+MLS,Fulham FC
+MLS,Fulham Fulham FC
+MLS,Genoa Cricket and Football Club
+MLS,Genoa Genoa CFC
+MLS,Genova 1893
+MLS,Getafe CF
+MLS,Getafe Deportivo
+MLS,Getafe Getafe CF
+MLS,Girona FC
+MLS,Girona Girona FC
+MLS,Gymnaste Club de Nice
+MLS,Gymnastics club origins
+MLS,Hamburg Hamburger SV
+MLS,Hamburger SV
+MLS,Heidenheim 1. FC Heidenheim
+MLS,Hellas Verona
+MLS,Hotspur FC
 MLS,Houston Dynamo FC
 MLS,Inter Miami CF
+MLS,Juventus Football Club
+MLS,Kansas City Sporting KC
+MLS,Kansas City Wiz
+MLS,Kansas City Wizards
 MLS,LA Galaxy
+MLS,Le Havre Athletic Club
+MLS,Le Havre Le Havre AC
+MLS,Lecce US Lecce
+MLS,Leeds Leeds United
+MLS,Leeds United
+MLS,Leipzig RB Leipzig
+MLS,Lens RC Lens
+MLS,Levante FC
+MLS,Levante UD
+MLS,Leverkusen Bayer 04 Leverkusen
+MLS,Lille LOSC Lille
+MLS,Lille Olympique Sporting Club
+MLS,Liverpool FC
+MLS,Liverpool Liverpool FC
+MLS,London Tottenham Hotspur
+MLS,London West Ham United
+MLS,Lorient FC Lorient
 MLS,Los Angeles FC
-MLS,CF Montreal
-MLS,Minnesota United FC
+MLS,Los Angeles LA Galaxy
+MLS,Los Angeles LAFC
+MLS,Lyon Olympique Lyonnais
+MLS,Madrid Atlético Madrid
+MLS,Madrid Football Club
+MLS,Madrid Rayo Vallecano
+MLS,Madrid Real Madrid
+MLS,Mainz 1. FSV Mainz 05
+MLS,Manchester Arsenal
+MLS,Manchester City
+MLS,Manchester Manchester City
+MLS,Manchester Manchester United
+MLS,Manchester United
+MLS,Marseille Olympique de Marseille
+MLS,Metz FC Metz
+MLS,Miami Inter Miami CF
+MLS,Milan AC Milan
+MLS,Milan Foot-Ball and Cricket Club
+MLS,Milan Inter Milan
+MLS,Milan reverted to English spelling as 'Milan'
+MLS,Minnesota Minnesota United FC
+MLS,Minnesota Stars FC / NASL club
+MLS,Monaco AS Monaco
+MLS,Montreal CF Montréal
+MLS,Montreal Impact
+MLS,Munich Bayern Munich
+MLS,Mönchengladbach Borussia Mönchengladbach
+MLS,Nantes FC Nantes
+MLS,Naples Foot-Ball Club
+MLS,Naples Napoli
+MLS,Nashville Nashville SC
 MLS,Nashville SC
 MLS,New England Revolution
+MLS,New San Jose Earthquakes expansion club revived the name/colors
 MLS,New York City FC
+MLS,New York NYCFC
 MLS,New York Red Bulls
-MLS,Orlando City SC
-MLS,Philadelphia Union
-MLS,Portland Timbers
-MLS,Real Salt Lake
-MLS,San Diego FC
-MLS,San Jose Earthquakes
-MLS,Seattle Sounders FC
-MLS,Sporting Kansas City
-MLS,St. Louis City SC
-MLS,Toronto FC
-MLS,Vancouver Whitecaps FC
-MLS,Arsenal
-MLS,Aston Villa
-MLS,Bournemouth
-MLS,Brentford
-MLS,Brighton & Hove Albion
-MLS,Burnley
-MLS,Chelsea
-MLS,Crystal Palace
-MLS,Everton
-MLS,Fulham
-MLS,Leeds United
-MLS,Liverpool
-MLS,Manchester City
-MLS,Manchester United
+MLS,New York/New Jersey MetroStars
+MLS,Newcastle Newcastle United
 MLS,Newcastle United
+MLS,Newton Heath LYR FC
+MLS,Nice OGC Nice
 MLS,Nottingham Forest
-MLS,Sunderland
+MLS,Nottingham Nottingham Forest
+MLS,OGC Nice
+MLS,Olympique Lyonnais
+MLS,Olympique de Marseille
+MLS,Orlando City SC
+MLS,Orlando Orlando City SC
+MLS,Osasuna CA Osasuna
+MLS,Palma RCD Mallorca
+MLS,Paris (suburbs) Paris FC
+MLS,Paris FC
+MLS,Paris Paris Saint-Germain
+MLS,Paris Saint-Germain
+MLS,Parma Parma Calcio
+MLS,Philadelphia Philadelphia Union
+MLS,Philadelphia Union
+MLS,Pisa Pisa SC
+MLS,Pisa Sporting Club
+MLS,Portland Portland Timbers
+MLS,RCD Mallorca
+MLS,Racing Club de Lens
+MLS,Racing Club de Strasbourg
+MLS,"RasenBallsport Leipzig, founded by buying the playing rights of fifth-division SSV Markranstädt"
+MLS,Rayo Vallecano
+MLS,Real Betis Balompié
+MLS,Real Betis Real Betis Balompié
+MLS,Real Madrid CF
+MLS,Real Oviedo
+MLS,Real Racing Club de Santander
+MLS,Real Salt Lake
+MLS,Real Sociedad
+MLS,Red Bull New York
+MLS,Refounded as Parma Calcio 1913 after bankruptcy
+MLS,Refounded/rebranded Como 1907 after prior bankruptcy
+MLS,Rennes Stade Rennais
+MLS,Reverted 'Athletic' spelling convention to 'Atlético'
+MLS,Reverted to Athletic Club
+MLS,Reverted to Genoa CFC
+MLS,Rome AS Roma
+MLS,Rome Lazio
+MLS,Royal Arsenal
+MLS,SC Freiburg
+MLS,SS Lazio
+MLS,SSC Napoli
+MLS,SV Werder Bremen
+MLS,Salt Lake City Real Salt Lake
+MLS,San Diego FC
+MLS,San Diego San Diego FC
+MLS,San Jose Clash
+MLS,San Jose Earthquakes
+MLS,San Jose San Jose Earthquakes
+MLS,San Sebastián Real Sociedad
+MLS,Santander Real Racing Club
+MLS,Sassuolo US Sassuolo Calcio
+MLS,Seattle Sounders FC
+MLS,Sevilla Balompié
+MLS,Sevilla FC
+MLS,Seville Sevilla FC
+MLS,Sinsheim TSG Hoffenheim
+MLS,Società Podistica Lazio
+MLS,Split from Aviación; Club Atlético de Madrid
+MLS,"Split from Paris FC, retained PSG name"
+MLS,Sporting Kansas City
+MLS,St. Domingo FC
+MLS,St. Louis City SC
+MLS,St. Louis St. Louis City SC
+MLS,St. Luke's FC
+MLS,St. Mark's
+MLS,St. Pauli FC St. Pauli
+MLS,Stade Brestois
+MLS,Stade Rennais
+MLS,Strasbourg RC Strasbourg
+MLS,Stuttgart VfB Stuttgart
+MLS,Sunderland AFC
+MLS,Sunderland Sunderland AFC
+MLS,Sunderland and District Teachers AFC
+MLS,TSG 1899 Hoffenheim
+MLS,Thames Ironworks FC
+MLS,The Arsenal
+MLS,Torino Calcio
+MLS,Torino FC
+MLS,Toronto FC
+MLS,Toronto Toronto FC
 MLS,Tottenham Hotspur
+MLS,"Toulouse FC (present club, refounded after predecessor Toulouse FC (1937-67) folded)"
+MLS,Toulouse Toulouse FC
+MLS,Turin Juventus
+MLS,Turin Torino FC
+MLS,US Lecce
+MLS,US Sassuolo Calcio
+MLS,Udine Udinese Calcio
+MLS,Udinese Calcio
+MLS,Valencia CF
+MLS,Valencia Levante UD
+MLS,Valencia Valencia CF
+MLS,Vallecas/Oviedo Real Oviedo
+MLS,Vancouver Whitecaps FC
+MLS,Verdi FC Parma
+MLS,Verona Hellas Verona
+MLS,VfB Stuttgart lineage begins
+MLS,VfL Wolfsburg
+MLS,Vigo Celta Vigo
+MLS,Villarreal CF
+MLS,Villarreal Villarreal CF
+MLS,Vitoria-Gasteiz Deportivo Alavés
 MLS,West Ham United
+MLS,Wolfsburg VfL Wolfsburg
 MLS,Wolverhampton Wanderers
+MLS,Wolverhampton Wolverhampton Wanderers
+MLS,Woolwich Arsenal
+Premier League,1. FC Heidenheim football section formalized
+Premier League,1. FC Köln
+Premier League,1. FC Union Berlin
+Premier League,1. FSV Mainz 05
+Premier League,ACF Fiorentina
+Premier League,AFC Bournemouth
+Premier League,AJ Auxerre
+Premier League,AS Monaco
+Premier League,AS Roma
+Premier League,Angers Angers SCO
+Premier League,Angers SCO
+Premier League,Ardwick Association FC
+Premier League,Arsenal Football Club
+Premier League,Associazione Calcio Milano
+Premier League,Aston Villa
+Premier League,Atalanta BC
+Premier League,Athletic Club
+Premier League,Athletic Club de Madrid
 Premier League,Atlanta United FC
+Premier League,Atlético Aviación
+Premier League,Atlético Club de Bilbao
+Premier League,Augsburg FC Augsburg
 Premier League,Austin FC
+Premier League,Auxerre AJ Auxerre
+Premier League,BC Augsburg
+Premier League,Ballspielverein Borussia Dortmund
+Premier League,Barcelona FC Barcelona
+Premier League,Bayer 04 Leverkusen
+Premier League,Bergamo Atalanta BC
+Premier League,Berlin Union Berlin
+Premier League,Bilbao Athletic Club
+Premier League,Birmingham Aston Villa
+Premier League,Bologna Bologna FC 1909
+Premier League,Bologna FC
+Premier League,Borussia Mönchengladbach
+Premier League,Boscombe FC
+Premier League,Boscombe St John's Institute FC
+Premier League,Bournemouth AFC Bournemouth
+Premier League,Bremen Werder Bremen
+Premier League,Brentford Brentford FC
+Premier League,Brentford FC
+Premier League,Brest Stade Brestois 29
+Premier League,Brighton & Hove Albion
+Premier League,Brighton Brighton & Hove Albion
+Premier League,Burnley Burnley FC
+Premier League,Burnley FC
+Premier League,CA Osasuna
+Premier League,CF Montréal
+Premier League,Cagliari Cagliari Calcio
+Premier League,Cagliari Calcio
+Premier League,Celta Vigo
 Premier League,Charlotte FC
+Premier League,Chelsea Chelsea FC
+Premier League,Chelsea FC
+Premier League,Chicago Fire
 Premier League,Chicago Fire FC
+Premier League,Chicago Fire Soccer Club
+Premier League,Cincinnati FC Cincinnati
+Premier League,Cologne 1. FC Köln
 Premier League,Colorado Rapids
 Premier League,Columbus Crew
-Premier League,DC United
+Premier League,Columbus Crew SC
+Premier League,Como Como 1907
+Premier League,Como Foot-Ball Club
+Premier League,Cremona Cremonese
+Premier League,Cremonese
+Premier League,Crystal Palace Crystal Palace FC
+Premier League,Crystal Palace FC
+Premier League,D.C. United
+Premier League,Dallas Burn
+Premier League,Dallas FC Dallas
+Premier League,Deportivo Alavés
+Premier League,Dial Square
+Premier League,Dortmund Borussia Dortmund
+Premier League,Eintracht Frankfurt
+Premier League,Eintracht merger lineage begins
+Premier League,Elche CF
+Premier League,Elche Elche CF
+Premier League,Everton Everton FC
+Premier League,Everton FC
+Premier League,FC Augsburg
+Premier League,FC Barcelona
+Premier League,FC Bayern München
 Premier League,FC Cincinnati
 Premier League,FC Dallas
+Premier League,FC Lorient
+Premier League,FC Metz
+Premier League,FC Nantes
+Premier League,FC St. Pauli
+Premier League,Florence Fiorentina
+Premier League,Foot-Ball Club Barcelona
+Premier League,Football Club Internazionale Milano
+Premier League,Football Club Torino
+Premier League,Formed present club Parma AC
+Premier League,Frankfurt Eintracht Frankfurt
+Premier League,Frankfurter Fussball Club Victoria
+Premier League,Freiburg SC Freiburg
+Premier League,Fulham FC
+Premier League,Fulham Fulham FC
+Premier League,Genoa Cricket and Football Club
+Premier League,Genoa Genoa CFC
+Premier League,Genova 1893
+Premier League,Getafe CF
+Premier League,Getafe Deportivo
+Premier League,Getafe Getafe CF
+Premier League,Girona FC
+Premier League,Girona Girona FC
+Premier League,Gymnaste Club de Nice
+Premier League,Gymnastics club origins
+Premier League,Hamburg Hamburger SV
+Premier League,Hamburger SV
+Premier League,Heidenheim 1. FC Heidenheim
+Premier League,Hellas Verona
+Premier League,Hotspur FC
 Premier League,Houston Dynamo FC
 Premier League,Inter Miami CF
+Premier League,Juventus Football Club
+Premier League,Kansas City Sporting KC
+Premier League,Kansas City Wiz
+Premier League,Kansas City Wizards
 Premier League,LA Galaxy
+Premier League,Le Havre Athletic Club
+Premier League,Le Havre Le Havre AC
+Premier League,Lecce US Lecce
+Premier League,Leeds Leeds United
+Premier League,Leeds United
+Premier League,Leipzig RB Leipzig
+Premier League,Lens RC Lens
+Premier League,Levante FC
+Premier League,Levante UD
+Premier League,Leverkusen Bayer 04 Leverkusen
+Premier League,Lille LOSC Lille
+Premier League,Lille Olympique Sporting Club
+Premier League,Liverpool FC
+Premier League,Liverpool Liverpool FC
+Premier League,London Tottenham Hotspur
+Premier League,London West Ham United
+Premier League,Lorient FC Lorient
 Premier League,Los Angeles FC
-Premier League,CF Montreal
-Premier League,Minnesota United FC
+Premier League,Los Angeles LA Galaxy
+Premier League,Los Angeles LAFC
+Premier League,Lyon Olympique Lyonnais
+Premier League,Madrid Atlético Madrid
+Premier League,Madrid Football Club
+Premier League,Madrid Rayo Vallecano
+Premier League,Madrid Real Madrid
+Premier League,Mainz 1. FSV Mainz 05
+Premier League,Manchester Arsenal
+Premier League,Manchester City
+Premier League,Manchester Manchester City
+Premier League,Manchester Manchester United
+Premier League,Manchester United
+Premier League,Marseille Olympique de Marseille
+Premier League,Metz FC Metz
+Premier League,Miami Inter Miami CF
+Premier League,Milan AC Milan
+Premier League,Milan Foot-Ball and Cricket Club
+Premier League,Milan Inter Milan
+Premier League,Milan reverted to English spelling as 'Milan'
+Premier League,Minnesota Minnesota United FC
+Premier League,Minnesota Stars FC / NASL club
+Premier League,Monaco AS Monaco
+Premier League,Montreal CF Montréal
+Premier League,Montreal Impact
+Premier League,Munich Bayern Munich
+Premier League,Mönchengladbach Borussia Mönchengladbach
+Premier League,Nantes FC Nantes
+Premier League,Naples Foot-Ball Club
+Premier League,Naples Napoli
+Premier League,Nashville Nashville SC
 Premier League,Nashville SC
 Premier League,New England Revolution
+Premier League,New San Jose Earthquakes expansion club revived the name/colors
 Premier League,New York City FC
+Premier League,New York NYCFC
 Premier League,New York Red Bulls
-Premier League,Orlando City SC
-Premier League,Philadelphia Union
-Premier League,Portland Timbers
-Premier League,Real Salt Lake
-Premier League,San Diego FC
-Premier League,San Jose Earthquakes
-Premier League,Seattle Sounders FC
-Premier League,Sporting Kansas City
-Premier League,St. Louis City SC
-Premier League,Toronto FC
-Premier League,Vancouver Whitecaps FC
-Premier League,Arsenal
-Premier League,Aston Villa
-Premier League,Bournemouth
-Premier League,Brentford
-Premier League,Brighton & Hove Albion
-Premier League,Burnley
-Premier League,Chelsea
-Premier League,Crystal Palace
-Premier League,Everton
-Premier League,Fulham
-Premier League,Leeds United
-Premier League,Liverpool
-Premier League,Manchester City
-Premier League,Manchester United
+Premier League,New York/New Jersey MetroStars
+Premier League,Newcastle Newcastle United
 Premier League,Newcastle United
+Premier League,Newton Heath LYR FC
+Premier League,Nice OGC Nice
 Premier League,Nottingham Forest
-Premier League,Sunderland
+Premier League,Nottingham Nottingham Forest
+Premier League,OGC Nice
+Premier League,Olympique Lyonnais
+Premier League,Olympique de Marseille
+Premier League,Orlando City SC
+Premier League,Orlando Orlando City SC
+Premier League,Osasuna CA Osasuna
+Premier League,Palma RCD Mallorca
+Premier League,Paris (suburbs) Paris FC
+Premier League,Paris FC
+Premier League,Paris Paris Saint-Germain
+Premier League,Paris Saint-Germain
+Premier League,Parma Parma Calcio
+Premier League,Philadelphia Philadelphia Union
+Premier League,Philadelphia Union
+Premier League,Pisa Pisa SC
+Premier League,Pisa Sporting Club
+Premier League,Portland Portland Timbers
+Premier League,RCD Mallorca
+Premier League,Racing Club de Lens
+Premier League,Racing Club de Strasbourg
+Premier League,"RasenBallsport Leipzig, founded by buying the playing rights of fifth-division SSV Markranstädt"
+Premier League,Rayo Vallecano
+Premier League,Real Betis Balompié
+Premier League,Real Betis Real Betis Balompié
+Premier League,Real Madrid CF
+Premier League,Real Oviedo
+Premier League,Real Racing Club de Santander
+Premier League,Real Salt Lake
+Premier League,Real Sociedad
+Premier League,Red Bull New York
+Premier League,Refounded as Parma Calcio 1913 after bankruptcy
+Premier League,Refounded/rebranded Como 1907 after prior bankruptcy
+Premier League,Rennes Stade Rennais
+Premier League,Reverted 'Athletic' spelling convention to 'Atlético'
+Premier League,Reverted to Athletic Club
+Premier League,Reverted to Genoa CFC
+Premier League,Rome AS Roma
+Premier League,Rome Lazio
+Premier League,Royal Arsenal
+Premier League,SC Freiburg
+Premier League,SS Lazio
+Premier League,SSC Napoli
+Premier League,SV Werder Bremen
+Premier League,Salt Lake City Real Salt Lake
+Premier League,San Diego FC
+Premier League,San Diego San Diego FC
+Premier League,San Jose Clash
+Premier League,San Jose Earthquakes
+Premier League,San Jose San Jose Earthquakes
+Premier League,San Sebastián Real Sociedad
+Premier League,Santander Real Racing Club
+Premier League,Sassuolo US Sassuolo Calcio
+Premier League,Seattle Sounders FC
+Premier League,Sevilla Balompié
+Premier League,Sevilla FC
+Premier League,Seville Sevilla FC
+Premier League,Sinsheim TSG Hoffenheim
+Premier League,Società Podistica Lazio
+Premier League,Split from Aviación; Club Atlético de Madrid
+Premier League,"Split from Paris FC, retained PSG name"
+Premier League,Sporting Kansas City
+Premier League,St. Domingo FC
+Premier League,St. Louis City SC
+Premier League,St. Louis St. Louis City SC
+Premier League,St. Luke's FC
+Premier League,St. Mark's
+Premier League,St. Pauli FC St. Pauli
+Premier League,Stade Brestois
+Premier League,Stade Rennais
+Premier League,Strasbourg RC Strasbourg
+Premier League,Stuttgart VfB Stuttgart
+Premier League,Sunderland AFC
+Premier League,Sunderland Sunderland AFC
+Premier League,Sunderland and District Teachers AFC
+Premier League,TSG 1899 Hoffenheim
+Premier League,Thames Ironworks FC
+Premier League,The Arsenal
+Premier League,Torino Calcio
+Premier League,Torino FC
+Premier League,Toronto FC
+Premier League,Toronto Toronto FC
 Premier League,Tottenham Hotspur
+Premier League,"Toulouse FC (present club, refounded after predecessor Toulouse FC (1937-67) folded)"
+Premier League,Toulouse Toulouse FC
+Premier League,Turin Juventus
+Premier League,Turin Torino FC
+Premier League,US Lecce
+Premier League,US Sassuolo Calcio
+Premier League,Udine Udinese Calcio
+Premier League,Udinese Calcio
+Premier League,Valencia CF
+Premier League,Valencia Levante UD
+Premier League,Valencia Valencia CF
+Premier League,Vallecas/Oviedo Real Oviedo
+Premier League,Vancouver Whitecaps FC
+Premier League,Verdi FC Parma
+Premier League,Verona Hellas Verona
+Premier League,VfB Stuttgart lineage begins
+Premier League,VfL Wolfsburg
+Premier League,Vigo Celta Vigo
+Premier League,Villarreal CF
+Premier League,Villarreal Villarreal CF
+Premier League,Vitoria-Gasteiz Deportivo Alavés
 Premier League,West Ham United
+Premier League,Wolfsburg VfL Wolfsburg
 Premier League,Wolverhampton Wanderers
+Premier League,Wolverhampton Wolverhampton Wanderers
+Premier League,Woolwich Arsenal
+La Liga,1. FC Heidenheim football section formalized
+La Liga,1. FC Köln
+La Liga,1. FC Union Berlin
+La Liga,1. FSV Mainz 05
+La Liga,ACF Fiorentina
+La Liga,AFC Bournemouth
+La Liga,AJ Auxerre
+La Liga,AS Monaco
+La Liga,AS Roma
+La Liga,Angers Angers SCO
+La Liga,Angers SCO
+La Liga,Ardwick Association FC
+La Liga,Arsenal Football Club
+La Liga,Associazione Calcio Milano
+La Liga,Aston Villa
+La Liga,Atalanta BC
+La Liga,Athletic Club
+La Liga,Athletic Club de Madrid
+La Liga,Atlanta United FC
+La Liga,Atlético Aviación
+La Liga,Atlético Club de Bilbao
+La Liga,Augsburg FC Augsburg
+La Liga,Austin FC
+La Liga,Auxerre AJ Auxerre
+La Liga,BC Augsburg
+La Liga,Ballspielverein Borussia Dortmund
+La Liga,Barcelona FC Barcelona
+La Liga,Bayer 04 Leverkusen
+La Liga,Bergamo Atalanta BC
+La Liga,Berlin Union Berlin
+La Liga,Bilbao Athletic Club
+La Liga,Birmingham Aston Villa
+La Liga,Bologna Bologna FC 1909
+La Liga,Bologna FC
+La Liga,Borussia Mönchengladbach
+La Liga,Boscombe FC
+La Liga,Boscombe St John's Institute FC
+La Liga,Bournemouth AFC Bournemouth
+La Liga,Bremen Werder Bremen
+La Liga,Brentford Brentford FC
+La Liga,Brentford FC
+La Liga,Brest Stade Brestois 29
+La Liga,Brighton & Hove Albion
+La Liga,Brighton Brighton & Hove Albion
+La Liga,Burnley Burnley FC
+La Liga,Burnley FC
+La Liga,CA Osasuna
+La Liga,CF Montréal
+La Liga,Cagliari Cagliari Calcio
+La Liga,Cagliari Calcio
+La Liga,Celta Vigo
+La Liga,Charlotte FC
+La Liga,Chelsea Chelsea FC
+La Liga,Chelsea FC
+La Liga,Chicago Fire
+La Liga,Chicago Fire FC
+La Liga,Chicago Fire Soccer Club
+La Liga,Cincinnati FC Cincinnati
+La Liga,Cologne 1. FC Köln
+La Liga,Colorado Rapids
+La Liga,Columbus Crew
+La Liga,Columbus Crew SC
+La Liga,Como Como 1907
+La Liga,Como Foot-Ball Club
+La Liga,Cremona Cremonese
+La Liga,Cremonese
+La Liga,Crystal Palace Crystal Palace FC
+La Liga,Crystal Palace FC
+La Liga,D.C. United
+La Liga,Dallas Burn
+La Liga,Dallas FC Dallas
+La Liga,Deportivo Alavés
+La Liga,Dial Square
+La Liga,Dortmund Borussia Dortmund
+La Liga,Eintracht Frankfurt
+La Liga,Eintracht merger lineage begins
+La Liga,Elche CF
+La Liga,Elche Elche CF
+La Liga,Everton Everton FC
+La Liga,Everton FC
+La Liga,FC Augsburg
+La Liga,FC Barcelona
+La Liga,FC Bayern München
+La Liga,FC Cincinnati
+La Liga,FC Dallas
+La Liga,FC Lorient
+La Liga,FC Metz
+La Liga,FC Nantes
+La Liga,FC St. Pauli
+La Liga,Florence Fiorentina
+La Liga,Foot-Ball Club Barcelona
+La Liga,Football Club Internazionale Milano
+La Liga,Football Club Torino
+La Liga,Formed present club Parma AC
+La Liga,Frankfurt Eintracht Frankfurt
+La Liga,Frankfurter Fussball Club Victoria
+La Liga,Freiburg SC Freiburg
+La Liga,Fulham FC
+La Liga,Fulham Fulham FC
+La Liga,Genoa Cricket and Football Club
+La Liga,Genoa Genoa CFC
+La Liga,Genova 1893
+La Liga,Getafe CF
+La Liga,Getafe Deportivo
+La Liga,Getafe Getafe CF
+La Liga,Girona FC
+La Liga,Girona Girona FC
+La Liga,Gymnaste Club de Nice
+La Liga,Gymnastics club origins
+La Liga,Hamburg Hamburger SV
+La Liga,Hamburger SV
+La Liga,Heidenheim 1. FC Heidenheim
+La Liga,Hellas Verona
+La Liga,Hotspur FC
+La Liga,Houston Dynamo FC
+La Liga,Inter Miami CF
+La Liga,Juventus Football Club
+La Liga,Kansas City Sporting KC
+La Liga,Kansas City Wiz
+La Liga,Kansas City Wizards
+La Liga,LA Galaxy
+La Liga,Le Havre Athletic Club
+La Liga,Le Havre Le Havre AC
+La Liga,Lecce US Lecce
+La Liga,Leeds Leeds United
+La Liga,Leeds United
+La Liga,Leipzig RB Leipzig
+La Liga,Lens RC Lens
+La Liga,Levante FC
+La Liga,Levante UD
+La Liga,Leverkusen Bayer 04 Leverkusen
+La Liga,Lille LOSC Lille
+La Liga,Lille Olympique Sporting Club
+La Liga,Liverpool FC
+La Liga,Liverpool Liverpool FC
+La Liga,London Tottenham Hotspur
+La Liga,London West Ham United
+La Liga,Lorient FC Lorient
+La Liga,Los Angeles FC
+La Liga,Los Angeles LA Galaxy
+La Liga,Los Angeles LAFC
+La Liga,Lyon Olympique Lyonnais
+La Liga,Madrid Atlético Madrid
+La Liga,Madrid Football Club
+La Liga,Madrid Rayo Vallecano
+La Liga,Madrid Real Madrid
+La Liga,Mainz 1. FSV Mainz 05
+La Liga,Manchester Arsenal
+La Liga,Manchester City
+La Liga,Manchester Manchester City
+La Liga,Manchester Manchester United
+La Liga,Manchester United
+La Liga,Marseille Olympique de Marseille
+La Liga,Metz FC Metz
+La Liga,Miami Inter Miami CF
+La Liga,Milan AC Milan
+La Liga,Milan Foot-Ball and Cricket Club
+La Liga,Milan Inter Milan
+La Liga,Milan reverted to English spelling as 'Milan'
+La Liga,Minnesota Minnesota United FC
+La Liga,Minnesota Stars FC / NASL club
+La Liga,Monaco AS Monaco
+La Liga,Montreal CF Montréal
+La Liga,Montreal Impact
+La Liga,Munich Bayern Munich
+La Liga,Mönchengladbach Borussia Mönchengladbach
+La Liga,Nantes FC Nantes
+La Liga,Naples Foot-Ball Club
+La Liga,Naples Napoli
+La Liga,Nashville Nashville SC
+La Liga,Nashville SC
+La Liga,New England Revolution
+La Liga,New San Jose Earthquakes expansion club revived the name/colors
+La Liga,New York City FC
+La Liga,New York NYCFC
+La Liga,New York Red Bulls
+La Liga,New York/New Jersey MetroStars
+La Liga,Newcastle Newcastle United
+La Liga,Newcastle United
+La Liga,Newton Heath LYR FC
+La Liga,Nice OGC Nice
+La Liga,Nottingham Forest
+La Liga,Nottingham Nottingham Forest
+La Liga,OGC Nice
+La Liga,Olympique Lyonnais
+La Liga,Olympique de Marseille
+La Liga,Orlando City SC
+La Liga,Orlando Orlando City SC
+La Liga,Osasuna CA Osasuna
+La Liga,Palma RCD Mallorca
+La Liga,Paris (suburbs) Paris FC
+La Liga,Paris FC
+La Liga,Paris Paris Saint-Germain
+La Liga,Paris Saint-Germain
+La Liga,Parma Parma Calcio
+La Liga,Philadelphia Philadelphia Union
+La Liga,Philadelphia Union
+La Liga,Pisa Pisa SC
+La Liga,Pisa Sporting Club
+La Liga,Portland Portland Timbers
+La Liga,RCD Mallorca
+La Liga,Racing Club de Lens
+La Liga,Racing Club de Strasbourg
+La Liga,"RasenBallsport Leipzig, founded by buying the playing rights of fifth-division SSV Markranstädt"
+La Liga,Rayo Vallecano
+La Liga,Real Betis Balompié
+La Liga,Real Betis Real Betis Balompié
+La Liga,Real Madrid CF
+La Liga,Real Oviedo
+La Liga,Real Racing Club de Santander
+La Liga,Real Salt Lake
+La Liga,Real Sociedad
+La Liga,Red Bull New York
+La Liga,Refounded as Parma Calcio 1913 after bankruptcy
+La Liga,Refounded/rebranded Como 1907 after prior bankruptcy
+La Liga,Rennes Stade Rennais
+La Liga,Reverted 'Athletic' spelling convention to 'Atlético'
+La Liga,Reverted to Athletic Club
+La Liga,Reverted to Genoa CFC
+La Liga,Rome AS Roma
+La Liga,Rome Lazio
+La Liga,Royal Arsenal
+La Liga,SC Freiburg
+La Liga,SS Lazio
+La Liga,SSC Napoli
+La Liga,SV Werder Bremen
+La Liga,Salt Lake City Real Salt Lake
+La Liga,San Diego FC
+La Liga,San Diego San Diego FC
+La Liga,San Jose Clash
+La Liga,San Jose Earthquakes
+La Liga,San Jose San Jose Earthquakes
+La Liga,San Sebastián Real Sociedad
+La Liga,Santander Real Racing Club
+La Liga,Sassuolo US Sassuolo Calcio
+La Liga,Seattle Sounders FC
+La Liga,Sevilla Balompié
+La Liga,Sevilla FC
+La Liga,Seville Sevilla FC
+La Liga,Sinsheim TSG Hoffenheim
+La Liga,Società Podistica Lazio
+La Liga,Split from Aviación; Club Atlético de Madrid
+La Liga,"Split from Paris FC, retained PSG name"
+La Liga,Sporting Kansas City
+La Liga,St. Domingo FC
+La Liga,St. Louis City SC
+La Liga,St. Louis St. Louis City SC
+La Liga,St. Luke's FC
+La Liga,St. Mark's
+La Liga,St. Pauli FC St. Pauli
+La Liga,Stade Brestois
+La Liga,Stade Rennais
+La Liga,Strasbourg RC Strasbourg
+La Liga,Stuttgart VfB Stuttgart
+La Liga,Sunderland AFC
+La Liga,Sunderland Sunderland AFC
+La Liga,Sunderland and District Teachers AFC
+La Liga,TSG 1899 Hoffenheim
+La Liga,Thames Ironworks FC
+La Liga,The Arsenal
+La Liga,Torino Calcio
+La Liga,Torino FC
+La Liga,Toronto FC
+La Liga,Toronto Toronto FC
+La Liga,Tottenham Hotspur
+La Liga,"Toulouse FC (present club, refounded after predecessor Toulouse FC (1937-67) folded)"
+La Liga,Toulouse Toulouse FC
+La Liga,Turin Juventus
+La Liga,Turin Torino FC
+La Liga,US Lecce
+La Liga,US Sassuolo Calcio
+La Liga,Udine Udinese Calcio
+La Liga,Udinese Calcio
+La Liga,Valencia CF
+La Liga,Valencia Levante UD
+La Liga,Valencia Valencia CF
+La Liga,Vallecas/Oviedo Real Oviedo
+La Liga,Vancouver Whitecaps FC
+La Liga,Verdi FC Parma
+La Liga,Verona Hellas Verona
+La Liga,VfB Stuttgart lineage begins
+La Liga,VfL Wolfsburg
+La Liga,Vigo Celta Vigo
+La Liga,Villarreal CF
+La Liga,Villarreal Villarreal CF
+La Liga,Vitoria-Gasteiz Deportivo Alavés
+La Liga,West Ham United
+La Liga,Wolfsburg VfL Wolfsburg
+La Liga,Wolverhampton Wanderers
+La Liga,Wolverhampton Wolverhampton Wanderers
+La Liga,Woolwich Arsenal
+Serie A,1. FC Heidenheim football section formalized
+Serie A,1. FC Köln
+Serie A,1. FC Union Berlin
+Serie A,1. FSV Mainz 05
+Serie A,ACF Fiorentina
+Serie A,AFC Bournemouth
+Serie A,AJ Auxerre
+Serie A,AS Monaco
+Serie A,AS Roma
+Serie A,Angers Angers SCO
+Serie A,Angers SCO
+Serie A,Ardwick Association FC
+Serie A,Arsenal Football Club
+Serie A,Associazione Calcio Milano
+Serie A,Aston Villa
+Serie A,Atalanta BC
+Serie A,Athletic Club
+Serie A,Athletic Club de Madrid
+Serie A,Atlanta United FC
+Serie A,Atlético Aviación
+Serie A,Atlético Club de Bilbao
+Serie A,Augsburg FC Augsburg
+Serie A,Austin FC
+Serie A,Auxerre AJ Auxerre
+Serie A,BC Augsburg
+Serie A,Ballspielverein Borussia Dortmund
+Serie A,Barcelona FC Barcelona
+Serie A,Bayer 04 Leverkusen
+Serie A,Bergamo Atalanta BC
+Serie A,Berlin Union Berlin
+Serie A,Bilbao Athletic Club
+Serie A,Birmingham Aston Villa
+Serie A,Bologna Bologna FC 1909
+Serie A,Bologna FC
+Serie A,Borussia Mönchengladbach
+Serie A,Boscombe FC
+Serie A,Boscombe St John's Institute FC
+Serie A,Bournemouth AFC Bournemouth
+Serie A,Bremen Werder Bremen
+Serie A,Brentford Brentford FC
+Serie A,Brentford FC
+Serie A,Brest Stade Brestois 29
+Serie A,Brighton & Hove Albion
+Serie A,Brighton Brighton & Hove Albion
+Serie A,Burnley Burnley FC
+Serie A,Burnley FC
+Serie A,CA Osasuna
+Serie A,CF Montréal
+Serie A,Cagliari Cagliari Calcio
+Serie A,Cagliari Calcio
+Serie A,Celta Vigo
+Serie A,Charlotte FC
+Serie A,Chelsea Chelsea FC
+Serie A,Chelsea FC
+Serie A,Chicago Fire
+Serie A,Chicago Fire FC
+Serie A,Chicago Fire Soccer Club
+Serie A,Cincinnati FC Cincinnati
+Serie A,Cologne 1. FC Köln
+Serie A,Colorado Rapids
+Serie A,Columbus Crew
+Serie A,Columbus Crew SC
+Serie A,Como Como 1907
+Serie A,Como Foot-Ball Club
+Serie A,Cremona Cremonese
+Serie A,Cremonese
+Serie A,Crystal Palace Crystal Palace FC
+Serie A,Crystal Palace FC
+Serie A,D.C. United
+Serie A,Dallas Burn
+Serie A,Dallas FC Dallas
+Serie A,Deportivo Alavés
+Serie A,Dial Square
+Serie A,Dortmund Borussia Dortmund
+Serie A,Eintracht Frankfurt
+Serie A,Eintracht merger lineage begins
+Serie A,Elche CF
+Serie A,Elche Elche CF
+Serie A,Everton Everton FC
+Serie A,Everton FC
+Serie A,FC Augsburg
+Serie A,FC Barcelona
+Serie A,FC Bayern München
+Serie A,FC Cincinnati
+Serie A,FC Dallas
+Serie A,FC Lorient
+Serie A,FC Metz
+Serie A,FC Nantes
+Serie A,FC St. Pauli
+Serie A,Florence Fiorentina
+Serie A,Foot-Ball Club Barcelona
+Serie A,Football Club Internazionale Milano
+Serie A,Football Club Torino
+Serie A,Formed present club Parma AC
+Serie A,Frankfurt Eintracht Frankfurt
+Serie A,Frankfurter Fussball Club Victoria
+Serie A,Freiburg SC Freiburg
+Serie A,Fulham FC
+Serie A,Fulham Fulham FC
+Serie A,Genoa Cricket and Football Club
+Serie A,Genoa Genoa CFC
+Serie A,Genova 1893
+Serie A,Getafe CF
+Serie A,Getafe Deportivo
+Serie A,Getafe Getafe CF
+Serie A,Girona FC
+Serie A,Girona Girona FC
+Serie A,Gymnaste Club de Nice
+Serie A,Gymnastics club origins
+Serie A,Hamburg Hamburger SV
+Serie A,Hamburger SV
+Serie A,Heidenheim 1. FC Heidenheim
+Serie A,Hellas Verona
+Serie A,Hotspur FC
+Serie A,Houston Dynamo FC
+Serie A,Inter Miami CF
+Serie A,Juventus Football Club
+Serie A,Kansas City Sporting KC
+Serie A,Kansas City Wiz
+Serie A,Kansas City Wizards
+Serie A,LA Galaxy
+Serie A,Le Havre Athletic Club
+Serie A,Le Havre Le Havre AC
+Serie A,Lecce US Lecce
+Serie A,Leeds Leeds United
+Serie A,Leeds United
+Serie A,Leipzig RB Leipzig
+Serie A,Lens RC Lens
+Serie A,Levante FC
+Serie A,Levante UD
+Serie A,Leverkusen Bayer 04 Leverkusen
+Serie A,Lille LOSC Lille
+Serie A,Lille Olympique Sporting Club
+Serie A,Liverpool FC
+Serie A,Liverpool Liverpool FC
+Serie A,London Tottenham Hotspur
+Serie A,London West Ham United
+Serie A,Lorient FC Lorient
+Serie A,Los Angeles FC
+Serie A,Los Angeles LA Galaxy
+Serie A,Los Angeles LAFC
+Serie A,Lyon Olympique Lyonnais
+Serie A,Madrid Atlético Madrid
+Serie A,Madrid Football Club
+Serie A,Madrid Rayo Vallecano
+Serie A,Madrid Real Madrid
+Serie A,Mainz 1. FSV Mainz 05
+Serie A,Manchester Arsenal
+Serie A,Manchester City
+Serie A,Manchester Manchester City
+Serie A,Manchester Manchester United
+Serie A,Manchester United
+Serie A,Marseille Olympique de Marseille
+Serie A,Metz FC Metz
+Serie A,Miami Inter Miami CF
+Serie A,Milan AC Milan
+Serie A,Milan Foot-Ball and Cricket Club
+Serie A,Milan Inter Milan
+Serie A,Milan reverted to English spelling as 'Milan'
+Serie A,Minnesota Minnesota United FC
+Serie A,Minnesota Stars FC / NASL club
+Serie A,Monaco AS Monaco
+Serie A,Montreal CF Montréal
+Serie A,Montreal Impact
+Serie A,Munich Bayern Munich
+Serie A,Mönchengladbach Borussia Mönchengladbach
+Serie A,Nantes FC Nantes
+Serie A,Naples Foot-Ball Club
+Serie A,Naples Napoli
+Serie A,Nashville Nashville SC
+Serie A,Nashville SC
+Serie A,New England Revolution
+Serie A,New San Jose Earthquakes expansion club revived the name/colors
+Serie A,New York City FC
+Serie A,New York NYCFC
+Serie A,New York Red Bulls
+Serie A,New York/New Jersey MetroStars
+Serie A,Newcastle Newcastle United
+Serie A,Newcastle United
+Serie A,Newton Heath LYR FC
+Serie A,Nice OGC Nice
+Serie A,Nottingham Forest
+Serie A,Nottingham Nottingham Forest
+Serie A,OGC Nice
+Serie A,Olympique Lyonnais
+Serie A,Olympique de Marseille
+Serie A,Orlando City SC
+Serie A,Orlando Orlando City SC
+Serie A,Osasuna CA Osasuna
+Serie A,Palma RCD Mallorca
+Serie A,Paris (suburbs) Paris FC
+Serie A,Paris FC
+Serie A,Paris Paris Saint-Germain
+Serie A,Paris Saint-Germain
+Serie A,Parma Parma Calcio
+Serie A,Philadelphia Philadelphia Union
+Serie A,Philadelphia Union
+Serie A,Pisa Pisa SC
+Serie A,Pisa Sporting Club
+Serie A,Portland Portland Timbers
+Serie A,RCD Mallorca
+Serie A,Racing Club de Lens
+Serie A,Racing Club de Strasbourg
+Serie A,"RasenBallsport Leipzig, founded by buying the playing rights of fifth-division SSV Markranstädt"
+Serie A,Rayo Vallecano
+Serie A,Real Betis Balompié
+Serie A,Real Betis Real Betis Balompié
+Serie A,Real Madrid CF
+Serie A,Real Oviedo
+Serie A,Real Racing Club de Santander
+Serie A,Real Salt Lake
+Serie A,Real Sociedad
+Serie A,Red Bull New York
+Serie A,Refounded as Parma Calcio 1913 after bankruptcy
+Serie A,Refounded/rebranded Como 1907 after prior bankruptcy
+Serie A,Rennes Stade Rennais
+Serie A,Reverted 'Athletic' spelling convention to 'Atlético'
+Serie A,Reverted to Athletic Club
+Serie A,Reverted to Genoa CFC
+Serie A,Rome AS Roma
+Serie A,Rome Lazio
+Serie A,Royal Arsenal
+Serie A,SC Freiburg
+Serie A,SS Lazio
+Serie A,SSC Napoli
+Serie A,SV Werder Bremen
+Serie A,Salt Lake City Real Salt Lake
+Serie A,San Diego FC
+Serie A,San Diego San Diego FC
+Serie A,San Jose Clash
+Serie A,San Jose Earthquakes
+Serie A,San Jose San Jose Earthquakes
+Serie A,San Sebastián Real Sociedad
+Serie A,Santander Real Racing Club
+Serie A,Sassuolo US Sassuolo Calcio
+Serie A,Seattle Sounders FC
+Serie A,Sevilla Balompié
+Serie A,Sevilla FC
+Serie A,Seville Sevilla FC
+Serie A,Sinsheim TSG Hoffenheim
+Serie A,Società Podistica Lazio
+Serie A,Split from Aviación; Club Atlético de Madrid
+Serie A,"Split from Paris FC, retained PSG name"
+Serie A,Sporting Kansas City
+Serie A,St. Domingo FC
+Serie A,St. Louis City SC
+Serie A,St. Louis St. Louis City SC
+Serie A,St. Luke's FC
+Serie A,St. Mark's
+Serie A,St. Pauli FC St. Pauli
+Serie A,Stade Brestois
+Serie A,Stade Rennais
+Serie A,Strasbourg RC Strasbourg
+Serie A,Stuttgart VfB Stuttgart
+Serie A,Sunderland AFC
+Serie A,Sunderland Sunderland AFC
+Serie A,Sunderland and District Teachers AFC
+Serie A,TSG 1899 Hoffenheim
+Serie A,Thames Ironworks FC
+Serie A,The Arsenal
+Serie A,Torino Calcio
+Serie A,Torino FC
+Serie A,Toronto FC
+Serie A,Toronto Toronto FC
+Serie A,Tottenham Hotspur
+Serie A,"Toulouse FC (present club, refounded after predecessor Toulouse FC (1937-67) folded)"
+Serie A,Toulouse Toulouse FC
+Serie A,Turin Juventus
+Serie A,Turin Torino FC
+Serie A,US Lecce
+Serie A,US Sassuolo Calcio
+Serie A,Udine Udinese Calcio
+Serie A,Udinese Calcio
+Serie A,Valencia CF
+Serie A,Valencia Levante UD
+Serie A,Valencia Valencia CF
+Serie A,Vallecas/Oviedo Real Oviedo
+Serie A,Vancouver Whitecaps FC
+Serie A,Verdi FC Parma
+Serie A,Verona Hellas Verona
+Serie A,VfB Stuttgart lineage begins
+Serie A,VfL Wolfsburg
+Serie A,Vigo Celta Vigo
+Serie A,Villarreal CF
+Serie A,Villarreal Villarreal CF
+Serie A,Vitoria-Gasteiz Deportivo Alavés
+Serie A,West Ham United
+Serie A,Wolfsburg VfL Wolfsburg
+Serie A,Wolverhampton Wanderers
+Serie A,Wolverhampton Wolverhampton Wanderers
+Serie A,Woolwich Arsenal
+Bundesliga,1. FC Heidenheim football section formalized
+Bundesliga,1. FC Köln
+Bundesliga,1. FC Union Berlin
+Bundesliga,1. FSV Mainz 05
+Bundesliga,ACF Fiorentina
+Bundesliga,AFC Bournemouth
+Bundesliga,AJ Auxerre
+Bundesliga,AS Monaco
+Bundesliga,AS Roma
+Bundesliga,Angers Angers SCO
+Bundesliga,Angers SCO
+Bundesliga,Ardwick Association FC
+Bundesliga,Arsenal Football Club
+Bundesliga,Associazione Calcio Milano
+Bundesliga,Aston Villa
+Bundesliga,Atalanta BC
+Bundesliga,Athletic Club
+Bundesliga,Athletic Club de Madrid
+Bundesliga,Atlanta United FC
+Bundesliga,Atlético Aviación
+Bundesliga,Atlético Club de Bilbao
+Bundesliga,Augsburg FC Augsburg
+Bundesliga,Austin FC
+Bundesliga,Auxerre AJ Auxerre
+Bundesliga,BC Augsburg
+Bundesliga,Ballspielverein Borussia Dortmund
+Bundesliga,Barcelona FC Barcelona
+Bundesliga,Bayer 04 Leverkusen
+Bundesliga,Bergamo Atalanta BC
+Bundesliga,Berlin Union Berlin
+Bundesliga,Bilbao Athletic Club
+Bundesliga,Birmingham Aston Villa
+Bundesliga,Bologna Bologna FC 1909
+Bundesliga,Bologna FC
+Bundesliga,Borussia Mönchengladbach
+Bundesliga,Boscombe FC
+Bundesliga,Boscombe St John's Institute FC
+Bundesliga,Bournemouth AFC Bournemouth
+Bundesliga,Bremen Werder Bremen
+Bundesliga,Brentford Brentford FC
+Bundesliga,Brentford FC
+Bundesliga,Brest Stade Brestois 29
+Bundesliga,Brighton & Hove Albion
+Bundesliga,Brighton Brighton & Hove Albion
+Bundesliga,Burnley Burnley FC
+Bundesliga,Burnley FC
+Bundesliga,CA Osasuna
+Bundesliga,CF Montréal
+Bundesliga,Cagliari Cagliari Calcio
+Bundesliga,Cagliari Calcio
+Bundesliga,Celta Vigo
+Bundesliga,Charlotte FC
+Bundesliga,Chelsea Chelsea FC
+Bundesliga,Chelsea FC
+Bundesliga,Chicago Fire
+Bundesliga,Chicago Fire FC
+Bundesliga,Chicago Fire Soccer Club
+Bundesliga,Cincinnati FC Cincinnati
+Bundesliga,Cologne 1. FC Köln
+Bundesliga,Colorado Rapids
+Bundesliga,Columbus Crew
+Bundesliga,Columbus Crew SC
+Bundesliga,Como Como 1907
+Bundesliga,Como Foot-Ball Club
+Bundesliga,Cremona Cremonese
+Bundesliga,Cremonese
+Bundesliga,Crystal Palace Crystal Palace FC
+Bundesliga,Crystal Palace FC
+Bundesliga,D.C. United
+Bundesliga,Dallas Burn
+Bundesliga,Dallas FC Dallas
+Bundesliga,Deportivo Alavés
+Bundesliga,Dial Square
+Bundesliga,Dortmund Borussia Dortmund
+Bundesliga,Eintracht Frankfurt
+Bundesliga,Eintracht merger lineage begins
+Bundesliga,Elche CF
+Bundesliga,Elche Elche CF
+Bundesliga,Everton Everton FC
+Bundesliga,Everton FC
+Bundesliga,FC Augsburg
+Bundesliga,FC Barcelona
+Bundesliga,FC Bayern München
+Bundesliga,FC Cincinnati
+Bundesliga,FC Dallas
+Bundesliga,FC Lorient
+Bundesliga,FC Metz
+Bundesliga,FC Nantes
+Bundesliga,FC St. Pauli
+Bundesliga,Florence Fiorentina
+Bundesliga,Foot-Ball Club Barcelona
+Bundesliga,Football Club Internazionale Milano
+Bundesliga,Football Club Torino
+Bundesliga,Formed present club Parma AC
+Bundesliga,Frankfurt Eintracht Frankfurt
+Bundesliga,Frankfurter Fussball Club Victoria
+Bundesliga,Freiburg SC Freiburg
+Bundesliga,Fulham FC
+Bundesliga,Fulham Fulham FC
+Bundesliga,Genoa Cricket and Football Club
+Bundesliga,Genoa Genoa CFC
+Bundesliga,Genova 1893
+Bundesliga,Getafe CF
+Bundesliga,Getafe Deportivo
+Bundesliga,Getafe Getafe CF
+Bundesliga,Girona FC
+Bundesliga,Girona Girona FC
+Bundesliga,Gymnaste Club de Nice
+Bundesliga,Gymnastics club origins
+Bundesliga,Hamburg Hamburger SV
+Bundesliga,Hamburger SV
+Bundesliga,Heidenheim 1. FC Heidenheim
+Bundesliga,Hellas Verona
+Bundesliga,Hotspur FC
+Bundesliga,Houston Dynamo FC
+Bundesliga,Inter Miami CF
+Bundesliga,Juventus Football Club
+Bundesliga,Kansas City Sporting KC
+Bundesliga,Kansas City Wiz
+Bundesliga,Kansas City Wizards
+Bundesliga,LA Galaxy
+Bundesliga,Le Havre Athletic Club
+Bundesliga,Le Havre Le Havre AC
+Bundesliga,Lecce US Lecce
+Bundesliga,Leeds Leeds United
+Bundesliga,Leeds United
+Bundesliga,Leipzig RB Leipzig
+Bundesliga,Lens RC Lens
+Bundesliga,Levante FC
+Bundesliga,Levante UD
+Bundesliga,Leverkusen Bayer 04 Leverkusen
+Bundesliga,Lille LOSC Lille
+Bundesliga,Lille Olympique Sporting Club
+Bundesliga,Liverpool FC
+Bundesliga,Liverpool Liverpool FC
+Bundesliga,London Tottenham Hotspur
+Bundesliga,London West Ham United
+Bundesliga,Lorient FC Lorient
+Bundesliga,Los Angeles FC
+Bundesliga,Los Angeles LA Galaxy
+Bundesliga,Los Angeles LAFC
+Bundesliga,Lyon Olympique Lyonnais
+Bundesliga,Madrid Atlético Madrid
+Bundesliga,Madrid Football Club
+Bundesliga,Madrid Rayo Vallecano
+Bundesliga,Madrid Real Madrid
+Bundesliga,Mainz 1. FSV Mainz 05
+Bundesliga,Manchester Arsenal
+Bundesliga,Manchester City
+Bundesliga,Manchester Manchester City
+Bundesliga,Manchester Manchester United
+Bundesliga,Manchester United
+Bundesliga,Marseille Olympique de Marseille
+Bundesliga,Metz FC Metz
+Bundesliga,Miami Inter Miami CF
+Bundesliga,Milan AC Milan
+Bundesliga,Milan Foot-Ball and Cricket Club
+Bundesliga,Milan Inter Milan
+Bundesliga,Milan reverted to English spelling as 'Milan'
+Bundesliga,Minnesota Minnesota United FC
+Bundesliga,Minnesota Stars FC / NASL club
+Bundesliga,Monaco AS Monaco
+Bundesliga,Montreal CF Montréal
+Bundesliga,Montreal Impact
+Bundesliga,Munich Bayern Munich
+Bundesliga,Mönchengladbach Borussia Mönchengladbach
+Bundesliga,Nantes FC Nantes
+Bundesliga,Naples Foot-Ball Club
+Bundesliga,Naples Napoli
+Bundesliga,Nashville Nashville SC
+Bundesliga,Nashville SC
+Bundesliga,New England Revolution
+Bundesliga,New San Jose Earthquakes expansion club revived the name/colors
+Bundesliga,New York City FC
+Bundesliga,New York NYCFC
+Bundesliga,New York Red Bulls
+Bundesliga,New York/New Jersey MetroStars
+Bundesliga,Newcastle Newcastle United
+Bundesliga,Newcastle United
+Bundesliga,Newton Heath LYR FC
+Bundesliga,Nice OGC Nice
+Bundesliga,Nottingham Forest
+Bundesliga,Nottingham Nottingham Forest
+Bundesliga,OGC Nice
+Bundesliga,Olympique Lyonnais
+Bundesliga,Olympique de Marseille
+Bundesliga,Orlando City SC
+Bundesliga,Orlando Orlando City SC
+Bundesliga,Osasuna CA Osasuna
+Bundesliga,Palma RCD Mallorca
+Bundesliga,Paris (suburbs) Paris FC
+Bundesliga,Paris FC
+Bundesliga,Paris Paris Saint-Germain
+Bundesliga,Paris Saint-Germain
+Bundesliga,Parma Parma Calcio
+Bundesliga,Philadelphia Philadelphia Union
+Bundesliga,Philadelphia Union
+Bundesliga,Pisa Pisa SC
+Bundesliga,Pisa Sporting Club
+Bundesliga,Portland Portland Timbers
+Bundesliga,RCD Mallorca
+Bundesliga,Racing Club de Lens
+Bundesliga,Racing Club de Strasbourg
+Bundesliga,"RasenBallsport Leipzig, founded by buying the playing rights of fifth-division SSV Markranstädt"
+Bundesliga,Rayo Vallecano
+Bundesliga,Real Betis Balompié
+Bundesliga,Real Betis Real Betis Balompié
+Bundesliga,Real Madrid CF
+Bundesliga,Real Oviedo
+Bundesliga,Real Racing Club de Santander
+Bundesliga,Real Salt Lake
+Bundesliga,Real Sociedad
+Bundesliga,Red Bull New York
+Bundesliga,Refounded as Parma Calcio 1913 after bankruptcy
+Bundesliga,Refounded/rebranded Como 1907 after prior bankruptcy
+Bundesliga,Rennes Stade Rennais
+Bundesliga,Reverted 'Athletic' spelling convention to 'Atlético'
+Bundesliga,Reverted to Athletic Club
+Bundesliga,Reverted to Genoa CFC
+Bundesliga,Rome AS Roma
+Bundesliga,Rome Lazio
+Bundesliga,Royal Arsenal
+Bundesliga,SC Freiburg
+Bundesliga,SS Lazio
+Bundesliga,SSC Napoli
+Bundesliga,SV Werder Bremen
+Bundesliga,Salt Lake City Real Salt Lake
+Bundesliga,San Diego FC
+Bundesliga,San Diego San Diego FC
+Bundesliga,San Jose Clash
+Bundesliga,San Jose Earthquakes
+Bundesliga,San Jose San Jose Earthquakes
+Bundesliga,San Sebastián Real Sociedad
+Bundesliga,Santander Real Racing Club
+Bundesliga,Sassuolo US Sassuolo Calcio
+Bundesliga,Seattle Sounders FC
+Bundesliga,Sevilla Balompié
+Bundesliga,Sevilla FC
+Bundesliga,Seville Sevilla FC
+Bundesliga,Sinsheim TSG Hoffenheim
+Bundesliga,Società Podistica Lazio
+Bundesliga,Split from Aviación; Club Atlético de Madrid
+Bundesliga,"Split from Paris FC, retained PSG name"
+Bundesliga,Sporting Kansas City
+Bundesliga,St. Domingo FC
+Bundesliga,St. Louis City SC
+Bundesliga,St. Louis St. Louis City SC
+Bundesliga,St. Luke's FC
+Bundesliga,St. Mark's
+Bundesliga,St. Pauli FC St. Pauli
+Bundesliga,Stade Brestois
+Bundesliga,Stade Rennais
+Bundesliga,Strasbourg RC Strasbourg
+Bundesliga,Stuttgart VfB Stuttgart
+Bundesliga,Sunderland AFC
+Bundesliga,Sunderland Sunderland AFC
+Bundesliga,Sunderland and District Teachers AFC
+Bundesliga,TSG 1899 Hoffenheim
+Bundesliga,Thames Ironworks FC
+Bundesliga,The Arsenal
+Bundesliga,Torino Calcio
+Bundesliga,Torino FC
+Bundesliga,Toronto FC
+Bundesliga,Toronto Toronto FC
+Bundesliga,Tottenham Hotspur
+Bundesliga,"Toulouse FC (present club, refounded after predecessor Toulouse FC (1937-67) folded)"
+Bundesliga,Toulouse Toulouse FC
+Bundesliga,Turin Juventus
+Bundesliga,Turin Torino FC
+Bundesliga,US Lecce
+Bundesliga,US Sassuolo Calcio
+Bundesliga,Udine Udinese Calcio
+Bundesliga,Udinese Calcio
+Bundesliga,Valencia CF
+Bundesliga,Valencia Levante UD
+Bundesliga,Valencia Valencia CF
+Bundesliga,Vallecas/Oviedo Real Oviedo
+Bundesliga,Vancouver Whitecaps FC
+Bundesliga,Verdi FC Parma
+Bundesliga,Verona Hellas Verona
+Bundesliga,VfB Stuttgart lineage begins
+Bundesliga,VfL Wolfsburg
+Bundesliga,Vigo Celta Vigo
+Bundesliga,Villarreal CF
+Bundesliga,Villarreal Villarreal CF
+Bundesliga,Vitoria-Gasteiz Deportivo Alavés
+Bundesliga,West Ham United
+Bundesliga,Wolfsburg VfL Wolfsburg
+Bundesliga,Wolverhampton Wanderers
+Bundesliga,Wolverhampton Wolverhampton Wanderers
+Bundesliga,Woolwich Arsenal
+Ligue 1,1. FC Heidenheim football section formalized
+Ligue 1,1. FC Köln
+Ligue 1,1. FC Union Berlin
+Ligue 1,1. FSV Mainz 05
+Ligue 1,ACF Fiorentina
+Ligue 1,AFC Bournemouth
+Ligue 1,AJ Auxerre
+Ligue 1,AS Monaco
+Ligue 1,AS Roma
+Ligue 1,Angers Angers SCO
+Ligue 1,Angers SCO
+Ligue 1,Ardwick Association FC
+Ligue 1,Arsenal Football Club
+Ligue 1,Associazione Calcio Milano
+Ligue 1,Aston Villa
+Ligue 1,Atalanta BC
+Ligue 1,Athletic Club
+Ligue 1,Athletic Club de Madrid
+Ligue 1,Atlanta United FC
+Ligue 1,Atlético Aviación
+Ligue 1,Atlético Club de Bilbao
+Ligue 1,Augsburg FC Augsburg
+Ligue 1,Austin FC
+Ligue 1,Auxerre AJ Auxerre
+Ligue 1,BC Augsburg
+Ligue 1,Ballspielverein Borussia Dortmund
+Ligue 1,Barcelona FC Barcelona
+Ligue 1,Bayer 04 Leverkusen
+Ligue 1,Bergamo Atalanta BC
+Ligue 1,Berlin Union Berlin
+Ligue 1,Bilbao Athletic Club
+Ligue 1,Birmingham Aston Villa
+Ligue 1,Bologna Bologna FC 1909
+Ligue 1,Bologna FC
+Ligue 1,Borussia Mönchengladbach
+Ligue 1,Boscombe FC
+Ligue 1,Boscombe St John's Institute FC
+Ligue 1,Bournemouth AFC Bournemouth
+Ligue 1,Bremen Werder Bremen
+Ligue 1,Brentford Brentford FC
+Ligue 1,Brentford FC
+Ligue 1,Brest Stade Brestois 29
+Ligue 1,Brighton & Hove Albion
+Ligue 1,Brighton Brighton & Hove Albion
+Ligue 1,Burnley Burnley FC
+Ligue 1,Burnley FC
+Ligue 1,CA Osasuna
+Ligue 1,CF Montréal
+Ligue 1,Cagliari Cagliari Calcio
+Ligue 1,Cagliari Calcio
+Ligue 1,Celta Vigo
+Ligue 1,Charlotte FC
+Ligue 1,Chelsea Chelsea FC
+Ligue 1,Chelsea FC
+Ligue 1,Chicago Fire
+Ligue 1,Chicago Fire FC
+Ligue 1,Chicago Fire Soccer Club
+Ligue 1,Cincinnati FC Cincinnati
+Ligue 1,Cologne 1. FC Köln
+Ligue 1,Colorado Rapids
+Ligue 1,Columbus Crew
+Ligue 1,Columbus Crew SC
+Ligue 1,Como Como 1907
+Ligue 1,Como Foot-Ball Club
+Ligue 1,Cremona Cremonese
+Ligue 1,Cremonese
+Ligue 1,Crystal Palace Crystal Palace FC
+Ligue 1,Crystal Palace FC
+Ligue 1,D.C. United
+Ligue 1,Dallas Burn
+Ligue 1,Dallas FC Dallas
+Ligue 1,Deportivo Alavés
+Ligue 1,Dial Square
+Ligue 1,Dortmund Borussia Dortmund
+Ligue 1,Eintracht Frankfurt
+Ligue 1,Eintracht merger lineage begins
+Ligue 1,Elche CF
+Ligue 1,Elche Elche CF
+Ligue 1,Everton Everton FC
+Ligue 1,Everton FC
+Ligue 1,FC Augsburg
+Ligue 1,FC Barcelona
+Ligue 1,FC Bayern München
+Ligue 1,FC Cincinnati
+Ligue 1,FC Dallas
+Ligue 1,FC Lorient
+Ligue 1,FC Metz
+Ligue 1,FC Nantes
+Ligue 1,FC St. Pauli
+Ligue 1,Florence Fiorentina
+Ligue 1,Foot-Ball Club Barcelona
+Ligue 1,Football Club Internazionale Milano
+Ligue 1,Football Club Torino
+Ligue 1,Formed present club Parma AC
+Ligue 1,Frankfurt Eintracht Frankfurt
+Ligue 1,Frankfurter Fussball Club Victoria
+Ligue 1,Freiburg SC Freiburg
+Ligue 1,Fulham FC
+Ligue 1,Fulham Fulham FC
+Ligue 1,Genoa Cricket and Football Club
+Ligue 1,Genoa Genoa CFC
+Ligue 1,Genova 1893
+Ligue 1,Getafe CF
+Ligue 1,Getafe Deportivo
+Ligue 1,Getafe Getafe CF
+Ligue 1,Girona FC
+Ligue 1,Girona Girona FC
+Ligue 1,Gymnaste Club de Nice
+Ligue 1,Gymnastics club origins
+Ligue 1,Hamburg Hamburger SV
+Ligue 1,Hamburger SV
+Ligue 1,Heidenheim 1. FC Heidenheim
+Ligue 1,Hellas Verona
+Ligue 1,Hotspur FC
+Ligue 1,Houston Dynamo FC
+Ligue 1,Inter Miami CF
+Ligue 1,Juventus Football Club
+Ligue 1,Kansas City Sporting KC
+Ligue 1,Kansas City Wiz
+Ligue 1,Kansas City Wizards
+Ligue 1,LA Galaxy
+Ligue 1,Le Havre Athletic Club
+Ligue 1,Le Havre Le Havre AC
+Ligue 1,Lecce US Lecce
+Ligue 1,Leeds Leeds United
+Ligue 1,Leeds United
+Ligue 1,Leipzig RB Leipzig
+Ligue 1,Lens RC Lens
+Ligue 1,Levante FC
+Ligue 1,Levante UD
+Ligue 1,Leverkusen Bayer 04 Leverkusen
+Ligue 1,Lille LOSC Lille
+Ligue 1,Lille Olympique Sporting Club
+Ligue 1,Liverpool FC
+Ligue 1,Liverpool Liverpool FC
+Ligue 1,London Tottenham Hotspur
+Ligue 1,London West Ham United
+Ligue 1,Lorient FC Lorient
+Ligue 1,Los Angeles FC
+Ligue 1,Los Angeles LA Galaxy
+Ligue 1,Los Angeles LAFC
+Ligue 1,Lyon Olympique Lyonnais
+Ligue 1,Madrid Atlético Madrid
+Ligue 1,Madrid Football Club
+Ligue 1,Madrid Rayo Vallecano
+Ligue 1,Madrid Real Madrid
+Ligue 1,Mainz 1. FSV Mainz 05
+Ligue 1,Manchester Arsenal
+Ligue 1,Manchester City
+Ligue 1,Manchester Manchester City
+Ligue 1,Manchester Manchester United
+Ligue 1,Manchester United
+Ligue 1,Marseille Olympique de Marseille
+Ligue 1,Metz FC Metz
+Ligue 1,Miami Inter Miami CF
+Ligue 1,Milan AC Milan
+Ligue 1,Milan Foot-Ball and Cricket Club
+Ligue 1,Milan Inter Milan
+Ligue 1,Milan reverted to English spelling as 'Milan'
+Ligue 1,Minnesota Minnesota United FC
+Ligue 1,Minnesota Stars FC / NASL club
+Ligue 1,Monaco AS Monaco
+Ligue 1,Montreal CF Montréal
+Ligue 1,Montreal Impact
+Ligue 1,Munich Bayern Munich
+Ligue 1,Mönchengladbach Borussia Mönchengladbach
+Ligue 1,Nantes FC Nantes
+Ligue 1,Naples Foot-Ball Club
+Ligue 1,Naples Napoli
+Ligue 1,Nashville Nashville SC
+Ligue 1,Nashville SC
+Ligue 1,New England Revolution
+Ligue 1,New San Jose Earthquakes expansion club revived the name/colors
+Ligue 1,New York City FC
+Ligue 1,New York NYCFC
+Ligue 1,New York Red Bulls
+Ligue 1,New York/New Jersey MetroStars
+Ligue 1,Newcastle Newcastle United
+Ligue 1,Newcastle United
+Ligue 1,Newton Heath LYR FC
+Ligue 1,Nice OGC Nice
+Ligue 1,Nottingham Forest
+Ligue 1,Nottingham Nottingham Forest
+Ligue 1,OGC Nice
+Ligue 1,Olympique Lyonnais
+Ligue 1,Olympique de Marseille
+Ligue 1,Orlando City SC
+Ligue 1,Orlando Orlando City SC
+Ligue 1,Osasuna CA Osasuna
+Ligue 1,Palma RCD Mallorca
+Ligue 1,Paris (suburbs) Paris FC
+Ligue 1,Paris FC
+Ligue 1,Paris Paris Saint-Germain
+Ligue 1,Paris Saint-Germain
+Ligue 1,Parma Parma Calcio
+Ligue 1,Philadelphia Philadelphia Union
+Ligue 1,Philadelphia Union
+Ligue 1,Pisa Pisa SC
+Ligue 1,Pisa Sporting Club
+Ligue 1,Portland Portland Timbers
+Ligue 1,RCD Mallorca
+Ligue 1,Racing Club de Lens
+Ligue 1,Racing Club de Strasbourg
+Ligue 1,"RasenBallsport Leipzig, founded by buying the playing rights of fifth-division SSV Markranstädt"
+Ligue 1,Rayo Vallecano
+Ligue 1,Real Betis Balompié
+Ligue 1,Real Betis Real Betis Balompié
+Ligue 1,Real Madrid CF
+Ligue 1,Real Oviedo
+Ligue 1,Real Racing Club de Santander
+Ligue 1,Real Salt Lake
+Ligue 1,Real Sociedad
+Ligue 1,Red Bull New York
+Ligue 1,Refounded as Parma Calcio 1913 after bankruptcy
+Ligue 1,Refounded/rebranded Como 1907 after prior bankruptcy
+Ligue 1,Rennes Stade Rennais
+Ligue 1,Reverted 'Athletic' spelling convention to 'Atlético'
+Ligue 1,Reverted to Athletic Club
+Ligue 1,Reverted to Genoa CFC
+Ligue 1,Rome AS Roma
+Ligue 1,Rome Lazio
+Ligue 1,Royal Arsenal
+Ligue 1,SC Freiburg
+Ligue 1,SS Lazio
+Ligue 1,SSC Napoli
+Ligue 1,SV Werder Bremen
+Ligue 1,Salt Lake City Real Salt Lake
+Ligue 1,San Diego FC
+Ligue 1,San Diego San Diego FC
+Ligue 1,San Jose Clash
+Ligue 1,San Jose Earthquakes
+Ligue 1,San Jose San Jose Earthquakes
+Ligue 1,San Sebastián Real Sociedad
+Ligue 1,Santander Real Racing Club
+Ligue 1,Sassuolo US Sassuolo Calcio
+Ligue 1,Seattle Sounders FC
+Ligue 1,Sevilla Balompié
+Ligue 1,Sevilla FC
+Ligue 1,Seville Sevilla FC
+Ligue 1,Sinsheim TSG Hoffenheim
+Ligue 1,Società Podistica Lazio
+Ligue 1,Split from Aviación; Club Atlético de Madrid
+Ligue 1,"Split from Paris FC, retained PSG name"
+Ligue 1,Sporting Kansas City
+Ligue 1,St. Domingo FC
+Ligue 1,St. Louis City SC
+Ligue 1,St. Louis St. Louis City SC
+Ligue 1,St. Luke's FC
+Ligue 1,St. Mark's
+Ligue 1,St. Pauli FC St. Pauli
+Ligue 1,Stade Brestois
+Ligue 1,Stade Rennais
+Ligue 1,Strasbourg RC Strasbourg
+Ligue 1,Stuttgart VfB Stuttgart
+Ligue 1,Sunderland AFC
+Ligue 1,Sunderland Sunderland AFC
+Ligue 1,Sunderland and District Teachers AFC
+Ligue 1,TSG 1899 Hoffenheim
+Ligue 1,Thames Ironworks FC
+Ligue 1,The Arsenal
+Ligue 1,Torino Calcio
+Ligue 1,Torino FC
+Ligue 1,Toronto FC
+Ligue 1,Toronto Toronto FC
+Ligue 1,Tottenham Hotspur
+Ligue 1,"Toulouse FC (present club, refounded after predecessor Toulouse FC (1937-67) folded)"
+Ligue 1,Toulouse Toulouse FC
+Ligue 1,Turin Juventus
+Ligue 1,Turin Torino FC
+Ligue 1,US Lecce
+Ligue 1,US Sassuolo Calcio
+Ligue 1,Udine Udinese Calcio
+Ligue 1,Udinese Calcio
+Ligue 1,Valencia CF
+Ligue 1,Valencia Levante UD
+Ligue 1,Valencia Valencia CF
+Ligue 1,Vallecas/Oviedo Real Oviedo
+Ligue 1,Vancouver Whitecaps FC
+Ligue 1,Verdi FC Parma
+Ligue 1,Verona Hellas Verona
+Ligue 1,VfB Stuttgart lineage begins
+Ligue 1,VfL Wolfsburg
+Ligue 1,Vigo Celta Vigo
+Ligue 1,Villarreal CF
+Ligue 1,Villarreal Villarreal CF
+Ligue 1,Vitoria-Gasteiz Deportivo Alavés
+Ligue 1,West Ham United
+Ligue 1,Wolfsburg VfL Wolfsburg
+Ligue 1,Wolverhampton Wanderers
+Ligue 1,Wolverhampton Wolverhampton Wanderers
+Ligue 1,Woolwich Arsenal
