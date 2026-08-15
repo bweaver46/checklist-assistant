@@ -1,39 +1,37 @@
 """
-Keeps the Mac awake for the duration of an extraction run, so a long
-multi-hundred-page pull doesn't get interrupted by the machine going
-to sleep partway through (Brandon, 2026-08-07).
+Keep-awake (Brandon, 2026-08-07): a full extraction can run long enough
+that macOS puts the Mac to sleep partway through, which pauses (or can
+outright break) a live Playwright browser session mid-scrape.
 
-This file was referenced by app/extraction_worker.py's import but
-never actually committed - it only worked because a local, untracked
-copy happened to still be sitting on disk. Reconstructed here from
-that usage (start_keep_awake() with no args, returning a handle;
-stop_keep_awake(handle) in a finally block) - confirmed 2026-08-10
-after Brandon's git status showed it as untracked post-pull.
+Wraps macOS's built-in `caffeinate` command-line tool for the duration
+of an extraction run - no extra dependencies, it ships with every Mac.
+`-d` keeps the display awake, `-i` prevents idle sleep, `-s` prevents
+system sleep while on AC power. Started right before scraping begins,
+always stopped in a `finally` block (see app/extraction_worker.py) so
+a crash or early return never leaves the Mac stuck awake afterward.
 
-Uses macOS's built-in `caffeinate` command-line tool rather than a
-third-party package - no extra dependency, and it's already on every
-Mac. Silently does nothing on any other OS (`caffeinate` doesn't
-exist there) rather than failing the whole extraction over a
-nice-to-have.
+No-ops safely (returns None, stop_keep_awake does nothing) on any
+non-macOS system, or if `caffeinate` isn't found - this is a nice-to-
+have, not something that should ever break the actual extraction.
+
+(This file was briefly missing from the committed repo - it only
+worked because a local, untracked copy stayed on Brandon's machine
+from when it was first written. Restored here, 2026-08-10, matching
+that original working version - not the interim placeholder guess.)
 """
 
 from __future__ import annotations
 
+import platform
 import subprocess
-import sys
 
 
 def start_keep_awake() -> subprocess.Popen | None:
-    """Starts `caffeinate -i` (prevent idle sleep) for as long as the
-    returned process stays alive. Returns None on non-macOS platforms,
-    or if caffeinate isn't available for any reason - callers should
-    treat None as "nothing to clean up" and pass it straight through
-    to stop_keep_awake() without checking."""
-    if sys.platform != "darwin":
+    if platform.system() != "Darwin":
         return None
     try:
         return subprocess.Popen(
-            ["caffeinate", "-i"],
+            ["caffeinate", "-d", "-i", "-s"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
@@ -42,12 +40,10 @@ def start_keep_awake() -> subprocess.Popen | None:
 
 
 def stop_keep_awake(process: subprocess.Popen | None) -> None:
-    """Stops a process started by start_keep_awake(). Safe to call with
-    None (nothing was started, e.g. non-macOS)."""
     if process is None:
         return
-    process.terminate()
     try:
-        process.wait(timeout=2)
-    except subprocess.TimeoutExpired:
-        process.kill()
+        process.terminate()
+        process.wait(timeout=3)
+    except Exception:
+        pass
