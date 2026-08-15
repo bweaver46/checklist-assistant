@@ -212,6 +212,36 @@ class BrowserManager:
         page = self._require_page()
         return page.locator(selector).count()
 
+    def test_search_url(self, url: str, timeout_ms: int = 10000) -> tuple[bool, str]:
+        """Navigates to a built search URL (see scraper/search_url.py)
+        and reports whether it actually returned results, WITHOUT
+        reading/extracting any rows - this is for validating a staged
+        search before committing to a full pull, not the pull itself
+        (Brandon, 2026-08-10: "we need a way to test each set, and skip
+        searches that fail").
+
+        Launches the browser first if it isn't already running. Returns
+        (True, "<n> result(s)") on success, or (False, reason) - a
+        timeout waiting for any row to appear is treated as "this search
+        returned nothing" rather than letting the exception propagate,
+        since a bad guess at a filter value shouldn't crash the whole
+        staging flow, it should just mark that one entry failed."""
+        try:
+            if not self.is_launched:
+                self.launch(start_url=url)
+            else:
+                self.navigate_to_url(url)
+            page = self._require_page()
+            page.wait_for_selector(ROW_SELECTOR, timeout=timeout_ms)
+            count = self.count_rows()
+            if count > 0:
+                return True, f"{count} result(s)"
+            return False, "No results found for this search."
+        except PlaywrightTimeoutError:
+            return False, "No results found for this search (timed out waiting for rows)."
+        except Exception as exc:  # noqa: BLE001
+            return False, str(exc)
+
     def read_row(self, row: Locator) -> CardRecord:
         """Read a single row element into a raw CardRecord.
 

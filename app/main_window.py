@@ -25,6 +25,7 @@ from scraper.browser_manager import BrowserManager
 from scraper.site_detect import detect_source, parse_beckett_url, BSC, BECKETT, TCDB
 from scraper.tcdb_pagination import tcdb_page_url
 from scraper.search_url import build_search_url
+from app.search_queue_dialog import SearchQueueDialog
 from app.extraction_worker import ExtractionWorker
 from settings.window_layout import MAIN_WINDOW_POSITION
 from settings.last_run import load_last_run, save_last_run
@@ -78,6 +79,10 @@ class MainWindow(QMainWindow):
         self.extract_tcdb_button = QPushButton("Extract TCDB Checklist")
         self.extract_tcdb_button.clicked.connect(self._extract_tcdb)
         layout.addWidget(self.extract_tcdb_button)
+
+        self.search_queue_button = QPushButton("Search Queue")
+        self.search_queue_button.clicked.connect(self.on_open_search_queue)
+        layout.addWidget(self.search_queue_button)
 
         self.pause_button = QPushButton("Pause")
         self.pause_button.clicked.connect(self.on_pause_resume)
@@ -479,6 +484,10 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
     # Main extraction handler
     # ------------------------------------------------------------------
+
+    def on_open_search_queue(self) -> None:
+        dialog = SearchQueueDialog(self, self.browser_manager)
+        dialog.exec()
 
     def on_extract_checklist(self) -> None:
         source = detect_source(self.browser_manager.current_url())
