@@ -50,6 +50,7 @@ class SearchQueueDialog(QDialog):
         self.entries: list[StagedSearch] = load_queue()
         self._running_entry: StagedSearch | None = None
         self._active_worker: ExtractionWorker | None = None
+        self._queue_running = False
 
         self.setWindowTitle("Search Queue")
         self.setFixedSize(560, 520)
@@ -99,6 +100,8 @@ class SearchQueueDialog(QDialog):
         test_row.addWidget(test_selected_btn)
         test_row.addWidget(test_all_btn)
         layout.addLayout(test_row)
+        self.test_selected_btn = test_selected_btn
+        self.test_all_btn = test_all_btn
 
         run_row = QHBoxLayout()
         self.run_queue_btn = QPushButton("Run Queue")
@@ -227,6 +230,13 @@ class SearchQueueDialog(QDialog):
         self._refresh_list()
 
     def _on_test_selected(self) -> None:
+        if self._queue_running:
+            self.status_label.setText(
+                "Can't test while Run Queue is going — Test and the "
+                "running extraction share the same browser page, "
+                "testing something else would navigate it away mid-scrape."
+            )
+            return
         row = self.list_widget.currentRow()
         if row < 0:
             self.status_label.setText("Select an entry to test first.")
@@ -238,6 +248,13 @@ class SearchQueueDialog(QDialog):
         self.status_label.setText(f"Done testing {self.entries[row].name}.")
 
     def _on_test_all(self) -> None:
+        if self._queue_running:
+            self.status_label.setText(
+                "Can't test while Run Queue is going — Test and the "
+                "running extraction share the same browser page, "
+                "testing something else would navigate it away mid-scrape."
+            )
+            return
         for entry in self.entries:
             self._run_test(entry)
         passed_count = sum(1 for e in self.entries if e.status == PASSED)
@@ -263,7 +280,9 @@ class SearchQueueDialog(QDialog):
             "Each produces its own output file named "
             "\"[year] [set] [sport]\" from that search's fields. "
             "You can still add, edit, and reorder anything that "
-            "hasn't started yet while this runs.",
+            "hasn't started yet while this runs - but not Test, since "
+            "testing shares the same browser page as the running "
+            "extraction.",
             ["Run", "Cancel"], "Run",
         )
         if answer != "Run":
@@ -271,9 +290,16 @@ class SearchQueueDialog(QDialog):
 
         # Locked for the duration of the whole queue run, not just one
         # item - re-entrant runs and a mid-run Close would both leave
-        # things in an inconsistent state (see closeEvent below).
+        # things in an inconsistent state (see closeEvent below). Test
+        # is locked too (not just the running entry, see _locked) since
+        # it drives the SAME shared browser page the running extraction
+        # is actively reading from - testing something else would
+        # navigate that page away mid-scrape (found live, 2026-08-16).
         self.run_queue_btn.setEnabled(False)
         self.close_btn.setEnabled(False)
+        self.test_selected_btn.setEnabled(False)
+        self.test_all_btn.setEnabled(False)
+        self._queue_running = True
 
         ran = 0
         # Re-reads self.entries for the next PASSED one on every
@@ -288,8 +314,11 @@ class SearchQueueDialog(QDialog):
             self._run_one(next_entry)
             ran += 1
 
+        self._queue_running = False
         self.run_queue_btn.setEnabled(True)
         self.close_btn.setEnabled(True)
+        self.test_selected_btn.setEnabled(True)
+        self.test_all_btn.setEnabled(True)
         self.status_label.setText(f"Queue run finished — {ran} search(es) processed.")
 
     def _run_one(self, entry: StagedSearch) -> None:
