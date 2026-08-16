@@ -13,6 +13,12 @@ try:
 
     def main() -> None:
         app = QApplication(sys.argv)
+        # On macOS, Qt gives each window's "default" button (the one
+        # Enter triggers) a native blue highlight but leaves its text
+        # black -- poor contrast (Brandon, 2026-08-16). Targeting just
+        # :default here fixes that without touching every other button's
+        # normal OS-native look.
+        app.setStyleSheet("QPushButton:default { color: white; }")
         window = MainWindow()
         window.show()
         sys.exit(app.exec())
