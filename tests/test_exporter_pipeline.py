@@ -234,7 +234,11 @@ def test_autograph_insert_no_redundant_subtype():
     row = rows[0]
     assert row.insert == "Rookie and Veteran Autographs Purple"
     assert row.attributes == ""  # "Autograph" already implied by insert text
-    assert row.parallels == [("", "250")]
+    # Single-occurrence card (no parallel siblings at all) - its own
+    # serial goes to base_serial, not a blank-named parallel slot that
+    # would read like a broken/incomplete row (Brandon, 2026-08-15).
+    assert row.parallels == []
+    assert row.base_serial == "250"
 
 
 def test_autograph_gets_subtype_when_not_redundant():
@@ -368,6 +372,77 @@ def test_base_serial_blank_for_insert_only_card():
     rows = convert_and_build(records)
     assert len(rows) == 1
     assert rows[0].base_serial == ""
+
+
+def test_single_occurrence_insert_card_serial_goes_to_base_serial_not_blank_parallel():
+    # 2025 Topps Allen & Ginter "Relics No Number Back" - a single-
+    # occurrence Insert card (no parallel siblings at all - BSC lists
+    # exactly one row for this exact insert+card_number), MEM/SN25 on
+    # that one and only row. Previously the whole variant_name got fully
+    # absorbed into `insert`, leaving nothing over for the parallels loop
+    # except the serial - which produced a blank-named parallel
+    # ("", "25") that read like a broken/incomplete row, and dropped the
+    # "MEM" code entirely (Brandon, 2026-08-15, confirmed against his
+    # raw export).
+    records = [
+        CardRecord(name="Hank Aaron", card_number="#1", set="2025 Topps Allen & Ginter",
+                   variant="Insert", variant_name="Relics No Number Back",
+                   attributes="MEM, SN25", team="Atlanta Braves"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row.insert == "Relics No Number Back"
+    assert row.parallels == []
+    assert row.base_serial == "25"
+    assert row.attributes == "MEM"
+
+
+def test_bare_occurrence_with_real_parallel_siblings_keeps_blank_parallel_behavior():
+    # The OTHER side of the same fix: a bare/un-suffixed row that DOES
+    # have real, separately-named parallel siblings (unlike the single-
+    # occurrence case above) keeps producing a blank-named parallel slot
+    # for its own serial - it represents one specific print version
+    # sitting alongside its named siblings, not an orphaned row with
+    # nothing else on the card. See also
+    # test_base_row_with_only_a_serial_gets_blank_parallel_with_serial.
+    records = [
+        CardRecord(name="Mike Trout", card_number="#BA-23", set="2026 Bowman",
+                   variant="Insert", variant_name="Anime", attributes="SN50"),
+        CardRecord(name="Mike Trout", card_number="#BA-23", set="2026 Bowman",
+                   variant="Insert", variant_name="Anime Black Refractors", attributes="SN10"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 1
+    assert rows[0].parallels == [("", "50"), ("Black Refractor", "10")]
+    assert rows[0].base_serial == ""
+
+
+def test_records_with_no_usable_identity_are_dropped_not_ghost_rows():
+    # 2025 Topps Allen & Ginter, confirmed against Brandon's real raw
+    # export, 2026-08-15: one raw row entirely blank across every field,
+    # plus two more with name="" and card_number="'#" (empty once the
+    # leading apostrophe/hash is stripped) - real parallel names ("Mini
+    # Cloth", "Wood") but no way to know which player's card they
+    # belonged to. These previously survived all the way through as
+    # ghost rows in the final export - no card_number, no player,
+    # nothing to identify them by. There's no way to recover the missing
+    # identity after the fact, so they're dropped entirely rather than
+    # grouped into their own nonsense "blank" card. A normal record
+    # elsewhere in the same batch is unaffected.
+    records = [
+        CardRecord(name="", card_number="", set="", variant="", variant_name="",
+                   attributes="", team="", description=""),
+        CardRecord(name="", card_number="'#", set="2025 Topps Allen & Ginter",
+                   variant="Parallel", variant_name="Mini Cloth", attributes="-"),
+        CardRecord(name="", card_number="'#", set="2025 Topps Allen & Ginter",
+                   variant="Parallel", variant_name="Wood", attributes="-"),
+        CardRecord(name="Hank Aaron", card_number="#13", set="2025 Topps Allen & Ginter",
+                   variant="Base", variant_name="-", attributes="-"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 1
+    assert rows[0].player == "Hank Aaron"
 
 
 def test_season_year_formats_use_first_year():
@@ -632,6 +707,9 @@ if __name__ == "__main__":
     test_base_serial_populated_when_base_row_has_serial()
     test_base_serial_blank_when_base_row_has_no_serial()
     test_base_serial_blank_for_insert_only_card()
+    test_single_occurrence_insert_card_serial_goes_to_base_serial_not_blank_parallel()
+    test_bare_occurrence_with_real_parallel_siblings_keeps_blank_parallel_behavior()
+    test_records_with_no_usable_identity_are_dropped_not_ghost_rows()
     test_season_year_formats_use_first_year()
     test_split_concatenated_names()
     test_split_concatenated_names_protects_common_surname_prefixes()

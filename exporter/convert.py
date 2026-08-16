@@ -415,4 +415,24 @@ def build_raw_occurrence(record: CardRecord, context: dict | None = None) -> tup
 
 
 def convert_all(records: list[CardRecord], context: dict | None = None) -> list[tuple[RawOccurrence, str]]:
-    return [build_raw_occurrence(r, context) for r in records]
+    """Skips any record with no usable card identity at all - blank
+    player name AND blank/empty card_number (after the same leading
+    '#/apostrophe stripping clean_card_number does). Confirmed against
+    a real Brandon export, 2026-08-15 (2025 Topps Allen & Ginter): three
+    raw rows came back this way - one entirely blank across every field,
+    two more with name="" and card_number="'#" (empty after cleaning),
+    variant_name "Mini Cloth"/"Wood" - real A&G parallel names, but with
+    no way to know which player's card they actually belonged to. These
+    previously flowed all the way through as two ghost rows in the final
+    export: no card_number, no player, nothing to identify them by, just
+    a stray parallel name (and, for one of them, not even that). There's
+    no way to recover the missing identity after the fact - the raw
+    scrape itself never captured it - so the right fix is to not let an
+    unidentifiable row produce a phantom output row at all, rather than
+    grouping them into their own nonsense "blank" card."""
+    result = []
+    for r in records:
+        if not r.name.strip() and not clean_card_number(r.card_number).strip():
+            continue
+        result.append(build_raw_occurrence(r, context))
+    return result

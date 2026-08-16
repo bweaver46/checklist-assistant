@@ -374,6 +374,25 @@ def build_checklist_rows(
             if occ.is_base and not occ.is_letter_variant:
                 base_occ_attrs = occ.attributes
                 break
+        else:
+            # No Base row in this group at all. If the group is a single
+            # occurrence (no parallel siblings at all - the card IS this
+            # one row), treat ITS attributes the same way a real base
+            # row's would be used below, so a code like "MEM" on a
+            # single-print Insert card doesn't just vanish (Brandon,
+            # 2026-08-15: 2025 Topps Allen & Ginter "Relics No Number
+            # Back" - MEM/SN25 on the one and only row for that insert -
+            # confirmed against his raw export). Scoped to len<=1 only -
+            # a bare row that DOES have real parallel siblings (e.g. an
+            # "Anime" base print alongside "Anime Black Refractors") is a
+            # different, already-covered case (see bare_occurrence_serial
+            # below and test_base_row_with_only_a_serial_gets_blank_
+            # parallel_with_serial) and keeps its existing behavior.
+            if len(non_base_group) <= 1:
+                for occ, _ in non_base_group:
+                    if not strip_common_prefix(occ.variant_name, common_prefix).strip():
+                        base_occ_attrs = occ.attributes
+                        break
 
         # Autograph detection must come from the card's OWN print version,
         # not from whichever of its parallels happens to be autographed.
@@ -404,6 +423,11 @@ def build_checklist_rows(
             if leftover.strip() and leftover.strip() not in card_attrs_parts:
                 card_attrs_parts.append(leftover.strip())
         for token in sorted(tokenize_attributes(base_occ_attrs)):
+            # AU is always represented via has_autograph -> "Autograph"
+            # text below (or correctly omitted as redundant) - including
+            # it here too would double it up ("AU, Autograph").
+            if AUTOGRAPH_PATTERN.match(token):
+                continue
             if token not in card_attrs_parts:
                 card_attrs_parts.append(token)
 
@@ -423,6 +447,7 @@ def build_checklist_rows(
 
 
         parallels: list[tuple[str, str]] = []
+        bare_occurrence_serial = ""
 
         # Regular (non-lettered) parallels via the existing prefix logic.
         for occ, fallback_serial in regular_group:
@@ -431,6 +456,31 @@ def build_checklist_rows(
             serial = parse_serial(occ.attributes) or fallback_serial
 
             if not remainder.strip() and not serial:
+                continue
+
+            if not remainder.strip() and len(non_base_group) <= 1:
+                # This is the ONLY occurrence in the whole group (no
+                # parallel siblings at all - not even an un-named one) -
+                # its whole variant_name text WAS the common prefix
+                # (insert name), so this isn't a separately-named
+                # parallel, it's the card's own bare printing. Its serial
+                # belongs on the card itself (base_serial), not floating
+                # in a blank-named parallel slot ("", "25") that reads
+                # like a broken row (2025 Topps Allen & Ginter "Relics No
+                # Number Back" - a single-occurrence Insert card, MEM/
+                # SN25 on the one and only row - confirmed against
+                # Brandon's raw export, 2026-08-15).
+                #
+                # Scoped to len<=1 ONLY - a bare row that DOES have real
+                # parallel siblings (e.g. an "Anime" base print alongside
+                # "Anime Black Refractors") keeps its existing blank-
+                # parallel-with-serial behavior instead (see
+                # test_base_row_with_only_a_serial_gets_blank_parallel_
+                # with_serial) - that pattern represents a real, specific
+                # print version sitting alongside its named siblings, not
+                # an orphaned row with nothing else on the card at all.
+                if not bare_occurrence_serial:
+                    bare_occurrence_serial = serial
                 continue
 
             parallels.append((remainder, serial))
@@ -446,11 +496,17 @@ def build_checklist_rows(
         # base_serial: if any row in this group was a Base row and had a
         # serial (SN/PR), capture it here. base itself is always blank
         # from the parser - filled manually after export when needed.
+        # Falls back to bare_occurrence_serial (above) for a group with
+        # no Base row at all, so a single-occurrence Insert card's own
+        # serial still ends up somewhere sensible instead of a blank-
+        # named parallel.
         base_serial = ""
         for occ, fallback_serial in group:
             if occ.is_base and not occ.is_letter_variant:
                 base_serial = parse_serial(occ.attributes) or fallback_serial
                 break
+        if not base_serial:
+            base_serial = bare_occurrence_serial
 
         rows.append(
             ChecklistRow(
