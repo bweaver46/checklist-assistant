@@ -445,17 +445,54 @@ def test_records_with_no_usable_identity_are_dropped_not_ghost_rows():
     assert rows[0].player == "Hank Aaron"
 
 
+def test_nno_row_remaps_onto_players_real_base_card_when_one_exists():
+    # The primary case, added after Brandon asked "NNO should show up
+    # in the base set right?" (2026-08-16): a card_number of "NNO" is
+    # usually still the SAME player's real, already-numbered base card
+    # - just a parallel print of it that happens to lack a number,
+    # mis-keyed under "NNO" instead of that card's actual number.
+    # Confirmed against Brandon's real raw export: 349 of 350 "NNO"
+    # players in 2025 Topps Allen & Ginter also have a genuine numbered
+    # Base row elsewhere in the same product - e.g. Ivan Rodriguez is
+    # base card #309, and his "Mini No Number" parallel is scraped as
+    # card_number "#NNO" instead of "#309", even though it's clearly
+    # his own card's parallel (same player, same team, same product).
+    # The earlier fix (commit 9bd7c90, test below) promoted "NNO" itself
+    # to be the card's insert name for EVERY such row - correct for a
+    # player with no real base card, but wrong here: it pulled the
+    # parallel away from the card it actually belongs to.
+    records = [
+        CardRecord(name="Ivan Rodriguez", card_number="#309", set="2025 Topps Allen & Ginter",
+                   variant="Base", variant_name="-", attributes="-", team="Florida Marlins"),
+        CardRecord(name="Ivan Rodriguez", card_number="#309", set="2025 Topps Allen & Ginter",
+                   variant="Parallel", variant_name="Foil Filagree Gold", attributes="SN50",
+                   team="Florida Marlins"),
+        CardRecord(name="Ivan Rodriguez", card_number="#NNO", set="2025 Topps Allen & Ginter",
+                   variant="Parallel", variant_name="Mini No Number", attributes="PR50",
+                   team="Florida Marlins"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row.card_number == "309"
+    assert row.insert == ""
+    assert ("Mini No Number", "50") in row.parallels
+    assert ("Foil Filagree Gold", "50") in row.parallels
+
+
 def test_nno_placeholder_parallel_rows_treated_as_their_own_card_not_base():
+    # The fallback case: a player with NO real Base row anywhere in the
+    # product (e.g. this file's one exception among 350, Yu Darvish) -
     # "NNO" (no number officially) never appears as a genuine Base row
-    # for ANYONE in a real product - unlike a normal numbered Parallel
-    # row, there's no base card being paralleled. 2025 Topps Allen &
+    # for such a player, unlike a normal numbered Parallel row, so
+    # there's no base card to re-key this onto. 2025 Topps Allen &
     # Ginter, confirmed against Brandon's real raw export, 2026-08-15:
-    # 350 different players' "Mini No Number"/"Framed Mini Cloth"
-    # Parallel-type rows (no Base row, no Insert row) were silently
-    # folding into the base-set count - inflating what should have been
-    # roughly a 350-card base checklist to 709 rows tagged as base, and
-    # making the real numbered base set impossible to see clearly
-    # ("the main set has 709 cards, that cant be correct").
+    # before EITHER fix, 350 different players' "Mini No Number"/"Framed
+    # Mini Cloth" Parallel-type rows were silently folding into the
+    # base-set count - inflating what should have been roughly a
+    # 350-card base checklist to 709 rows tagged as base, and making the
+    # real numbered base set impossible to see clearly ("the main set
+    # has 709 cards, that cant be correct").
     records = [
         CardRecord(name="Hank Aaron", card_number="#NNO", set="2025 Topps Allen & Ginter",
                    variant="Parallel", variant_name="Mini No Number", attributes="PR50",
@@ -805,6 +842,7 @@ if __name__ == "__main__":
     test_single_occurrence_insert_card_serial_goes_to_base_serial_not_blank_parallel()
     test_bare_occurrence_with_real_parallel_siblings_keeps_blank_parallel_behavior()
     test_records_with_no_usable_identity_are_dropped_not_ghost_rows()
+    test_nno_row_remaps_onto_players_real_base_card_when_one_exists()
     test_nno_placeholder_parallel_rows_treated_as_their_own_card_not_base()
     test_regular_numbered_parallel_with_no_base_row_still_stays_a_parallel()
     test_trailing_period_on_generational_suffix_does_not_split_a_card()

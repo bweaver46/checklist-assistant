@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import re
 from collections import OrderedDict
+from dataclasses import replace
 
 from exporter.checklist_template import ChecklistRow
 from exporter.convert import RawOccurrence, normalize_plural_terms, parse_serial, AUTOGRAPH_PATTERN
@@ -333,9 +334,69 @@ def pick_display_team(group: list[tuple]) -> str:
     return ""
 
 
+def remap_placeholder_numbers_to_real_base_card(
+    occurrences_with_fallback: list[tuple[RawOccurrence, str]]
+) -> list[tuple[RawOccurrence, str]]:
+    """A row with card_number "NNO" (BSC's placeholder for "no number
+    printed on this card") is usually still the SAME player's real,
+    already-numbered base card - just a parallel print of it that
+    happens to lack a number, mis-keyed under "NNO" instead of that
+    card's actual number. Confirmed against Brandon's real raw export,
+    2026-08-16 (2025 Topps Allen & Ginter): 349 of 350 "NNO" players
+    also have a genuine numbered Base row elsewhere in the same product
+    - e.g. Ivan Rodriguez is base card #309, and his "Mini No Number"
+    parallel is scraped as card_number "#NNO" instead of "#309", even
+    though it's clearly his own card's parallel (same player, same
+    team, same product). Brandon: "NNO should show up in the base set
+    right?" - yes, and this is why: it almost always already IS part of
+    that player's base card, just mis-numbered by BSC.
+
+    Rewrites card_number on any "NNO" occurrence to that player's real
+    Base card_number, so it lands in the SAME group as the rest of
+    their card during normal clustering, instead of being treated as
+    its own separate identity (the earlier, less correct fix - commit
+    9bd7c90 - promoted "NNO" itself to be the card's insert name for
+    EVERY such row, which solved the base-count inflation but at the
+    cost of pulling every one of these away from the card they actually
+    belong to).
+
+    Only remaps within the SAME product (type/sport/year/brand/set) and
+    the SAME player (via normalize_player_for_grouping, so e.g. a
+    trailing-period Jr./Sr. difference doesn't block the match) - never
+    across different products or players. A player with genuinely NO
+    real Base row anywhere (e.g. this file's one exception, Yu Darvish)
+    is left with "NNO" as their card_number, which still gets the
+    dedicated placeholder handling in assign_insert_clusters/
+    build_checklist_rows below."""
+    real_base_numbers: dict[tuple, str] = {}
+    for occ, _ in occurrences_with_fallback:
+        if occ.is_base and occ.card_number.strip().upper() != "NNO":
+            product_player_key = (
+                occ.type, occ.sport, occ.year, occ.brand, occ.set,
+                normalize_player_for_grouping(occ.player),
+            )
+            real_base_numbers.setdefault(product_player_key, occ.card_number)
+
+    remapped: list[tuple[RawOccurrence, str]] = []
+    for occ, fallback_serial in occurrences_with_fallback:
+        if occ.card_number.strip().upper() == "NNO":
+            product_player_key = (
+                occ.type, occ.sport, occ.year, occ.brand, occ.set,
+                normalize_player_for_grouping(occ.player),
+            )
+            real_number = real_base_numbers.get(product_player_key)
+            if real_number:
+                occ = replace(occ, card_number=real_number)
+        remapped.append((occ, fallback_serial))
+    return remapped
+
+
 def build_checklist_rows(
     occurrences_with_fallback: list[tuple[RawOccurrence, str]]
 ) -> list[ChecklistRow]:
+    occurrences_with_fallback = remap_placeholder_numbers_to_real_base_card(
+        occurrences_with_fallback
+    )
     prelim: "OrderedDict[tuple, list[tuple[RawOccurrence, str]]]" = OrderedDict()
     for occurrence, fallback_serial in occurrences_with_fallback:
         prelim.setdefault(prelim_key(occurrence), []).append((occurrence, fallback_serial))
