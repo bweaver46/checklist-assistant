@@ -307,11 +307,32 @@ class SearchQueueDialog(QDialog):
         # continuation intentionally would.
         clear_accumulated()
 
+        # Bug found live, 2026-08-16 (Brandon: "everything passes teh
+        # test but when I run it just creates blank files"): a plain
+        # navigate_to_url() here, immediately followed by extraction,
+        # raced BSC's client-side rendering - read_all_rows' count()
+        # doesn't auto-wait for elements to appear the way Playwright's
+        # action methods do, so it was reading 0 rows every time before
+        # the results had actually rendered. The MANUAL flow never hit
+        # this because clicking through several prompts (output name,
+        # checklist type, sport, team, section, page range) before
+        # extraction starts happens to give the page time to finish
+        # loading - nothing was ever explicitly waiting for it. Reusing
+        # test_search_url() here (same one Test Selected/Test All already
+        # use) gets that explicit wait for free, and its own count is a
+        # live re-check right before extraction, not just a rerun of
+        # whatever passed earlier - if the site genuinely has nothing
+        # right now, this fails loudly as an error instead of quietly
+        # writing an empty file.
         url = entry.url()
-        if not self.browser_manager.is_launched:
-            self.browser_manager.launch(start_url=url)
-        else:
-            self.browser_manager.navigate_to_url(url)
+        passed, detail = self.browser_manager.test_search_url(url)
+        if not passed:
+            self._running_entry = None
+            entry.status = ERROR
+            entry.status_detail = f"Re-check before running failed: {detail}"
+            save_queue(self.entries)
+            self._refresh_list()
+            return
         self.browser_manager.bring_to_front()
 
         output_name = resolve_unique_output_name(entry.output_name())
