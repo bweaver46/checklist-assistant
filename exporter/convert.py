@@ -235,23 +235,52 @@ def extract_card_number_prefix(card_number: str) -> str:
     return ""
 
 
+NAME_PREFIXES = {"mc", "mac", "de", "la", "le", "di", "van", "von", "o"}
+
+
 def split_concatenated_names(text: str) -> str:
     """BSC sometimes concatenates multiple player names with no separator:
     'Dave JollyJim PendletonKarl Spooner' -> 'Dave Jolly / Jim Pendleton / Karl Spooner'.
 
     The split point is wherever a lowercase letter is immediately followed
     by an uppercase letter with no space between them - that boundary is
-    where one name ends and the next begins.
+    usually where one name ends and the next begins.
 
-    Known limitation: names with internal capitals (McDonald, DeShields,
-    O'Brien) will split incorrectly at those points. These are uncommon
-    enough on vintage cards that manual correction is simpler than trying
-    to enumerate every exception."""
+    A common surname prefix (Mc, Mac, De, La, Le, Di, Van, Von, O) sitting
+    right before that boundary is NOT treated as a split point - e.g.
+    "McGwire" has exactly this lowercase-then-uppercase shape internally
+    ("Mc" + "Gwire") but is one name, not two. Previously any of these
+    surnames got incorrectly split ("Mark Mc / Gwire", "Andrew Mc /
+    Cutchen") - confirmed at real scale against a Brandon export (68 rows
+    in one 2025 Allen & Ginter pull alone, 2026-08-15), not the rare edge
+    case this function's docstring used to assume. Each whitespace-
+    delimited token is scanned independently, checking the text since the
+    last accepted split (or token start) against the prefix list before
+    deciding to split there - so a genuinely concatenated run following a
+    protected surname (e.g. a hypothetical "McGwireJohnSmith") still
+    splits correctly after "McGwire", not before it.
+
+    Remaining known limitation: a name with an internal capital that ISN'T
+    one of these common prefixes (rare) can still split wrong - uncommon
+    enough that manual correction stays simpler than enumerating every
+    possible surname pattern."""
     if not text:
         return text
-    # Insert ' / ' before any uppercase letter that immediately follows
-    # a lowercase letter (the name boundary).
-    result = re.sub(r'([a-z])([A-Z])', r'\1 / \2', text)
+
+    def split_token(token: str) -> str:
+        pieces: list[str] = []
+        seg_start = 0
+        for i in range(len(token) - 1):
+            if token[i].islower() and token[i + 1].isupper():
+                prefix = token[seg_start:i + 1]
+                if prefix.lower() in NAME_PREFIXES:
+                    continue
+                pieces.append(prefix)
+                seg_start = i + 1
+        pieces.append(token[seg_start:])
+        return " / ".join(pieces)
+
+    result = " ".join(split_token(t) for t in text.split(" "))
     return WHITESPACE_PATTERN.sub(' ', result).strip()
 
 

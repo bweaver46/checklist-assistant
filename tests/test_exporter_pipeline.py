@@ -392,6 +392,25 @@ def test_split_concatenated_names():
     assert split_concatenated_names("") == ""
 
 
+def test_split_concatenated_names_protects_common_surname_prefixes():
+    # A common surname prefix (Mc/Mac/De/La/Le/Di/Van/Von) sitting right
+    # before a lowercase-then-uppercase boundary is NOT a name split point
+    # - confirmed at real scale (Brandon, 2026-08-15: 68 rows hit this in
+    # one 2025 Allen & Ginter pull alone - "Mark Mc / Gwire" instead of
+    # "Mark McGwire").
+    protected = [
+        "Mark McGwire", "Andrew McCutchen", "Michael McGreevy", "Grant McCray",
+        "Shane McClanahan", "Brian McCann", "MacKenzie Gore", "Jacob DeGrom",
+        "Adam LaRoche", "DJ LeMahieu", "Joe DiMaggio",
+    ]
+    for name in protected:
+        assert split_concatenated_names(name) == name, f"Failed for {name!r}"
+
+    # A genuine concatenation immediately after a protected prefix still
+    # splits correctly at the REAL boundary, not inside the prefix name.
+    assert split_concatenated_names("McGwireJohnSmith") == "McGwire / John / Smith"
+
+
 def test_normalize_team_separators():
     # Comma-separated teams become slash-separated
     assert normalize_team_separators(
@@ -615,6 +634,7 @@ if __name__ == "__main__":
     test_base_serial_blank_for_insert_only_card()
     test_season_year_formats_use_first_year()
     test_split_concatenated_names()
+    test_split_concatenated_names_protects_common_surname_prefixes()
     test_normalize_team_separators()
     test_concatenated_names_applied_in_pipeline()
     test_team_commas_converted_to_slashes_in_pipeline()
