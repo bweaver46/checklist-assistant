@@ -495,6 +495,51 @@ def test_regular_numbered_parallel_with_no_base_row_still_stays_a_parallel():
     assert rows[0].parallels == [("Signature Series Red Laser", "5")]
 
 
+def test_trailing_period_on_generational_suffix_does_not_split_a_card():
+    # 2025 Topps Allen & Ginter #123 scraped as both "Bobby Witt Jr."
+    # and "Bobby Witt Jr" across different parallel rows of the exact
+    # same card - split into two rows instead of staying one card with
+    # all its parallels. Confirmed against Brandon's real raw export,
+    # cross-checked against his existing ColLock library data for the
+    # same product (2026-08-16) - ColLock's own copy correctly shows
+    # this as one unified 39-version card.
+    records = [
+        CardRecord(name="Bobby Witt Jr.", card_number="#123", set="2025 Topps Allen & Ginter",
+                   variant="Base", variant_name="-", attributes="-", team="Kansas City Royals"),
+        CardRecord(name="Bobby Witt Jr", card_number="#123", set="2025 Topps Allen & Ginter",
+                   variant="Parallel", variant_name="Daguerreotype", attributes="EXCH",
+                   team="Kansas City Royals"),
+        CardRecord(name="Bobby Witt Jr.", card_number="#123", set="2025 Topps Allen & Ginter",
+                   variant="Parallel", variant_name="Chrome", attributes="-",
+                   team="Kansas City Royals"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 1
+    # Prefers the period-suffixed form as the nicer display text, even
+    # though it wasn't the first occurrence in the group.
+    assert rows[0].player == "Bobby Witt Jr."
+    assert ("Daguerreotype", "") in rows[0].parallels
+    assert ("Chrome", "") in rows[0].parallels
+
+
+def test_different_real_names_at_the_same_number_stay_separate():
+    # The other side of the same fix: "Goose Gossage" and "Rich
+    # Gossage" (his actual first name) sharing 2025 Topps Allen &
+    # Ginter #337 is NOT a punctuation artifact - they're genuinely
+    # different name text with no safe way to know they're the same
+    # person without a nickname dictionary, so they correctly stay two
+    # separate rows rather than being guessed into one.
+    records = [
+        CardRecord(name="Goose Gossage", card_number="#337", set="2025 Topps Allen & Ginter",
+                   variant="Base", variant_name="-", attributes="-", team="New York Yankees"),
+        CardRecord(name="Rich Gossage", card_number="#337", set="2025 Topps Allen & Ginter",
+                   variant="Parallel", variant_name="Chrome", attributes="-",
+                   team="New York Yankees"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 2
+
+
 def test_season_year_formats_use_first_year():
     # "2021-22 Panini Prizm" -> year "2021", not blank
     assert parse_set("2021-22 Panini Prizm") == ("2021", "Panini", "Prizm")
@@ -762,6 +807,8 @@ if __name__ == "__main__":
     test_records_with_no_usable_identity_are_dropped_not_ghost_rows()
     test_nno_placeholder_parallel_rows_treated_as_their_own_card_not_base()
     test_regular_numbered_parallel_with_no_base_row_still_stays_a_parallel()
+    test_trailing_period_on_generational_suffix_does_not_split_a_card()
+    test_different_real_names_at_the_same_number_stay_separate()
     test_season_year_formats_use_first_year()
     test_split_concatenated_names()
     test_split_concatenated_names_protects_common_surname_prefixes()

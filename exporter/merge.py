@@ -268,29 +268,52 @@ KNOWN_TRAILING_NAME_CODES = {"LL", "ALC", "NLC", "WSHL", "SP"}
 
 def normalize_player_for_grouping(player: str) -> str:
     """Strip a trailing comma and/or a trailing run of known subset codes
-    (see KNOWN_TRAILING_NAME_CODES) so different scrapes of the same card
-    that got these codes tacked onto the Name text inconsistently still
-    group together. Only ever used for the grouping KEY - the actual
-    displayed player text is chosen separately (see below) so nothing is
-    lost from the export, just consolidated onto one row."""
+    (see KNOWN_TRAILING_NAME_CODES), and a trailing period right after a
+    generational suffix (Jr/Sr/II/III/IV), so different scrapes of the
+    same card that got these things inconsistently attached to the Name
+    text still group together. The period case is real, not
+    hypothetical: 2025 Topps Allen & Ginter #123 scraped as both "Bobby
+    Witt Jr." and "Bobby Witt Jr" across different parallel rows of the
+    exact same card - split into two separate rows in the export instead
+    of staying one card with all its parallels (confirmed against
+    Brandon's real raw export cross-checked against his existing ColLock
+    library data for the same product, 2026-08-16 - ColLock's own copy
+    correctly shows this as one unified card). Only ever used for the
+    grouping KEY - the actual displayed player text is chosen separately
+    (see pick_display_player below) so nothing is lost from the export,
+    just consolidated onto one row."""
     text = player.strip()
     while True:
         text = text.rstrip(",").rstrip()
         words = text.split(" ")
         if words and words[-1] in KNOWN_TRAILING_NAME_CODES:
             text = " ".join(words[:-1]).rstrip()
-        else:
-            break
+            continue
+        if words and re.match(r"^(Jr|Sr|I{2,3}|IV)\.$", words[-1], re.IGNORECASE):
+            text = " ".join(words[:-1] + [words[-1][:-1]])
+            continue
+        break
     return text
 
 
 def pick_display_player(group: list[tuple]) -> str:
-    """Prefer whichever occurrence's raw player text is already 'clean'
-    (equal to its own normalized form - no trailing comma, no known
-    trailing code) as what actually gets exported, since that's the
-    version without scrape-artifact suffix text stuck on it. Falls back
-    to the first occurrence's raw text if every row in the group has one
-    of these suffixes for some reason."""
+    """Prefer a raw text ending in a period-suffixed generational marker
+    (Jr./Sr./II./III./IV.) over one missing the period, since that's the
+    more standard display form (confirmed against Brandon's existing
+    ColLock library data for this same product, which displays it that
+    way) - both forms group onto the same row via
+    normalize_player_for_grouping, this just picks the nicer one to
+    actually show. Otherwise, prefer whichever occurrence's raw player
+    text is already 'clean' (equal to its own normalized form - no
+    trailing comma, no known trailing code) as what actually gets
+    exported, since that's the version without scrape-artifact suffix
+    text stuck on it. Falls back to the first occurrence's raw text if
+    nothing else matches."""
+    for occ, _ in group:
+        raw = occ.player.strip()
+        words = raw.split(" ")
+        if words and re.match(r"^(Jr|Sr|I{2,3}|IV)\.$", words[-1], re.IGNORECASE):
+            return raw
     for occ, _ in group:
         raw = occ.player.strip()
         if raw == normalize_player_for_grouping(raw):
