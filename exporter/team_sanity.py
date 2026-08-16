@@ -96,6 +96,7 @@ BOSTON_BRAVES_NFL_1932_ROSTER = {
 }
 
 _sport_teams_cache: dict[str, set[str]] | None = None
+_sport_labels_cache: list[str] | None = None
 _ny_giants_players_cache: set[str] | None = None
 
 
@@ -119,6 +120,31 @@ def load_sport_teams() -> dict[str, set[str]]:
 
     _sport_teams_cache = teams
     return teams
+
+
+def load_sport_labels() -> list[str]:
+    """Returns the distinct sport labels from settings/sport_teams.csv in
+    their original display casing (e.g. "Baseball", "NBA", "WNBA") and
+    first-seen order - for populating the Sport dropdown in the search
+    form (Brandon, 2026-08-16: "I think sport should be a dropdown
+    list"). A separate cache from load_sport_teams above since that one
+    lowercases sport as a dict key for the team-sanity lookup and would
+    lose the display casing this needs. Missing file -> empty list, no
+    crash, same spirit as load_sport_teams."""
+    global _sport_labels_cache
+    if _sport_labels_cache is not None:
+        return _sport_labels_cache
+
+    labels: list[str] = []
+    if SPORT_TEAMS_PATH.exists():
+        with open(SPORT_TEAMS_PATH, newline="", encoding="utf-8-sig") as f:
+            for row in csv.DictReader(f):
+                sport = (row.get("sport") or "").strip()
+                if sport and sport not in labels:
+                    labels.append(sport)
+
+    _sport_labels_cache = labels
+    return labels
 
 
 def load_ny_giants_notable_players() -> set[str]:

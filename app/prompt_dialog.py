@@ -12,6 +12,9 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
+from exporter.team_sanity import load_sport_labels
+from settings.last_search import save_last_search
+
 DIALOG_WIDTH = 420
 
 
@@ -155,12 +158,24 @@ class PromptDialog(QDialog):
         return {row_index for cb, row_index in checkboxes if cb.isChecked()}
 
     @staticmethod
-    def build_search_form(parent) -> dict[str, str] | None:
+    def build_search_form(parent, defaults: dict[str, str] | None = None) -> dict[str, str] | None:
         """The search-builder form (Brandon, 2026-08-08): Keyword is the
         only required field, matching BSC's own free-text search box -
         everything else narrows it further and is optional. Returns None
         if cancelled or if Keyword was left blank on OK (rather than
-        silently building a keyword-less search)."""
+        silently building a keyword-less search).
+
+        defaults pre-fills every field (Brandon, 2026-08-16: "when adding
+        a search it should maintain all of the fields from the last time
+        it was filled out so that if only one field changes I don't have
+        to fill it out again"). Callers building a NEW search pass
+        load_last_search()'s result; callers EDITING an existing staged
+        entry pass that entry's own fields instead - see
+        SearchQueueDialog._on_edit. Sport is a QComboBox (2026-08-16:
+        "I think sport should be a dropdown list"), populated from
+        settings/sport_teams.csv via load_sport_labels - editable so an
+        as-yet-unlisted sport can still be typed in, same growable spirit
+        as sport_teams.csv itself."""
         d = PromptDialog(
             parent, "Build a Search",
             "Keyword is required (this is BSC's own search box - one or "
@@ -168,8 +183,9 @@ class PromptDialog(QDialog):
             "can be left blank.",
         )
         d.setFixedWidth(460)
+        defaults = defaults or {}
 
-        fields: dict[str, QLineEdit] = {}
+        fields: dict[str, QLineEdit | QComboBox] = {}
         FORM_FIELDS = [
             ("keyword", "Keyword (required)"),
             ("sport", "Sport"),
@@ -186,7 +202,20 @@ class PromptDialog(QDialog):
             row = QHBoxLayout()
             lbl = QLabel(label_text)
             lbl.setFixedWidth(220)
-            field = QLineEdit()
+            if key == "sport":
+                field = QComboBox()
+                field.setEditable(True)
+                field.addItems(load_sport_labels())
+                default_value = defaults.get("sport", "")
+                if default_value:
+                    idx = field.findText(default_value)
+                    if idx >= 0:
+                        field.setCurrentIndex(idx)
+                    else:
+                        field.setCurrentText(default_value)
+            else:
+                field = QLineEdit()
+                field.setText(defaults.get(key, ""))
             row.addWidget(lbl)
             row.addWidget(field)
             d._layout.addLayout(row)
@@ -197,9 +226,13 @@ class PromptDialog(QDialog):
         if not ok:
             return None
 
-        values = {key: field.text().strip() for key, field in fields.items()}
+        values = {
+            key: (field.currentText() if isinstance(field, QComboBox) else field.text()).strip()
+            for key, field in fields.items()
+        }
         if not values["keyword"]:
             return None
+        save_last_search(values)
         return values
 
     @staticmethod

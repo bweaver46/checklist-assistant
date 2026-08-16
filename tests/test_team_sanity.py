@@ -4,7 +4,7 @@ check (Brandon, 2026-08-06).
 """
 
 from exporter.checklist_template import ChecklistRow
-from exporter.team_sanity import find_sport_team_mismatches, certain_flags, review_flags
+from exporter.team_sanity import find_sport_team_mismatches, certain_flags, review_flags, load_sport_labels
 
 
 def row(**kwargs) -> ChecklistRow:
@@ -116,3 +116,23 @@ def test_generic_mismatch_is_certain_giants_and_braves_are_not():
     assert len(certain_flags(flagged)) == 1
     assert len(review_flags(flagged)) == 2
     assert certain_flags(flagged)[0].team == "Seattle Seahawks"
+
+
+# --- Sport dropdown labels (Brandon, 2026-08-16: "I think sport should
+# be a dropdown list" - build_search_form's Sport field) ---
+
+def test_load_sport_labels_returns_known_sports_in_display_casing():
+    # Real settings/sport_teams.csv, not a fixture - this just needs to
+    # confirm distinct, display-cased labels come back (not lowercased
+    # like load_sport_teams' dict keys), covering both a plain-sport and
+    # a league-abbreviation entry.
+    labels = load_sport_labels()
+    assert "Baseball" in labels
+    assert "NBA" in labels
+    # No lowercased duplicates alongside the real casing.
+    assert "baseball" not in labels
+
+
+def test_load_sport_labels_has_no_duplicates():
+    labels = load_sport_labels()
+    assert len(labels) == len(set(labels))

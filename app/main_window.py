@@ -29,6 +29,7 @@ from app.search_queue_dialog import SearchQueueDialog
 from app.extraction_worker import ExtractionWorker
 from settings.window_layout import MAIN_WINDOW_POSITION
 from settings.last_run import load_last_run, save_last_run
+from settings.last_search import load_last_search
 from settings.accumulator import clear_accumulated, accumulated_count
 from settings.team_cache import clear_team_cache
 from settings.year_team_cache import clear_year_team_cache
@@ -515,7 +516,7 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("Extraction cancelled.")
             return
         if choice == "Build a Search":
-            fields = PromptDialog.build_search_form(self)
+            fields = PromptDialog.build_search_form(self, defaults=load_last_search())
             if fields is None:
                 self.statusBar().showMessage(
                     "Extraction cancelled — Keyword is required to build a search."
