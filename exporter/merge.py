@@ -30,6 +30,7 @@ belongs to, not any one print version of it.
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections import OrderedDict
 from dataclasses import replace
 
@@ -267,6 +268,22 @@ def assign_insert_clusters(bucket: list[tuple[RawOccurrence, str]]) -> list[int]
 KNOWN_TRAILING_NAME_CODES = {"LL", "ALC", "NLC", "WSHL", "SP"}
 
 
+def _strip_diacritics(s: str) -> str:
+    """Return s with combining accent marks removed (e.g. "Rodríguez" ->
+    "Rodriguez"). Used only for grouping-key comparisons - never for
+    display text, see pick_display_player."""
+    nfkd = unicodedata.normalize("NFKD", s)
+    return "".join(c for c in nfkd if not unicodedata.combining(c))
+
+
+def _diacritic_count(s: str) -> int:
+    """Count combining accent marks in s, used as a display-preference
+    tiebreaker in pick_display_player (more marks = more fully-accented
+    spelling, treated as the more correct one)."""
+    nfkd = unicodedata.normalize("NFKD", s)
+    return sum(1 for c in nfkd if unicodedata.combining(c))
+
+
 def normalize_player_for_grouping(player: str) -> str:
     """Strip a trailing comma and/or a trailing run of known subset codes
     (see KNOWN_TRAILING_NAME_CODES), and a trailing period right after a
@@ -279,10 +296,15 @@ def normalize_player_for_grouping(player: str) -> str:
     of staying one card with all its parallels (confirmed against
     Brandon's real raw export cross-checked against his existing ColLock
     library data for the same product, 2026-08-16 - ColLock's own copy
-    correctly shows this as one unified card). Only ever used for the
-    grouping KEY - the actual displayed player text is chosen separately
-    (see pick_display_player below) so nothing is lost from the export,
-    just consolidated onto one row."""
+    correctly shows this as one unified card). Also strips diacritics
+    for the comparison key, since BSC scrapes some players' names with
+    accents on one pass (Base section) and without on another
+    (Parallel/Insert section) - e.g. "Julio Rodríguez" vs "Julio
+    Rodriguez" - which otherwise produces an orphan row for the
+    unaccented variant. Only ever used for the grouping KEY - the actual
+    displayed player text is chosen separately (see pick_display_player
+    below) so nothing is lost from the export, just consolidated onto
+    one row."""
     text = player.strip()
     while True:
         text = text.rstrip(",").rstrip()
@@ -294,7 +316,7 @@ def normalize_player_for_grouping(player: str) -> str:
             text = " ".join(words[:-1] + [words[-1][:-1]])
             continue
         break
-    return text
+    return _strip_diacritics(text)
 
 
 def pick_display_player(group: list[tuple]) -> str:
@@ -308,16 +330,24 @@ def pick_display_player(group: list[tuple]) -> str:
     text is already 'clean' (equal to its own normalized form - no
     trailing comma, no known trailing code) as what actually gets
     exported, since that's the version without scrape-artifact suffix
-    text stuck on it. Falls back to the first occurrence's raw text if
-    nothing else matches."""
+    text stuck on it. When occurrences differ only by diacritics
+    (accented vs unaccented spelling of the same name, e.g. "Julio
+    Rodríguez" vs "Julio Rodriguez"), prefers whichever raw text has
+    more combining accent marks - that's the more fully-accented, and
+    thus more correct, spelling. Falls back to the first occurrence's
+    raw text if nothing else matches."""
     for occ, _ in group:
         raw = occ.player.strip()
         words = raw.split(" ")
         if words and re.match(r"^(Jr|Sr|I{2,3}|IV)\.$", words[-1], re.IGNORECASE):
             return raw
+    diacritic_counts = {_diacritic_count(occ.player.strip()) for occ, _ in group}
+    if len(diacritic_counts) > 1:
+        best = max(group, key=lambda pair: _diacritic_count(pair[0].player.strip()))
+        return best[0].player.strip()
     for occ, _ in group:
         raw = occ.player.strip()
-        if raw == normalize_player_for_grouping(raw):
+        if _strip_diacritics(raw) == normalize_player_for_grouping(raw):
             return raw
     return group[0][0].player
 
@@ -389,6 +419,21 @@ def remap_placeholder_numbers_to_real_base_card(
                 occ = replace(occ, card_number=real_number)
         remapped.append((occ, fallback_serial))
     return remapped
+
+
+def dedupe_parallels(parallel_serial_pairs: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    """Collapse case-insensitive duplicate (parallel, serial) pairs into
+    one slot, keeping the first-seen casing and backfilling a missing
+    serial if a later duplicate has one. See the call site in
+    build_checklist_rows for the real-world case this fixes."""
+    seen: "OrderedDict[str, tuple[str, str]]" = OrderedDict()
+    for val, serial in parallel_serial_pairs:
+        key = val.lower()
+        if key not in seen:
+            seen[key] = (val, serial)
+        elif not seen[key][1] and serial:
+            seen[key] = (seen[key][0], serial)
+    return list(seen.values())
 
 
 def build_checklist_rows(
@@ -595,6 +640,15 @@ def build_checklist_rows(
             parallel_name = f"{extra_attrs} {desc}".strip() if extra_attrs else desc
             serial = parse_serial(occ.attributes) or fallback_serial
             parallels.append((parallel_name, serial))
+
+        # BSC occasionally lists the same parallel twice with inconsistent
+        # capitalization on its own site data (e.g. "SP Design Variation
+        # (1991)" and "SP Design variation (1991)" both attached to the
+        # same card - 2026 Topps [set], #300 Rafael Devers, confirmed
+        # against Brandon's raw export, 2026-08-16). This isn't a grouping
+        # bug - it's two raw records for one row that should collapse into
+        # a single parallel slot instead of producing a duplicate.
+        parallels = dedupe_parallels(parallels)
 
         # base_serial: if any row in this group was a Base row and had a
         # serial (SN/PR), capture it here. base itself is always blank

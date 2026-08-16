@@ -23,7 +23,7 @@ from exporter.convert import (
     normalize_plural_terms, load_brand_set_exceptions,
     split_concatenated_names, normalize_team_separators,
 )
-from exporter.merge import build_checklist_rows, longest_common_word_prefix, strip_common_prefix, clean_description, attributes_extra
+from exporter.merge import build_checklist_rows, longest_common_word_prefix, strip_common_prefix, clean_description, attributes_extra, normalize_player_for_grouping, pick_display_player, dedupe_parallels
 from exporter.cleanup import apply_cleanup
 from exporter.checklist_template import ChecklistRow
 from exporter.final_export import sort_rows_by_brand
@@ -575,6 +575,87 @@ def test_different_real_names_at_the_same_number_stay_separate():
     ]
     rows = convert_and_build(records)
     assert len(rows) == 2
+
+
+def test_diacritic_variants_group_together():
+    # BSC scrapes a player's name with accents on one pass (Base
+    # section) and without on another (Parallel/Insert section) - e.g.
+    # "Julio Rodríguez" vs "Julio Rodriguez" - which used to produce an
+    # orphan row for the unaccented variant instead of merging with the
+    # real card and its parallels.
+    assert normalize_player_for_grouping("Julio Rodríguez") == normalize_player_for_grouping("Julio Rodriguez")
+    assert normalize_player_for_grouping("José Ramírez") == normalize_player_for_grouping("Jose Ramirez")
+
+
+def test_diacritic_display_prefers_accented():
+    # Prefer whichever occurrence's raw text has more combining accent
+    # marks - the more fully-accented spelling is the more correct one.
+    records = [
+        CardRecord(name="Julio Rodriguez", card_number="#1", set="2026 Topps",
+                   variant="Base", variant_name="-", attributes="-", team="Seattle Mariners"),
+        CardRecord(name="Julio Rodríguez", card_number="#1", set="2026 Topps",
+                   variant="Parallel", variant_name="Chrome", attributes="-", team="Seattle Mariners"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 1
+    assert rows[0].player == "Julio Rodríguez"
+
+
+def test_diacritic_variants_merge_end_to_end():
+    records = [
+        CardRecord(name="Julio Rodriguez", card_number="#88", set="2026 Topps Chrome",
+                   variant="Base", variant_name="-", attributes="-", team="Seattle Mariners"),
+        CardRecord(name="Julio Rodríguez", card_number="#88", set="2026 Topps Chrome",
+                   variant="Parallel", variant_name="Refractor", attributes="-", team="Seattle Mariners"),
+        CardRecord(name="Julio Rodríguez", card_number="#88", set="2026 Topps Chrome",
+                   variant="Parallel", variant_name="Gold Refractor", attributes="SN50", team="Seattle Mariners"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 1
+    assert rows[0].player == "Julio Rodríguez"
+    assert ("Refractor", "") in rows[0].parallels
+    assert ("Gold Refractor", "50") in rows[0].parallels
+
+
+def test_case_insensitive_parallel_dedup():
+    # BSC occasionally lists the same variant twice with inconsistent
+    # capitalization in its own site data for the same card (e.g. "SP
+    # Design Variation (1991)" and "SP Design variation (1991)" both
+    # attached to 2026 Topps [set] #300 Rafael Devers) - two raw records
+    # for one row that should collapse into a single parallel slot.
+    pairs = [("SP Design Variation (1991)", ""), ("SP Design variation (1991)", "")]
+    assert dedupe_parallels(pairs) == [("SP Design Variation (1991)", "")]
+
+
+def test_dedupe_keeps_serial_from_either_dup():
+    pairs = [("Black Foil", ""), ("black foil", "25")]
+    assert dedupe_parallels(pairs) == [("Black Foil", "25")]
+
+
+def test_case_insensitive_parallel_dedup_end_to_end():
+    # A third, differently-named parallel sibling keeps the common-word-
+    # prefix calculation from consuming the whole "SP Design Variation
+    # (1991)" text as a shared Insert name - so the duplicate pair still
+    # reaches the parallel_N assembly step, where dedupe_parallels
+    # collapses it.
+    records = [
+        CardRecord(name="Rafael Devers", card_number="#300", set="2026 Topps",
+                   variant="Base", variant_name="-", attributes="-", team="Boston Red Sox"),
+        CardRecord(name="Rafael Devers", card_number="#300", set="2026 Topps",
+                   variant="Parallel", variant_name="SP Design Variation (1991)", attributes="-",
+                   team="Boston Red Sox"),
+        CardRecord(name="Rafael Devers", card_number="#300", set="2026 Topps",
+                   variant="Parallel", variant_name="SP Design variation (1991)", attributes="-",
+                   team="Boston Red Sox"),
+        CardRecord(name="Rafael Devers", card_number="#300", set="2026 Topps",
+                   variant="Parallel", variant_name="Gold Refractor", attributes="SN50",
+                   team="Boston Red Sox"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 1
+    assert rows[0].parallels.count(("SP Design Variation (1991)", "")) == 1
+    assert ("Gold Refractor", "50") in rows[0].parallels
+    assert len(rows[0].parallels) == 2
 
 
 def test_season_year_formats_use_first_year():
