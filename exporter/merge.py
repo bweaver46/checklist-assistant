@@ -212,13 +212,30 @@ def assign_insert_clusters(bucket: list[tuple[RawOccurrence, str]]) -> list[int]
     (no shrinking needed) - otherwise a genuinely one-word insert name
     (e.g. "Anime", extended by "Anime Black Refractors") would
     incorrectly fragment on its very first color variant, since the
-    bare anchor itself is only one word."""
+    bare anchor itself is only one word.
+
+    A card_number of literally "NNO" (BSC's own placeholder for "this
+    print doesn't have a number on it at all") gets the same treatment
+    as an Insert-type row, even when BSC labeled it "Parallel" - unlike
+    a real numbered Parallel row (which conceptually parallels some
+    base card, even one BSC didn't separately list for this specific
+    player), "NNO" never appears as a genuine Base row for ANYONE in a
+    product, so there's no base card being paralleled at all. Confirmed
+    against Brandon's raw export, 2026-08-15 (2025 Topps Allen &
+    Ginter): 350 different players' "Mini No Number"/"Framed Mini
+    Cloth" Parallel rows were all silently folding into the base-set
+    count (no Insert, no Base row of their own - just a nameless entry
+    with one parallel attached), inflating what looked like a 350-card
+    base checklist to 709 "base" rows and making Brandon's real,
+    correctly-sized numbered base set impossible to see clearly.
+    """
+    is_no_number_placeholder = bucket[0][0].card_number.strip().upper() == "NNO" if bucket else False
     cluster_ids: list[int] = []
     anchor: str = ""
     current_id = 0
     next_id = 1
     for occ, _ in bucket:
-        if not occ.is_insert:
+        if occ.is_base or (not occ.is_insert and not is_no_number_placeholder):
             cluster_ids.append(0)
             continue
         text = occ.variant_name
@@ -343,7 +360,9 @@ def build_checklist_rows(
         # and intentional for a real Insert-only group with one print
         # version - that's exactly what occ.is_insert=True means.)
         if len(non_base_group) <= 1:
-            single_is_insert = bool(non_base_group) and non_base_group[0][0].is_insert
+            single_is_insert = bool(non_base_group) and (
+                non_base_group[0][0].is_insert or card_number.strip().upper() == "NNO"
+            )
             common_prefix = variant_texts[0] if single_is_insert else ""
         else:
             common_prefix = longest_common_word_prefix(variant_texts)

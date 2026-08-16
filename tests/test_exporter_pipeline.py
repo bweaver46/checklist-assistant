@@ -445,6 +445,56 @@ def test_records_with_no_usable_identity_are_dropped_not_ghost_rows():
     assert rows[0].player == "Hank Aaron"
 
 
+def test_nno_placeholder_parallel_rows_treated_as_their_own_card_not_base():
+    # "NNO" (no number officially) never appears as a genuine Base row
+    # for ANYONE in a real product - unlike a normal numbered Parallel
+    # row, there's no base card being paralleled. 2025 Topps Allen &
+    # Ginter, confirmed against Brandon's real raw export, 2026-08-15:
+    # 350 different players' "Mini No Number"/"Framed Mini Cloth"
+    # Parallel-type rows (no Base row, no Insert row) were silently
+    # folding into the base-set count - inflating what should have been
+    # roughly a 350-card base checklist to 709 rows tagged as base, and
+    # making the real numbered base set impossible to see clearly
+    # ("the main set has 709 cards, that cant be correct").
+    records = [
+        CardRecord(name="Hank Aaron", card_number="#NNO", set="2025 Topps Allen & Ginter",
+                   variant="Parallel", variant_name="Mini No Number", attributes="PR50",
+                   team="Atlanta Braves"),
+        CardRecord(name="Hank Aaron", card_number="#NNO", set="2025 Topps Allen & Ginter",
+                   variant="Parallel", variant_name="Framed Mini Cloth", attributes="SN10",
+                   team="Atlanta Braves"),
+    ]
+    rows = convert_and_build(records)
+    # Two unrelated parallel names sharing no common prefix - two
+    # separate cards, same as any other genuinely different inserts
+    # colliding on one number (e.g. Crunch Time vs Diamond Marvels).
+    assert len(rows) == 2
+    inserts = {r.insert for r in rows}
+    assert inserts == {"Mini No Number", "Framed Mini Cloth"}
+    for row in rows:
+        assert row.parallels == []
+
+
+def test_regular_numbered_parallel_with_no_base_row_still_stays_a_parallel():
+    # The other side of the NNO fix: a REAL numbered Parallel row with
+    # no Base row scraped for this specific player (e.g. an autograph-
+    # only insert card that BSC lists as "Parallel") still stays a
+    # parallel of an implied base card, not promoted to its own insert -
+    # this is the exact case the single_is_insert gate was built to
+    # protect (Brandon, 2026-08-06, Topps Chrome - ~64 cards mis-tagged
+    # before that fix). The NNO placeholder check must not weaken this
+    # for any real numbered card.
+    records = [
+        CardRecord(name="Chris Olave", card_number="#SG-CO", set="2026 Topps",
+                   variant="Parallel", variant_name="Signature Series Red Laser",
+                   attributes="AU, MEM, SN5"),
+    ]
+    rows = convert_and_build(records)
+    assert len(rows) == 1
+    assert rows[0].insert == ""
+    assert rows[0].parallels == [("Signature Series Red Laser", "5")]
+
+
 def test_season_year_formats_use_first_year():
     # "2021-22 Panini Prizm" -> year "2021", not blank
     assert parse_set("2021-22 Panini Prizm") == ("2021", "Panini", "Prizm")
@@ -710,6 +760,8 @@ if __name__ == "__main__":
     test_single_occurrence_insert_card_serial_goes_to_base_serial_not_blank_parallel()
     test_bare_occurrence_with_real_parallel_siblings_keeps_blank_parallel_behavior()
     test_records_with_no_usable_identity_are_dropped_not_ghost_rows()
+    test_nno_placeholder_parallel_rows_treated_as_their_own_card_not_base()
+    test_regular_numbered_parallel_with_no_base_row_still_stays_a_parallel()
     test_season_year_formats_use_first_year()
     test_split_concatenated_names()
     test_split_concatenated_names_protects_common_surname_prefixes()
