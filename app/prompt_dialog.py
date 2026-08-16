@@ -195,7 +195,6 @@ class PromptDialog(QDialog):
             ("variant_name", "Variant Name"),
             ("attribute", "Card Attribute"),
             ("player", "Player"),
-            ("team", "Team"),
             ("card_number", "Card Number"),
         ]
         for key, label_text in FORM_FIELDS:
@@ -221,6 +220,34 @@ class PromptDialog(QDialog):
             d._layout.addLayout(row)
             fields[key] = field
 
+        # Team: same choice as pulling a Set manually (Brandon, 2026-08-16:
+        # "It needs to have the same logic as when I pull a set... Add a
+        # team field if no, but that team is applied to every card, we are
+        # not opening them to look for the team."). Checked = fetch Team
+        # per card from BSC's "Add" detail page (slow - one extra page
+        # visit per card, same tradeoff as _prompt_fetch_team in
+        # main_window.py). Unchecked = the typed Team applies to every
+        # card in this pull as a blanket value, no per-card lookup at all.
+        fetch_team_checkbox = QCheckBox("Pull Team from each card (slower - opens every card)")
+        fetch_team_checkbox.setChecked(defaults.get("fetch_team", "false") == "true")
+        d._layout.addWidget(fetch_team_checkbox)
+
+        team_row = QHBoxLayout()
+        team_label = QLabel("Team")
+        team_label.setFixedWidth(220)
+        team_field = QLineEdit()
+        team_field.setText(defaults.get("team", ""))
+        team_field.setPlaceholderText("Applied to every card - leave blank if not applicable")
+        team_row.addWidget(team_label)
+        team_row.addWidget(team_field)
+        d._layout.addLayout(team_row)
+        fields["team"] = team_field
+
+        def _sync_team_field_enabled(checked: bool) -> None:
+            team_field.setEnabled(not checked)
+        fetch_team_checkbox.toggled.connect(_sync_team_field_enabled)
+        _sync_team_field_enabled(fetch_team_checkbox.isChecked())
+
         d._add_ok_cancel()
         ok = d.exec()
         if not ok:
@@ -230,6 +257,9 @@ class PromptDialog(QDialog):
             key: (field.currentText() if isinstance(field, QComboBox) else field.text()).strip()
             for key, field in fields.items()
         }
+        values["fetch_team"] = "true" if fetch_team_checkbox.isChecked() else "false"
+        if fetch_team_checkbox.isChecked():
+            values["team"] = ""  # per-card lookup wins - a stale typed value shouldn't linger unused
         if not values["keyword"]:
             return None
         save_last_search(values)

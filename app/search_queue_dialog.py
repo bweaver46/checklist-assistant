@@ -372,7 +372,16 @@ class SearchQueueDialog(QDialog):
             "primary_player": "",
             "team": entry.fields.get("team", "").strip(),
             "section": "",
-            "fetch_team": False,
+            # Same choice as pulling a Set manually (Brandon, 2026-08-16:
+            # "It needs to have the same logic as when I pull a set...
+            # that team is applied to every card, we are not opening
+            # them to look for the team" for the unchecked case). Set on
+            # the search itself via the Pull Team checkbox in
+            # PromptDialog.build_search_form - "true" fetches Team from
+            # each card's detail page (slow), anything else means the
+            # "team" value above is a blanket value with no per-card
+            # lookup at all.
+            "fetch_team": entry.fields.get("fetch_team", "false") == "true",
             "start_page": 1,
             "end_page": 0,
             "output_name": output_name,
