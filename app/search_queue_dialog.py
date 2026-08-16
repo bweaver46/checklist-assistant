@@ -51,6 +51,7 @@ class SearchQueueDialog(QDialog):
         self._running_entry: StagedSearch | None = None
         self._active_worker: ExtractionWorker | None = None
         self._queue_running = False
+        self._stop_requested = False
 
         self.setWindowTitle("Search Queue")
         self.setFixedSize(560, 520)
@@ -109,8 +110,12 @@ class SearchQueueDialog(QDialog):
         self.pause_btn = QPushButton("Pause")
         self.pause_btn.clicked.connect(self._on_pause_resume)
         self.pause_btn.setVisible(False)
+        self.stop_btn = QPushButton("Stop")
+        self.stop_btn.clicked.connect(self._on_stop)
+        self.stop_btn.setVisible(False)
         run_row.addWidget(self.run_queue_btn)
         run_row.addWidget(self.pause_btn)
+        run_row.addWidget(self.stop_btn)
         layout.addLayout(run_row)
 
         self.status_label = QLabel("")
@@ -308,18 +313,25 @@ class SearchQueueDialog(QDialog):
         # running gets picked up, matching "add more to it... and
         # continue" from the spec.
         while True:
+            if self._stop_requested:
+                break
             next_entry = next((e for e in self.entries if e.status == PASSED), None)
             if next_entry is None:
                 break
             self._run_one(next_entry)
             ran += 1
 
+        stopped = self._stop_requested
+        self._stop_requested = False
         self._queue_running = False
         self.run_queue_btn.setEnabled(True)
         self.close_btn.setEnabled(True)
         self.test_selected_btn.setEnabled(True)
         self.test_all_btn.setEnabled(True)
-        self.status_label.setText(f"Queue run finished — {ran} search(es) processed.")
+        if stopped:
+            self.status_label.setText(f"Stopped — {ran} search(es) completed before stopping.")
+        else:
+            self.status_label.setText(f"Queue run finished — {ran} search(es) processed.")
 
     def _run_one(self, entry: StagedSearch) -> None:
         self._running_entry = entry
@@ -423,14 +435,26 @@ class SearchQueueDialog(QDialog):
         self._active_worker = worker
         self.pause_btn.setVisible(True)
         self.pause_btn.setText("Pause")
+        self.stop_btn.setVisible(True)
 
         worker.run()  # blocks (pumping Qt events internally) until this item finishes, errors, or is paused/resumed through to completion
 
         self._active_worker = None
         self.pause_btn.setVisible(False)
+        self.stop_btn.setVisible(False)
         self._running_entry = None
 
-        if result.get("ok"):
+        if self._stop_requested:
+            # User-requested cancellation (see _on_stop), not a real
+            # failure - nothing about the search itself was invalidated,
+            # so put it back to PASSED instead of ERROR so it's ready to
+            # run again immediately without needing a re-test. Nothing
+            # to clean up either: cancellation fires from
+            # ExtractionWorker's pause_callback, which only runs between
+            # page turns, before any file gets written for this attempt.
+            entry.status = PASSED
+            entry.status_detail = "Stopped by user - ready to run again."
+        elif result.get("ok"):
             entry.status = DONE
             entry.status_detail = result.get("detail", "Done.")
         else:
@@ -438,6 +462,13 @@ class SearchQueueDialog(QDialog):
             entry.status_detail = result.get("detail", "Failed.")
         save_queue(self.entries)
         self._refresh_list()
+
+    def _on_stop(self) -> None:
+        if self._active_worker is None:
+            return
+        self._stop_requested = True
+        self._active_worker.cancel()
+        self.status_label.setText("Stopping…")
 
     def _on_pause_resume(self) -> None:
         if self._active_worker is None:

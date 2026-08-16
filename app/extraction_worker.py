@@ -36,11 +36,27 @@ from settings.output_naming import raw_export_path, final_export_path, DEFAULT_N
 from settings.keep_awake import start_keep_awake, stop_keep_awake
 
 
+class ExtractionCancelled(Exception):
+    """Raised from _pause_callback when cancel() was called - caught in
+    run()'s existing except Exception clause (see its comment there),
+    so this needs no new callback parameter and doesn't touch
+    main_window.py's existing ExtractionWorker usage at all - only
+    something that actually calls cancel() (currently just
+    SearchQueueDialog's Stop button) can ever trigger this path."""
+
+
 class ExtractionWorker:
     """Runs the full extraction pipeline synchronously on the main thread.
 
     pause() / resume() are called from button click handlers (which fire
     during QApplication.processEvents() calls inside the pause_callback).
+    cancel() is the same idea for stopping outright rather than pausing -
+    added 2026-08-16 after Brandon found there was no way to actually
+    stop a run once started, even while it was already paused ("When I
+    click the x, it tells me that football is still running... It is
+    paused."). Safe to call whether currently paused or not: it clears
+    _paused too, so a call arriving while genuinely paused breaks the
+    spin-wait immediately instead of needing a Resume click first.
     """
 
     def __init__(
@@ -63,6 +79,7 @@ class ExtractionWorker:
         self._on_resumed = on_resumed
         self._on_review_flags = on_review_flags
         self._paused = False
+        self._cancelled = False
 
     def pause(self) -> None:
         self._paused = True
@@ -70,16 +87,28 @@ class ExtractionWorker:
     def resume(self) -> None:
         self._paused = False
 
+    def cancel(self) -> None:
+        self._cancelled = True
+        self._paused = False  # unstick an active pause spin-wait immediately
+
     def _pause_callback(self) -> None:
         """Called between every team fetch and every page turn.
         Processes Qt events to keep the UI alive. If paused, spins here
-        until resume() is called via a button click processed in the loop.
+        until resume() is called via a button click processed in the
+        loop - or until cancel() is called, which raises out of the
+        spin-wait (or straight out of here if not currently paused) so
+        run()'s existing except Exception clause unwinds the whole
+        pipeline cleanly instead of writing a partial/incomplete file.
         """
         QApplication.processEvents()
+        if self._cancelled:
+            raise ExtractionCancelled("Cancelled by user.")
         if self._paused:
             self._on_paused()
             while self._paused:
                 QApplication.processEvents()
+                if self._cancelled:
+                    raise ExtractionCancelled("Cancelled by user.")
                 time.sleep(0.05)   # avoid burning the CPU while waiting
             self._on_resumed()
 
