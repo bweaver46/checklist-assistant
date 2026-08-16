@@ -6,20 +6,39 @@ architecture, and roadmap.
 
 ## Quick Start
 
+### Mac / Linux
+
 ```bash
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 playwright install chromium
 python main.py
 ```
 
-### Easier launch (Mac)
+### Windows
 
-After the one-time setup above, double-click **`Launch Checklist Assistant.command`**
-in Finder to start the app without typing anything into Terminal. To put
-it somewhere convenient: right-click the file → Make Alias, then drag
-that alias to your Desktop or Dock.
+```powershell
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+playwright install chromium
+python main.py
+```
+
+If `python` isn't recognized, you likely need the "Add python.exe to PATH"
+checkbox during the Python installer, or use `py` instead of `python` for
+the first two commands.
+
+## Easier launch (after the one-time setup above)
+
+**Mac:** double-click **`Launch Checklist Assistant.command`** in Finder.
+To put it somewhere convenient: right-click the file → Make Alias, then
+drag that alias to your Desktop or Dock.
+
+**Windows:** double-click **`Launch Checklist Assistant.bat`** in File
+Explorer. To put it somewhere convenient: right-click the file → Show
+more options → Send to → Desktop (create shortcut).
 
 Window positions (where the app window and the browser window open on
 screen) are set in `settings/window_layout.py` if you want to move them.
