@@ -1,15 +1,11 @@
 """
-A staged list of searches to build, test, and (eventually) run through
-extraction one after another - the first piece of the queue feature
-Brandon asked for (2026-08-10): "lets work on staging searches. we
-need a way to test each set, and skip searches that fail."
-
-This module is intentionally scoped to just staging + testing for now,
-matching how Brandon asked to build this up: get search-URL building
-and navigation solid on its own first (scraper/search_url.py, already
-shipped), then staging + per-entry testing (this module), and only
-after that actually wire up "run every passed entry through extraction
-automatically" - see StagedSearch.status for where that hook goes.
+A staged list of searches to build, test, and run through extraction
+one after another (Brandon, 2026-08-10: "lets work on staging
+searches. we need a way to test each set, and skip searches that
+fail."). Staging + per-entry testing shipped first; Run Queue (running
+every passed entry through real extraction, one output file per
+search) was added 2026-08-16 - see SearchQueueDialog._on_run_queue in
+app/search_queue_dialog.py for the runner itself.
 
 Persisted to settings/staged_searches.json so a staged list survives
 an app restart, same spirit as the other settings/*.csv files, just
@@ -30,6 +26,9 @@ QUEUE_PATH = Path(__file__).resolve().parent.parent / "settings" / "staged_searc
 UNTESTED = "untested"
 PASSED = "passed"
 FAILED = "failed"
+RUNNING = "running"
+DONE = "done"
+ERROR = "error"
 
 
 @dataclass
@@ -42,8 +41,25 @@ class StagedSearch:
     def url(self) -> str:
         return build_search_url(self.fields)
 
+    def output_name(self) -> str:
+        """The '[year] [set] [sport]' output name Brandon asked for
+        (2026-08-16) for Run Queue's one-file-per-search behavior.
+        Falls back to this entry's own name if year/set/sport were all
+        left blank (e.g. a keyword-only search), so there's always
+        something usable to sanitize into a filename."""
+        parts = [
+            self.fields.get("year", "").strip(),
+            self.fields.get("set", "").strip(),
+            self.fields.get("sport", "").strip(),
+        ]
+        joined = " ".join(p for p in parts if p)
+        return joined or self.name
+
     def display_line(self) -> str:
-        icon = {"untested": "○", "passed": "✓", "failed": "✗"}.get(self.status, "○")
+        icon = {
+            "untested": "○", "passed": "✓", "failed": "✗",
+            "running": "▶", "done": "✔", "error": "⚠",
+        }.get(self.status, "○")
         detail = f" — {self.status_detail}" if self.status_detail else ""
         return f"{icon} {self.name}{detail}"
 

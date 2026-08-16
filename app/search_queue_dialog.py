@@ -1,13 +1,23 @@
 """
 Search Queue dialog - stage multiple searches, test each one against
-the live site, and see which ones are safe to actually run later.
+the live site, then run every passed entry through real extraction,
+one output file per search (Run Queue).
 
 Brandon, 2026-08-10: "lets work on staging searches. we need a way to
-test each set, and skip searches that fail." Scoped deliberately to
-staging + testing only for now - actually running every passed entry
-through extraction automatically is the next step after this (see
-scraper/search_queue.py's module docstring for the reasoning on why
-this is being built up in stages).
+test each set, and skip searches that fail." Staging + per-entry
+testing shipped first; Run Queue itself was specced out and built
+2026-08-16 per this back-and-forth:
+- Manual trigger: review the queue, hit one button to kick off every
+  approved (passed) search in order.
+- Reorder, add, and edit not-yet-started entries freely - including
+  WHILE a run is in progress - since none of that touches the entry
+  actually being processed right now. Only the currently-running entry
+  itself is locked.
+- Pause stops the in-progress extraction wherever it is (reuses
+  ExtractionWorker's existing per-page pause/resume, the same
+  mechanism the main window's Pause button already uses).
+- Each search gets its own output file, named "[year] [set] [sport]"
+  from that search's own fields.
 """
 
 from __future__ import annotations
@@ -18,8 +28,19 @@ from PySide6.QtWidgets import (
 )
 
 from app.prompt_dialog import PromptDialog
-from scraper.search_queue import StagedSearch, load_queue, save_queue, PASSED, FAILED, UNTESTED
+from app.extraction_worker import ExtractionWorker
+from scraper.search_queue import (
+    StagedSearch, load_queue, save_queue,
+    UNTESTED, PASSED, FAILED, RUNNING, DONE, ERROR,
+)
 from settings.last_search import load_last_search
+from settings.output_naming import resolve_unique_output_name
+from settings.accumulator import clear_accumulated
+
+# Matches main_window.DEFAULT_TYPE - duplicated here (not imported) to
+# avoid a circular import, since main_window.py itself imports this
+# dialog. Same stable literal ("Sports") either way.
+DEFAULT_TYPE = "Sports"
 
 
 class SearchQueueDialog(QDialog):
@@ -27,16 +48,20 @@ class SearchQueueDialog(QDialog):
         super().__init__(parent)
         self.browser_manager = browser_manager
         self.entries: list[StagedSearch] = load_queue()
+        self._running_entry: StagedSearch | None = None
+        self._active_worker: ExtractionWorker | None = None
 
         self.setWindowTitle("Search Queue")
-        self.setFixedSize(560, 480)
+        self.setFixedSize(560, 520)
 
         layout = QVBoxLayout(self)
 
         intro = QLabel(
             "Stage searches here and test each one against the live "
             "site before running it for real. Untested and failed "
-            "entries are skipped when the queue actually runs."
+            "entries are skipped when Run Queue runs. Add, edit, and "
+            "reorder freely at any time - only the entry currently "
+            "running is locked."
         )
         intro.setWordWrap(True)
         layout.addWidget(intro)
@@ -75,21 +100,39 @@ class SearchQueueDialog(QDialog):
         test_row.addWidget(test_all_btn)
         layout.addLayout(test_row)
 
+        run_row = QHBoxLayout()
+        self.run_queue_btn = QPushButton("Run Queue")
+        self.run_queue_btn.clicked.connect(self._on_run_queue)
+        self.pause_btn = QPushButton("Pause")
+        self.pause_btn.clicked.connect(self._on_pause_resume)
+        self.pause_btn.setVisible(False)
+        run_row.addWidget(self.run_queue_btn)
+        run_row.addWidget(self.pause_btn)
+        layout.addLayout(run_row)
+
         self.status_label = QLabel("")
         self.status_label.setWordWrap(True)
         layout.addWidget(self.status_label)
 
         close_row = QHBoxLayout()
         close_row.addStretch()
-        close_btn = QPushButton("Close")
-        close_btn.clicked.connect(self._on_close)
-        close_row.addWidget(close_btn)
+        self.close_btn = QPushButton("Close")
+        self.close_btn.clicked.connect(self._on_close)
+        close_row.addWidget(self.close_btn)
         layout.addLayout(close_row)
 
     def _refresh_list(self) -> None:
+        selected = self.list_widget.currentRow()
         self.list_widget.clear()
         for entry in self.entries:
             self.list_widget.addItem(QListWidgetItem(entry.display_line()))
+        if 0 <= selected < len(self.entries):
+            self.list_widget.setCurrentRow(selected)
+
+    def _locked(self, entry: StagedSearch) -> bool:
+        """True if entry is the one currently running - every other
+        entry stays editable/reorderable/removable during a run."""
+        return entry is self._running_entry
 
     def _on_add(self) -> None:
         fields = PromptDialog.build_search_form(self, defaults=load_last_search())
@@ -111,15 +154,17 @@ class SearchQueueDialog(QDialog):
         fields (not the global last-used ones) so Brandon can tweak just
         what changed. Resets status to untested since a field change can
         invalidate a prior pass/fail result - re-test before running.
-        (Brandon, 2026-08-16: "I would like to be able to edit items in
-        the que if they havent started running" - nothing here has a
-        concept of "started running" yet since Run Queue isn't built,
-        so editing is available on every entry for now.)"""
+        Refused only if this specific entry is the one currently
+        running (Brandon, 2026-08-16: "I would like to be able to edit
+        items in the que if they havent started running")."""
         row = self.list_widget.currentRow()
         if row < 0:
             self.status_label.setText("Select an entry to edit first.")
             return
         entry = self.entries[row]
+        if self._locked(entry):
+            self.status_label.setText(f"{entry.name} is currently running - wait for it to finish.")
+            return
         fields = PromptDialog.build_search_form(self, defaults=entry.fields)
         if fields is None:
             return
@@ -135,6 +180,10 @@ class SearchQueueDialog(QDialog):
         if row < 0:
             self.status_label.setText("Select an entry to remove first.")
             return
+        entry = self.entries[row]
+        if self._locked(entry):
+            self.status_label.setText(f"{entry.name} is currently running - wait for it to finish.")
+            return
         del self.entries[row]
         save_queue(self.entries)
         self._refresh_list()
@@ -143,6 +192,9 @@ class SearchQueueDialog(QDialog):
         row = self.list_widget.currentRow()
         if row <= 0:
             self.status_label.setText("Select an entry (not already first) to move up.")
+            return
+        if self._locked(self.entries[row]) or self._locked(self.entries[row - 1]):
+            self.status_label.setText("Can't reorder past the entry currently running.")
             return
         self.entries[row - 1], self.entries[row] = self.entries[row], self.entries[row - 1]
         save_queue(self.entries)
@@ -154,12 +206,17 @@ class SearchQueueDialog(QDialog):
         if row < 0 or row >= len(self.entries) - 1:
             self.status_label.setText("Select an entry (not already last) to move down.")
             return
+        if self._locked(self.entries[row]) or self._locked(self.entries[row + 1]):
+            self.status_label.setText("Can't reorder past the entry currently running.")
+            return
         self.entries[row + 1], self.entries[row] = self.entries[row], self.entries[row + 1]
         save_queue(self.entries)
         self._refresh_list()
         self.list_widget.setCurrentRow(row + 1)
 
     def _run_test(self, entry: StagedSearch) -> None:
+        if self._locked(entry):
+            return
         self.status_label.setText(f"Testing: {entry.name}…")
         QApplication.processEvents()
         url = entry.url()
@@ -174,6 +231,9 @@ class SearchQueueDialog(QDialog):
         if row < 0:
             self.status_label.setText("Select an entry to test first.")
             return
+        if self._locked(self.entries[row]):
+            self.status_label.setText(f"{self.entries[row].name} is currently running.")
+            return
         self._run_test(self.entries[row])
         self.status_label.setText(f"Done testing {self.entries[row].name}.")
 
@@ -187,6 +247,166 @@ class SearchQueueDialog(QDialog):
             f"{passed_count} passed, {failed_count} failed."
         )
 
+    # ------------------------------------------------------------------
+    # Run Queue
+    # ------------------------------------------------------------------
+
+    def _on_run_queue(self) -> None:
+        pending = [e for e in self.entries if e.status == PASSED]
+        if not pending:
+            self.status_label.setText("No passed entries to run - test some searches first.")
+            return
+
+        answer = PromptDialog.question(
+            self, "Run Queue",
+            f"Run {len(pending)} passed search(es) now?\n\n"
+            "Each produces its own output file named "
+            "\"[year] [set] [sport]\" from that search's fields. "
+            "You can still add, edit, and reorder anything that "
+            "hasn't started yet while this runs.",
+            ["Run", "Cancel"], "Run",
+        )
+        if answer != "Run":
+            return
+
+        # Locked for the duration of the whole queue run, not just one
+        # item - re-entrant runs and a mid-run Close would both leave
+        # things in an inconsistent state (see closeEvent below).
+        self.run_queue_btn.setEnabled(False)
+        self.close_btn.setEnabled(False)
+
+        ran = 0
+        # Re-reads self.entries for the next PASSED one on every
+        # iteration (rather than snapshotting `pending` once) so a
+        # search added or edited-then-repassed WHILE the queue is
+        # running gets picked up, matching "add more to it... and
+        # continue" from the spec.
+        while True:
+            next_entry = next((e for e in self.entries if e.status == PASSED), None)
+            if next_entry is None:
+                break
+            self._run_one(next_entry)
+            ran += 1
+
+        self.run_queue_btn.setEnabled(True)
+        self.close_btn.setEnabled(True)
+        self.status_label.setText(f"Queue run finished — {ran} search(es) processed.")
+
+    def _run_one(self, entry: StagedSearch) -> None:
+        self._running_entry = entry
+        entry.status = RUNNING
+        entry.status_detail = "Running…"
+        save_queue(self.entries)
+        self._refresh_list()
+        self.status_label.setText(f"Running: {entry.name}…")
+        QApplication.processEvents()
+
+        # One output file per search (Brandon, 2026-08-16) - clear
+        # accumulated rows first so this search's data doesn't merge
+        # into a previous item's file the way a manual multi-page
+        # continuation intentionally would.
+        clear_accumulated()
+
+        url = entry.url()
+        if not self.browser_manager.is_launched:
+            self.browser_manager.launch(start_url=url)
+        else:
+            self.browser_manager.navigate_to_url(url)
+        self.browser_manager.bring_to_front()
+
+        output_name = resolve_unique_output_name(entry.output_name())
+        context = {
+            "checklist_type": "Set",
+            "sport": entry.fields.get("sport", "").strip(),
+            "type": DEFAULT_TYPE,
+            "primary_player": "",
+            "team": entry.fields.get("team", "").strip(),
+            "section": "",
+            "fetch_team": False,
+            "start_page": 1,
+            "end_page": 0,
+            "output_name": output_name,
+        }
+
+        result: dict = {}
+
+        def on_finished(new_rows, total_rows, card_count, final_path):
+            result["ok"] = True
+            result["detail"] = f"{card_count:,} cards → {final_path}"
+
+        def on_error(message):
+            result["ok"] = False
+            result["detail"] = message
+
+        def on_progress(message):
+            self.status_label.setText(f"{entry.name}: {message}")
+            QApplication.processEvents()
+
+        def on_paused():
+            self.status_label.setText(f"{entry.name}: paused — click Resume when ready.")
+
+        def on_resumed():
+            self.status_label.setText(f"{entry.name}: resuming…")
+
+        def on_review_flags(flagged):
+            return PromptDialog.review_flags(self, "Review Flagged Cards", flagged)
+
+        worker = ExtractionWorker(
+            browser_manager=self.browser_manager,
+            context=context,
+            on_progress=on_progress,
+            on_finished=on_finished,
+            on_error=on_error,
+            on_paused=on_paused,
+            on_resumed=on_resumed,
+            on_review_flags=on_review_flags,
+        )
+        self._active_worker = worker
+        self.pause_btn.setVisible(True)
+        self.pause_btn.setText("Pause")
+
+        worker.run()  # blocks (pumping Qt events internally) until this item finishes, errors, or is paused/resumed through to completion
+
+        self._active_worker = None
+        self.pause_btn.setVisible(False)
+        self._running_entry = None
+
+        if result.get("ok"):
+            entry.status = DONE
+            entry.status_detail = result.get("detail", "Done.")
+        else:
+            entry.status = ERROR
+            entry.status_detail = result.get("detail", "Failed.")
+        save_queue(self.entries)
+        self._refresh_list()
+
+    def _on_pause_resume(self) -> None:
+        if self._active_worker is None:
+            return
+        if self.pause_btn.text() == "Pause":
+            self._active_worker.pause()
+            self.pause_btn.setText("Resume")
+        else:
+            self._active_worker.resume()
+            self.pause_btn.setText("Pause")
+
+    def closeEvent(self, event) -> None:
+        if self._running_entry is not None:
+            event.ignore()
+            self.status_label.setText(
+                f"{self._running_entry.name} is still running - "
+                "let it finish (or Pause it) before closing."
+            )
+            return
+        save_queue(self.entries)
+        event.accept()
+
     def _on_close(self) -> None:
+        if self._running_entry is not None:
+            self.status_label.setText(
+                f"{self._running_entry.name} is still running - "
+                "let it finish (or Pause it) before closing."
+            )
+            return
         save_queue(self.entries)
         self.accept()

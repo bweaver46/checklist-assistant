@@ -7,7 +7,7 @@ import json
 
 from scraper.search_queue import (
     StagedSearch, load_queue, save_queue, passed_entries,
-    UNTESTED, PASSED, FAILED, QUEUE_PATH,
+    UNTESTED, PASSED, FAILED, RUNNING, DONE, ERROR, QUEUE_PATH,
 )
 
 
@@ -94,3 +94,27 @@ if __name__ == "__main__":
     test_load_queue_corrupt_file_returns_empty_not_crash()
     test_passed_entries_excludes_untested_and_failed()
     print("All search_queue tests passed.")
+
+
+def test_output_name_builds_year_set_sport():
+    entry = StagedSearch(name="X", fields={"year": "1968", "set": "Topps", "sport": "Baseball"})
+    assert entry.output_name() == "1968 Topps Baseball"
+
+
+def test_output_name_skips_blank_parts():
+    entry = StagedSearch(name="X", fields={"year": "1968", "set": "", "sport": "Baseball"})
+    assert entry.output_name() == "1968 Baseball"
+
+
+def test_output_name_falls_back_to_entry_name_when_all_blank():
+    entry = StagedSearch(name="Keyword Only Search", fields={"keyword": "Mantle"})
+    assert entry.output_name() == "Keyword Only Search"
+
+
+def test_display_line_shows_running_done_error_icons():
+    entry = StagedSearch(name="X", status=RUNNING)
+    assert "▶" in entry.display_line()
+    entry.status = DONE
+    assert "✔" in entry.display_line()
+    entry.status = ERROR
+    assert "⚠" in entry.display_line()
